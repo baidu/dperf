@@ -36,10 +36,9 @@ It can also be a CPU benchmark for packets processing.
 |4|4|400,000,000|40|41|
 
 ### Client & Server Configuration
-- CPU: Kunpeng 920
 - MEM: 512GB(hugepage 100GB)
 - NIC: Mellanox MT27710 25Gbps * 2
-- Kernel: 4.19.90-17.ky10.aarch64
+- Kernel: 4.19.90
 
 ## Getting Started
     #set hugepages
