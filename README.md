@@ -1,5 +1,6 @@
 # Dperf: 10M HTTP CPS Load tester
 Dperf is a DPDK based high performance L4L7 load tester.
+It can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of connections.
 It can also be a CPU benchmark for packets processing.
 
 ## Main Features
