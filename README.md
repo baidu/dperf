@@ -1,7 +1,5 @@
 # Dperf: 10M HTTP CPS Load tester [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/baidu/dperf/blob/main/LICENSE)
-Dperf is a DPDK based high performance network load tester.
-It can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of connections.
-It can also be a CPU benchmark for packets processing.
+Dperf is a high performance network load tester. Thanks to DPDK and highly optimized network protocol stack, it can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of connections. At the same time, it can accurately capture and display any packet loss in real time, which is very helpful for you to find defects in the performance and stability of your device. Dperf is suitable for the L4 gateways (such as L4LB), and can also be used to evaluate the packet processing capacity of the CPU.
 
 ## Main Features
 - http/udp CPS(connections per second) test
