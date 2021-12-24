@@ -7,6 +7,7 @@ It can also be a CPU benchmark for packets processing.
 - http/udp CPS(connections per second) test
 - http/udp CC(current connections) test
 - http/udp TPS(throughput per second) test
+- detect DUT packet loss
 - multiple client/server network subnets
 - multiple network interfaces
 - ipv4/ipv6
