@@ -2,15 +2,10 @@
 Dperf is a high performance network load tester. Thanks to DPDK and highly optimized network protocol stack, it can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of connections. At the same time, it can accurately capture and display any packet loss in real time, which is very helpful for you to find defects in the performance and stability of your device. Dperf is suitable for the L4 gateways (such as L4LB), and can also be used to evaluate the packet processing capacity of the CPU.
 
 ## Main Features
-- http/udp CPS(connections per second) test
-- http/udp CC(current connections) test
-- http/udp TPS(throughput per second) test
-- detect DUT packet loss
-- multiple client/server network subnets
-- multiple network interfaces
+- http/udp load test
+- detect packet loss
+- http client, http server
 - ipv4/ipv6
-- X86_64/ARM64
-- dpdk versions: dpdk-17.11, dpdk-18.11, dpdk-19.11, dpdk-20.11
 
 ## Performance
 ### HTTP Connection per Second
