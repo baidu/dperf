@@ -36,7 +36,7 @@ dperf outputs various statistics every second.
 - Packets loss/drop
 - Retransmissions of TCP Flags
 
-'''
+```
 seconds 22                 cpuUsage 52
 pktRx   3,001,058          pktTx    3,001,025          bitsRx   2,272,799,040      bitsTx  1,920,657,600      dropTx  0
 arpRx   0                  arpTx    0                  icmpRx   0                  icmpTx  0                  otherRx 0          badRx 0
@@ -45,7 +45,7 @@ synRt   0                  finRt    0                  ackRt    0               
 skOpen  1,000,330          skClose  1,000,363          skCon    230                skErr   0
 httpGet 1,000,345          http2XX  1,000,350          httpErr  0
 ierrors 0                  oerrors  0                  imissed  0
-'''
+```
 
 ## Getting Started
     #set hugepages
