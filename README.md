@@ -1,4 +1,4 @@
-# dperf is a load tester for L4 load balancer[![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/baidu/dperf/blob/main/LICENSE)
+# dperf is a network load tester for cloud [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/baidu/dperf/blob/main/LICENSE)
 Based on DPDK, dperf can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of connections. It can give detailed statistics and find every packet loss.
 
 ## Performance
