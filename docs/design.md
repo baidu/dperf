@@ -1,7 +1,7 @@
-# Dperf Design
+# dperf Design
 
 ## Background
-Dperf is designed to test the performance of the L4 load balancer(L4LB). It can generate a lot of pressure with only one ordinary physical server installed with some appropriate network interfaces to meet my daily research and development needs, and can easily display the performance of our network products in the customer's environment.
+dperf is designed to test the performance of the L4 load balancer(L4LB). It can generate a lot of pressure with only one ordinary physical server installed with some appropriate network interfaces to meet my daily research and development needs, and can easily display the performance of our network products in the customer's environment.
 
 L4LB has high performance. Most L4LBs are based on packet forwarding and typically have a session table inside that tracks the state of the connections, but does not analyze application-layer data. So a L4LB has millions of new connections, billions concurrent connections, and hundreds of gigabits of throughput.
 
@@ -12,7 +12,7 @@ L4LB has high performance. Most L4LBs are based on packet forwarding and typical
 
 ## Reasonable assumptions
 - Testing in an internal network where addresses can be freely specified
-- Dperf does not require routing, it is handled by the switch
+- dperf does not require routing, it is handled by the switch
 - HTTP request or response cannot exceed one MTU in a single message
 - HTTP message is correct, dperf does not need to validate HTTP message
 
@@ -29,7 +29,7 @@ Note: the switch is omitted.
 
 ## Design Essentials
 ### Multi threads and Flow Director
-Dperf is a multi-thread program that can use multiple network interfaces, but only one RX queue and one TX queue per thread. Dperf takes advantage of the FDIR (flow director) function of the network interface. Each thread of dperf (server) binds a separate IP, and dperf (client) requests only one destination IP per thread, so that each thread can run independently.
+dperf is a multi-thread program that can use multiple network interfaces, but only one RX queue and one TX queue per thread. dperf takes advantage of the FDIR (flow director) function of the network interface. Each thread of dperf (server) binds a separate IP, and dperf (client) requests only one destination IP per thread, so that each thread can run independently.
 
 ### Very small socket
 A socket consumes only 64 bytes and can be placed in a cache line, so it's easy to reach billions of concurrent connections.
@@ -50,4 +50,4 @@ The payload and Ethernet header of the packets sent by dperf are fixed, so we do
 Many inline functions are used to reduce function calls.
 
 ## CPU Benchmark
-When we ported L4LB to multiple CPUs, we used dperf to test the CPU's performance by sending traffic to each other on two servers of these CPUs. we found that some processors were suitable for network packet processing, while others were not as good as I expected. Dperf can be used as a CPU benchmark for packets processing.
+When we ported L4LB to multiple CPUs, we used dperf to test the CPU's performance by sending traffic to each other on two servers of these CPUs. we found that some processors were suitable for network packet processing, while others were not as good as I expected. dperf can be used as a CPU benchmark for packets processing.

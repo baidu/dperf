@@ -42,13 +42,13 @@ Pass the "--socket MEM" parameter to dpdk so that multiple dperf instances can r
 - syntax: port PCI IPAddress Gateway [Gateway-Mac]
 - default: -
 - required: yes
-Set the network card used by dperf. You can assign multiple network cards to dpef. Dperf will take over these network cards from the operating system.
+Set the network card used by dperf. You can assign multiple network cards to dpef. dperf will take over these network cards from the operating system.
 
 ## duration
 - syntax: duration Time
 - default: duration 100s
 - required: yes 
-Set the running time of dperf. Dperf will slowly increase the pressure when it starts, and will delay for a few seconds when it exits. You can also make dperf exit through a signal (SIGINT). 
+Set the running time of dperf. dperf will slowly increase the pressure when it starts, and will delay for a few seconds when it exits. You can also make dperf exit through a signal (SIGINT). 
 
     Example:
     duration 1.5d
@@ -115,7 +115,7 @@ How many connections are initiated by the client at a time. In case of packet lo
 - syntax: client IPAddress Number
 - default: -
 - required: yes 
-Set the IP address range of the client. 'IPAddress' is the starting address. The last byte of the address in the address range cannot exceed 254. In client mode, only one client address range can be configured for each network card interface; Dperf uses it as the source address of the connection. In the server mode, multiple connections can be configured, indicating that the server only accepts connections within these IP ranges.
+Set the IP address range of the client. 'IPAddress' is the starting address. The last byte of the address in the address range cannot exceed 254. In client mode, only one client address range can be configured for each network card interface; dperf uses it as the source address of the connection. In the server mode, multiple connections can be configured, indicating that the server only accepts connections within these IP ranges.
 Note: dperf will allocate all sockets at startup. Please do not set a large address range.
 
 ## server
