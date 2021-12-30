@@ -2,55 +2,41 @@
 --by jianzhang peng
 
 ## 背景
-最开始，dperf是设计来给四层负载均衡器(L4LB)做性能测试的。用一个通用物理服务器，一些合适的网卡，dperf就可以产生相当大的压力，既可以满足我的日常研发需求，也方便我向客户展示我们L4LB的性能。
-L4LB的性能通常很高。大部分L4LB是基于报文转发实现的，在内部有一个会话表，用来跟踪连接状态, 不过L4LB不会去分析应用层的数据。所以L4LB可以达到数百万的每秒新建连接数，几十亿的并发，数百万Gbps的吞吐。
+dperf是设计来给四层负载均衡器(L4LB)做性能测试。用一个通用物理服务器，一些合适的网卡，dperf就可以产生相当大的压力，既可以满足L4LB研发需求，也方便在客户环境(通常没有商业测试仪)展示L4LB的性能。
 
-本文讲述针对四层负载均衡器的性能测试，dperf是怎么设计的, 考虑到UDP比较简单，本文主要针对TCP。
+L4LB的性能通常很高。主流L4LB是基于IP报文转发实现的，它在内部有会话表，用来跟踪连接状态；L4LB不分析应用层数据。所以L4LB可以达到数百万的每秒新建连接数，几十亿的并发，数百万Gbps的吞吐。
+
+既然L4LB的性能很高，所以对L4LB进行性能测试就是一个非常让人头疼的事情。本文说明dperf是如何解决这个问题的。
+由于UDP比较简单，本文只从TCP的角度去说明。
 
 ## 核心需求
 - 极高性能的TCP协议栈
-- 支持HTTP协议，方便用社区的各种工具进行测试
+- 支持HTTP协议，方便用社区的各种工具对dperf进行测试
 - 能够在一台物理服务器上模拟出HTTP客户端与HTTP服务器(用最少的资源，完成测试)
 
 ## 一些合理的假设
-- 测试在一个内部网络进行，IP地址可以随意设置
-- dperf可以接入三层交换机，dperf不需要支持路由功能
-- HTTP的请求、响应长度不能超过一个MTU，必须在一个报文内(不运行真实业务，用于测试是可以接收的)
-- HTTP的报文格式是正确的，dperf对HTTP报文做合法性校验（这是性能测试，不是功能测试）
-
-## 使用场景
-1. 两个dperf互打，用于测试网卡、CPU、交换机、虚拟网络等设施的性能
-
-dperf(client)------------------------dperf(server)
-
-2. 单作为客户端使用
-
-dperf(client)------------------------Server(eg nginx)
-
-3. 单作为服务器使用
-
-Client(eg ab/curl)-------------------dperf(server)
-
-3. 作为客户端、服务器，测试中间设备
-
-dperf(client)---------DUT(L4LB)------dperf(server)
-
-注意：上面省略了交换机。
+- 测试在一个内部网络进行，IP地址可以随意设置;
+- dperf可以接入三层交换机，dperf不需要支持路由功能;
+- HTTP的请求与响应长度不超过一个MTU
+- 不追求单个连接的性能，通过大并发、长连接等机制来增强整体性能
+- 在性能测试中，HTTP的报文格式是合法的，dperf可以不对HTTP报文做合法性校验
 
 ## 设计要点
 ### 多线程与网卡分流（FDIR）
 dperf是一个多线程程序，可以使用多个网卡端口，但是每个线程只使用1个RX和1个TX。
-dperf使用网卡的分流特性（FDIR。
+dperf使用网卡的分流特性（FDIR)。
 每个dperf server线程绑定一个监听IP，使用报文的目的IP分流。
 每个dperf client线程只请求一个目的IP，使用报文的源IP分流。
+经过分流后，理论上每个线程互不干扰，各自安好，实际上会因为共享片上资源，CPU硬件层面会有相互干扰, 做不到百分百线性。
 
 ### 极小socket
 1个socket（1条连接）只占用64字节，可以放在一个cache line中，10亿连接只需要6.2GB内存，所以很容易达到几十亿并发连接数。
 
 ### 地址与socket查找
-与商业测试仪类似，dperf client与dperf server要求使用连续的地址范围。
-
-Clients and servers use a continuous range of IP addresses. Each network interface takes up one range of IP addresses, the number of IPs used by dperf(server) equals the number of threads, dperf(client) can use more IPs (eg 100), the server's listening port is also a continuous range of ports, and the lower two bytes of the client's IP address is the index for lookup and needs to be unique. Since the IP addresses of the client and server are determined beforehand, all sockets are allocated at dperf startup to form a table, the lower 2 bytes of client port, server port, and client IP can be used to locate the socket immediately.
+dperf要求使用连续的客户端地址、连续的监听地址、连续的监听端口。
+测试中使用到的地址必须要写在配置文件中，dperf在启动时根据地址、端口的组合，把所有socket的内存全部申请好，并用数组组织好。
+为了减少内存消耗，客户端地址使用最低的两个字节来索引，服务器地址不用索引，每个线程关联一个服务器IP，监听端口用序号索引。
+从地址到socket的查找不需要哈希，只需要数组访问即可，花费几条指令而已。
 
 ### 定制的TCP协议栈
 关于dperf的TCP协议栈有一个有趣的故事。
@@ -80,8 +66,11 @@ Clients and servers use a continuous range of IP addresses. Each network interfa
 dperf服务器非常傻，它收到任何1数据包（第一个字符是G, GET的开始），就认为是完整的请求，就把固定的响应发送出去。
 dperf客户端也非常傻，它收到任何一个数据报文，如果第10个字符是'2'（假设"HTTP/1.1 200 OK")，就认为是成功的响应。
 
-### Inline函数
-dperf大量使用inline来避免函数调用开销。
+### 其他优化点
+- dperf大量使用inline来避免函数调用开销。
+- socket的内存从大页分配，避免页表缺失
+- 报文批量释放
+- 发送带缓存，一次发送不成功，下次再发送，不会立刻丢包
 
 ## 其他用途
 根据dperf的特点，我们发现它除了可以对L4LB进行测试外，还可：
@@ -89,6 +78,3 @@ dperf大量使用inline来避免函数调用开销。
 - 对云上虚拟机的网络性能进行测试
 - 对网卡性能、CPU的网络报文处理能力进行测试
 - 作为高性能的HTTP客户端或HTTP服务器用于压测场景
-
-我们要把四层负载均衡移植到各种CPU，我们用dperf来测评各种CPU的性能
-When we ported L4LB to multiple CPUs, we used dperf to test the CPU's performance by sending traffic to each other on two servers of these CPUs. we found that some processors were suitable for network packet processing, while others were not as good as I expected. dperf can be used as a CPU benchmark for packets processing.
