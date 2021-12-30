@@ -65,10 +65,10 @@ Configure the network interface port used by dperf.
 If you want to use multiple network cards, you only need to configure multiple'ports'. 
 As a DPDK program, dperf will take over these network cards from the operating system. 
 Before starting dperf, you need to use the DPDK script 'dpdk-devbind.py' for driver binding (except for Mellanox network interfaces).
-    - PCI: The PCI number of the network interface port, use 'dpdk-devbind.py -s' to get it from the system.
-    - IPAddress: This IP  Address is used to interconnect with the 'Gateway'
-    - Gateway: Gateway's IP address. dperf has no routing capability. It will send all packets to the gateway, except for ARP, NS, and ND.
-    - Gateway-MAC: the MAC address of the 'Gateway', which can be omitted.
+- PCI: The PCI number of the network interface port, use 'dpdk-devbind.py -s' to get it from the system.
+- IPAddress: This IP  Address is used to interconnect with the 'Gateway'
+- Gateway: Gateway's IP address. dperf has no routing capability. It will send all packets to the gateway, except for ARP, NS, and ND.
+- Gateway-MAC: the MAC address of the 'Gateway', which can be omitted.
 
 Reference:
 [binding-and-unbinding-network-ports](http://doc.dpdk.org/guides/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules)
@@ -160,9 +160,8 @@ How many connections are initiated by the client at a time. In case of packet lo
 - mode: client, server
 
 Set the client's IP address range.
-    - 'IPAddress': starting address.
-    - 'number': number of addresses, 1-254
-
+- 'IPAddress': starting address.
+- 'number': number of addresses, 1-254
 
 Whether it is IPv4 or IPv6, we use the last two bytes to uniquely identify an address. The address of the 'client' can only be changed in the last byte.
 In the client mode, the number of 'client' must be equal to the number of 'port', which has a one-to-one correspondence. Indicates that the 'port' uses the address pool of the 'client' as the source address of the connections.
