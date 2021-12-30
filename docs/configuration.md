@@ -6,7 +6,7 @@
 - required: yes
 - mode: -
 
-Set the running mode of dperf. dperf can be run as a client or a server, just like [iperf](https://iperf.fr/).
+Set the running mode of dperf. dperf can be run as a client or a server.
 
 ## daemon
 - syntax: daemon
@@ -22,6 +22,7 @@ In daemon mode, dperf statistics are written to the log file ('/var/log/dperf/dp
 - required: no
 - mode: server
 
+Keepalive means that multiple requests and responses can be sent in one connection.
 'keepalive' needs to be explicitly enabled on the dperf server.
 After 'keepalive' is enabled, the dperf server will not actively close the connection, it will wait for the client's FIN or RST.
 When 'keepalive' is not enabled, the dperf server closes the connection at the fastest speed in the world by directly setting the FIN Flag at the response packet.
@@ -34,10 +35,11 @@ There is no need to enable 'keepalive' for the dperf client. When the dperf clie
 - required: yes
 - mode: client, server
 
-Set which CPUs dperf runs on. dperf starts a worker thread on each CPU, and each thread uses only 1 RX queue and 1 TX queue.
-If you use multiple network ports, dperf will distribute the CPU equally according to the configuration order of the network port.
+Set which CPUs dperf runs on. dperf is a multithread program.
+It starts a worker thread on each CPU, and each thread uses only 1 RX queue and 1 TX queue.
+If you use multiple network interface ports, dperf will distribute the CPU equally according to the configuration order of the network interface port.
 
-On a multi-NUMA system, it is necessary to note that the CPU needs to be on the same NUMA node as the network port, which is a requirement of DPDK.
+On a multi-NUMA system, it is necessary to note that the CPU needs to be on the same NUMA node as the network interface port, which is a requirement of DPDK.
 
 Example:
 - cpu 0-3 12-15
@@ -71,8 +73,8 @@ Reference:
 - mode: client, server
 
 Configure the network interface port used by dperf. 
-If you want to use multiple network ports, you only need to configure multiple 'port's. 
-As a DPDK program, dperf will take over these network ports from the operating system. 
+If you want to use multiple network interface ports, you only need to configure multiple 'port's. 
+As a DPDK program, dperf will take over these network interface ports from the operating system. 
 Before starting dperf, you need to use the DPDK script 'dpdk-devbind.py' for driver binding (except for Mellanox network interfaces).
 - PCI: The PCI number of the network interface port, use 'dpdk-devbind.py -s' to get it from the system.
 - IPAddress: This IP  Address is used to interconnect with the 'Gateway'
@@ -204,6 +206,7 @@ Set the listening IP range of the server. The number of 'port' must be the same 
 - required: yes
 
 Set the port ranges that the server listens to, and the client sends packets to these port ranges.
+
 Note: dperf will allocate all sockets at startup. Please do not set a large port range.
 
 ## payload_size
@@ -238,5 +241,5 @@ TCP or UDP protocol. Regardless of the TCP or UDP protocol, the dperf client sen
 - required: no
 - mode: client, server
 
-Use the DPDK interface to send packets, the maximum number of packets sent at a time.
-A smaller value can make the data packet sending smoother and avoid packet loss at the receiving side, but it increases the CPU consumption of dperf.
+Use the DPDK API to send packets, the maximum number of packets sent at a time.
+A smaller value can make the packets sending smoother and avoid packet loss at the receiving side, but it increases the CPU consumption of dperf.
