@@ -49,5 +49,5 @@ The payload and Ethernet header of the packets sent by dperf are fixed, so we do
 ### Inline function
 Many inline functions are used to reduce function calls.
 
-## CPU Benchmark
+## Network Benchmark
 When we ported L4LB to multiple CPUs, we used dperf to test the CPU's performance by sending traffic to each other on two servers of these CPUs. we found that some processors were suitable for network packet processing, while others were not as good as I expected. dperf can be used as a CPU benchmark for packets processing.

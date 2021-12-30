@@ -100,4 +100,4 @@ dperf欢迎大家贡献。
 * **Jianzhang Peng** - *初试工作* - [Jianzhang Peng](https://github.com/pengjianzhang)
 
 ## 许可
-dperf基于[Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)许可证.
+dperf基于[Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)许可证。
