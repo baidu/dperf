@@ -22,7 +22,9 @@ In daemon mode, dperf statistics are written to the log file ('/var/log/dperf/dp
 - required: no
 - mode: server
 
-'keepalive' needs to be explicitly enabled on the dperf server. After 'keepalive' is enabled, the dperf server will not actively close the connection, it will wait for the client's FIN or RST. When 'keepalive' is not enabled, the dperf server closes the connection at the fastest speed in the world by directly setting the FIN Flag at the response packet.
+'keepalive' needs to be explicitly enabled on the dperf server.
+After 'keepalive' is enabled, the dperf server will not actively close the connection, it will wait for the client's FIN or RST.
+When 'keepalive' is not enabled, the dperf server closes the connection at the fastest speed in the world by directly setting the FIN Flag at the response packet.
 
 There is no need to enable 'keepalive' for the dperf client. When the dperf client finds 'cc' in the configuration file, 'keepalive' will be enable automatically.
  
@@ -32,7 +34,8 @@ There is no need to enable 'keepalive' for the dperf client. When the dperf clie
 - required: yes
 - mode: client, server
 
-Set which CPUs dperf runs on. dperf starts a worker thread on each CPU, and each thread uses only 1 RX queue and 1 TX queue. If you use multiple network ports, dperf will distribute the CPU equally according to the configuration order of the network port.
+Set which CPUs dperf runs on. dperf starts a worker thread on each CPU, and each thread uses only 1 RX queue and 1 TX queue.
+If you use multiple network ports, dperf will distribute the CPU equally according to the configuration order of the network port.
 
 On a multi-NUMA system, it is necessary to note that the CPU needs to be on the same NUMA node as the network port, which is a requirement of DPDK.
 
@@ -46,7 +49,9 @@ Example:
 - required: no
 - mode: client, server
 
-This is the DPDK "--socket" parameter, and dperf passes it to DPDK. Using'--socket_mem', we can run a dperf client and a dperf server on the same host at the same time, so that we can build a load test environment with one host.
+This is the DPDK "--socket" parameter, and dperf passes it to DPDK. Using'--socket_mem',
+we can run a dperf client and a dperf server on the same host at the same time,
+so that we can build a load test environment with one host.
 
 Example:
 - socket_mem  40960,0
@@ -56,6 +61,7 @@ Note: The unit of the parameter is MB.
 
 Reference:
 [Linux-specific EAL parameters](http://doc.dpdk.org/guides/linux_gsg/linux_eal_parameters.html#linux-specific-eal-parameters)
+
 [Multi-process Support](http://doc.dpdk.org/guides/prog_guide/multi_proc_support.html)
 
 ## port
@@ -65,8 +71,8 @@ Reference:
 - mode: client, server
 
 Configure the network interface port used by dperf. 
-If you want to use multiple network cards, you only need to configure multiple'ports'. 
-As a DPDK program, dperf will take over these network cards from the operating system. 
+If you want to use multiple network ports, you only need to configure multiple 'port's. 
+As a DPDK program, dperf will take over these network ports from the operating system. 
 Before starting dperf, you need to use the DPDK script 'dpdk-devbind.py' for driver binding (except for Mellanox network interfaces).
 - PCI: The PCI number of the network interface port, use 'dpdk-devbind.py -s' to get it from the system.
 - IPAddress: This IP  Address is used to interconnect with the 'Gateway'
@@ -84,7 +90,8 @@ Reference:
 
 Set the running time of dperf, after this time dperf will exit.
 
-After dperf is started, there is a slow start phase, and the CPS will gradually increase. There is also a short buffer time when exiting. You can also use the signal 'SIGINT' to make dperf exit gracefully immediately.
+After dperf is started, there is a slow start phase, and the CPS will gradually increase.
+There is also a short buffer time when exiting. You can also use the signal 'SIGINT' to make dperf exit gracefully immediately.
 
 Example:
 - duration 1.5d
@@ -99,7 +106,9 @@ Example:
 - required: yes
 - mode: client
 
-This is the total target for the number of new connections per second for all worker threads. dperf evenly distributes the total target to each worker thread, so it is recommended to set'cps' to an integer multiple of the number of worker threads. In the slow start phase, CPS will gradually increase.
+This is the total target for the number of new connections per second for all worker threads.
+dperf evenly distributes the total target to each worker thread, so it is recommended to set'cps' to an integer multiple of the number of worker threads.
+In the slow start phase, CPS will gradually increase.
 
 Example:
 - cps 10m
@@ -113,7 +122,9 @@ Example:
 - required: no
 - mode: client
 
-Set the total target for the number of concurrent connections on the client side. When 'cc' is set, the client will enable 'keepalive'. When the target value is high, we need to increase the time interval between two requests to reduce network bandwidth usage.
+Set the total target for the number of concurrent connections on the client side.
+When 'cc' is set, the client will enable 'keepalive'.
+When the target value is high, we need to increase the time interval between two requests to reduce network bandwidth usage.
 
 Example:
 - cc 100m
@@ -127,7 +138,7 @@ Example:
 - required: no
 - mode: client
 
-If this flag is enabled, the client will only send SYN packets and will not establish a connection.
+If this flag is enabled, the dperf client will only send SYN packets and will not establish connections.
 
 ## keepalive_request_interval
 - syntax: keepalive_request_interval Time
@@ -135,7 +146,7 @@ If this flag is enabled, the client will only send SYN packets and will not esta
 - required: no
 - mode: client
 
-Set the interval between two requests in the same connection. It only takes effect after setting 'cc'.
+Set the interval between two requests in the a connection. It only takes effect after setting 'cc'.
 
 Example:
 - keepalive_request_interval 1ms
@@ -148,7 +159,7 @@ Example:
 - required: no
 - mode: client
 
-How many requests are sent in the same connection before closing the connection. It only takes effect after setting 'cc'.
+How many requests are sent in the a connection before closing the connection. It only takes effect after setting 'cc'.
 
 # launch_num
 - syntax: launch_num Number
@@ -156,7 +167,9 @@ How many requests are sent in the same connection before closing the connection.
 - required: no
 - mode: client
 
-How many connections are initiated by the client at a time. In case of packet loss, try to reduce the number to make the packet sending more smooth, so as to avoid the packet loss of the receiver's network card caused by the surge of packets.
+How many connections are initiated by the client at a time.
+In case of packet loss, try to reduce the number to make the packet sending more smooth,
+so as to avoid the packet loss of the receiver's network card caused by the surge of packets.
 
 ## client
 - syntax: client IPAddress Number
@@ -168,10 +181,14 @@ Set the client's IP address range.
 - 'IPAddress': starting address.
 - 'number': number of addresses, 1-254
 
-Whether it is IPv4 or IPv6, we use the last two bytes to uniquely identify an address. The address of the 'client' can only be changed in the last byte.
-In the client mode, the number of 'client' must be equal to the number of 'port', which has a one-to-one correspondence. Indicates that the 'port' uses the address pool of the 'client' as the source address of the connections.
+dperf uses the last two bytes to uniquely identify an IPv4 or IPv6 address.
+In a 'client' configuration, only the last byte of the address is allowed to be variable.
 
-In the server mode, the number of 'client' can be greater or less than the number of 'port'. Indicates that the server only accepts connections from these clients, and does not accept connections from unspecified clients.
+In the client mode, the number of 'client' must be equal to the number of 'port', which has a one-to-one correspondence. 
+Indicates that the 'port' uses the address pool of the 'client' as the source addresses of the connections.
+
+In the server mode, the number of 'client' can be greater or less than the number of 'port'.
+Indicates that the server only accepts connections from these clients, and does not accept connections from unspecified clients.
 
 ## server
 - syntax: server IPAddress Number
@@ -221,4 +238,5 @@ TCP or UDP protocol. Regardless of the TCP or UDP protocol, the dperf client sen
 - required: no
 - mode: client, server
 
-Use the DPDK interface to send packets, the maximum number of packets sent at a time. A smaller value can make the data packet sending smoother and avoid packet loss at the receiving side, but it increases the CPU consumption of dperf.
+Use the DPDK interface to send packets, the maximum number of packets sent at a time.
+A smaller value can make the data packet sending smoother and avoid packet loss at the receiving side, but it increases the CPU consumption of dperf.
