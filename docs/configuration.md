@@ -22,9 +22,9 @@ In daemon mode, dperf statistics are written to the log file ('/var/log/dperf/dp
 - required: no
 - mode: server
 
-'keepalive' needs to be explicitly enabled on the dperf server. After 'keepaive' is turned on, the dperf server will not actively close the connection, it will wait for the client's FIN or RST. When 'keepalive' is not enabled, the dperf server closes the connection at the fastest speed in the world by directly setting the FIN Flag on the response packet.
+'keepalive' needs to be explicitly enabled on the dperf server. After 'keepalive' is enabled, the dperf server will not actively close the connection, it will wait for the client's FIN or RST. When 'keepalive' is not enabled, the dperf server closes the connection at the fastest speed in the world by directly setting the FIN Flag at the response packet.
 
-There is no need to configure 'keepalive' on the dperf client. When the dperf client finds 'cc' in the configuration file, it will automatically enable 'keepalive'.
+There is no need to enable 'keepalive' for the dperf client. When the dperf client finds 'cc' in the configuration file, 'keepalive' will be enable automatically.
  
 ## cpu
 - syntax: cpu n0 n1 n2-n3...
@@ -33,11 +33,12 @@ There is no need to configure 'keepalive' on the dperf client. When the dperf cl
 - mode: client, server
 
 Set which CPUs dperf runs on. dperf starts a worker thread on each CPU, and each thread uses only 1 RX queue and 1 TX queue. If you use multiple network ports, dperf will distribute the CPU equally according to the configuration order of the network port.
+
 On a multi-NUMA system, it is necessary to note that the CPU needs to be on the same NUMA node as the network port, which is a requirement of DPDK.
 
-    Example:
-    cpu 0-3 12-15
-    cpu 0 1 2 3 4 5
+Example:
+- cpu 0-3 12-15
+- cpu 0 1 2 3 4 5
 
 ## socket_mem
 - syntax: socket_mem n0,n1,n2...
@@ -46,14 +47,16 @@ On a multi-NUMA system, it is necessary to note that the CPU needs to be on the 
 - mode: client, server
 
 This is the DPDK "--socket" parameter, and dperf passes it to DPDK. Using'--socket_mem', we can run a dperf client and a dperf server on the same host at the same time, so that we can build a load test environment with one host.
+
+Example:
+- socket_mem  40960,0
+- socket_mem  0,40960
+
 Note: The unit of the parameter is MB.
+
 Reference:
 [Linux-specific EAL parameters](http://doc.dpdk.org/guides/linux_gsg/linux_eal_parameters.html#linux-specific-eal-parameters)
 [Multi-process Support](http://doc.dpdk.org/guides/prog_guide/multi_proc_support.html)
-
-    Example:
-    socket_mem  40960,0
-    socket_mem  0,40960
 
 ## port
 - syntax: port PCI IPAddress Gateway [GatewayMAC]
@@ -80,13 +83,15 @@ Reference:
 - mode: client, server
 
 Set the running time of dperf, after this time dperf will exit.
+
 After dperf is started, there is a slow start phase, and the CPS will gradually increase. There is also a short buffer time when exiting. You can also use the signal 'SIGINT' to make dperf exit gracefully immediately.
-    Example:
-    duration 1.5d
-    duration 2h
-    duration 3.5m
-    duration 100s
-    duration 100
+
+Example:
+- duration 1.5d
+- duration 2h
+- duration 3.5m
+- duration 100s
+- duration 100
 
 ## cps
 - syntax: cps Number
@@ -96,11 +101,11 @@ After dperf is started, there is a slow start phase, and the CPS will gradually 
 
 This is the total target for the number of new connections per second for all worker threads. dperf evenly distributes the total target to each worker thread, so it is recommended to set'cps' to an integer multiple of the number of worker threads. In the slow start phase, CPS will gradually increase.
 
-    Example:
-    cps 10m
-    cps 1.5m
-    cps 2k
-    cps 100
+Example:
+- cps 10m
+- cps 1.5m
+- cps 2k
+- cps 100
 
 ## cc
 - syntax: cc Number 
@@ -110,11 +115,11 @@ This is the total target for the number of new connections per second for all wo
 
 Set the total target for the number of concurrent connections on the client side. When 'cc' is set, the client will enable 'keepalive'. When the target value is high, we need to increase the time interval between two requests to reduce network bandwidth usage.
 
-    Example:
-    cc 100m
-    cc 1.5m
-    cc 2k
-    cc 100
+Example:
+- cc 100m
+- cc 1.5m
+- cc 2k
+- cc 100
 
 ## synflood
 - syntax: synflood
@@ -132,10 +137,10 @@ If this flag is enabled, the client will only send SYN packets and will not esta
 
 Set the interval between two requests in the same connection. It only takes effect after setting 'cc'.
 
-    Example:
-    keepalive_request_interval 1ms
-    keepalive_request_interval 1s
-    keepalive_request_interval 60s
+Example:
+- keepalive_request_interval 1ms
+- keepalive_request_interval 1s
+- keepalive_request_interval 60s
 
 ## keepalive_request_num Number
 - syntax: keepalive_request_num Number
