@@ -89,6 +89,10 @@ ierrors 0                  oerrors  0                  imissed  0
     #run client at another host
     ./build/dperf -c test/http/client-cps.conf
 
+## 文档
+ - [配置手册](docs/configuration-CN.md)
+ - [设计原理](docs/design-CN.md)
+
 ## 贡献
 dperf欢迎大家贡献。
 
