@@ -9,16 +9,16 @@ The performance of L4LB is so high that it is very difficult to test its perform
 
 ## Core needs
 - Extremely high-performance TCP protocol stack, performance in all aspects exceeds L4LB;
-- Support HTTP protocol, convenient to use various open source tools to test it;
+- Support HTTP protocol, it is convenient to use various tools to test the compatibility and correctness of the protocol stack; 
 - Able to simulate HTTP client and HTTP server on a physical server, complete the test with minimal resources. 
 
 ## Reasonable assumptions
 - The load test is carried out on the internal network, and the IP address can be set in the entire section;
 - dperf can be connected to a three-layer switch without supporting routing function;
 - we can test small and large packets, without supporting long HTTP messages (such as 16K HTTP requests, 1MB HTTP responses, etc.), and the HTTP message length is limited to 1 MTU;
-- Do not pursue the transmission speed of a single connection, and enhance the overall test pressure through mechanisms such as large concurrency and long connections
-- In the performance test, the HTTP message format is legal, and dperf does not need to do a complete verification of the legality of the HTTP message
-- During the test, the content of the HTTP message sent by dperf is fixed in length and the content is unchanged 
+- Do not pursue the transmission speed of a single connection, and enhance the overall test pressure through mechanisms such as large concurrency and long connections;
+- In the performance test, the HTTP message format is legal, and dperf does not need to do a complete verification of the legality of the HTTP message;
+- During the test, the content of the HTTP message sent by dperf is fixed in length and the content is unchanged.
 
 ## Design Essentials
 ### Multi threads and Flow Director
