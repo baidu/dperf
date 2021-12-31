@@ -1,6 +1,6 @@
-# Dperf Build Tips 
+# dperf Build Tips
 
-## Build Dperf With DPDK-17/18/19
+## Build dperf With DPDK-17/18/19
 ### Build DPDK
     #Suppose we use dpdk-19.11.10.
 
@@ -8,11 +8,11 @@
     cd /root/dpdk/dpdk-stable-19.11.10
     make install T=$TARGET -j16
 
-### Build Dperf
+### Build dperf
     cd dperf
     make -j8 RTE_SDK=/root/dpdk/dpdk-stable-19.11.10 RTE_TARGET=$TARGET
 
-## Build Dperf With DPDK-20
+## Build dperf With DPDK-20
 ### Build DPDK
     #Suppose we use dpdk-20.11.2.
 
@@ -20,7 +20,7 @@
     meson build --prefix=/root/dpdk/dpdk-stable-20.11.2/mydpdk -Denable_kmods=true
     ninja -C build install
 
-### Build Dperf
+### Build dperf
     export PKG_CONFIG_PATH=/root/dpdk/dpdk-stable-20.11.2/mydpdk/lib64/pkgconfig/
     cd dperf
     make

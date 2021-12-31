@@ -1,11 +1,11 @@
 # dperf is a network load tester for cloud [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/baidu/dperf/blob/main/LICENSE)
 
-English | [中文](README-CN.md)
+[English](README.md) | 中文
 
-Based on DPDK, dperf can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of connections. It can give detailed statistics and find every packet loss.
+基于DPDK，使用一台普通x86服务器，dperf可以产生巨大的流量：千万级的HTTP每秒新建连接数，数百Gbps的带宽，几十亿的并发连接数。dperf能够输出详细的统计信息，并且识别每一个丢包。
 
-## Performance
-### HTTP Connections per Second
+## 性能
+### HTTP每秒新建连接数
 |Client Cores|Server Cores|HTTP CPS|
 |------------|------------|--------|
 |1|1|2,101,044|
@@ -13,31 +13,31 @@ Based on DPDK, dperf can generate huge traffic with a single x86 server: tens of
 |4|4|7,010,743|
 |6|6|10,027,172|
 
-### HTTP Throughput per Second
+### HTTP吞吐
 |Client Cores|Server Cores|RX(Gbps)|TX(Gbps))|Client CPU Usage(%)|Server CPU Usage(%)|
 |------------|------------|--------|---------|-------------------|-------------------|
 |1|1|18|18|60|59|
 |2|2|35|35|60|59|
 |4|4|46|46|43|43|
 
-### HTTP Current Connections
+### HTTP并发连接数
 |Client Cores|Server Cores|Current Connections|Client CPU Usage(%)|Server CPU Usage(%)|
 |------------|------------|-------------------|-------------------|-------------------|
 |1|1|100,000,000|34|39|
 |2|1|200,000,000|36|39|
 |4|4|400,000,000|40|41|
 
-### Client & Server Configuration
-- MEM: 512GB(hugepage 100GB)
-- NIC: Mellanox MT27710 25Gbps * 2
-- Kernel: 4.19.90
+### 测试环境配置（客户端、服务器）
+- 内存: 512GB(大页 100GB)
+- 网卡: Mellanox MT27710 25Gbps * 2
+- 内核: 4.19.90
 
-## Statistics
-dperf outputs various statistics every second.
-- TPS, CPS, various PPS
-- Errors of TCP/Socket/HTTP
-- Packets loss/drop
-- Retransmissions of TCP Flags
+## 统计数据
+dperf每秒输出多种统计数据。
+- TPS, CPS,  各种维度的PPS
+- TCP/Socket/HTTP级别的错误数
+- 丢包数
+- 按照TCP Flag分类的报文重传数
 
 ```
 seconds 22                 cpuUsage 52
@@ -50,7 +50,7 @@ httpGet 1,000,345          http2XX  1,000,350          httpErr  0
 ierrors 0                  oerrors  0                  imissed  0
 ```
 
-## Getting Started
+## 开始使用
     #set hugepages
     #edit '/boot/grub2/grub.cfg' like this, and reboot the OS
     #linux16 /vmlinuz-... nopku transparent_hugepage=never default_hugepagesz=1G hugepagesz=1G hugepages=8
@@ -80,8 +80,8 @@ ierrors 0                  oerrors  0                  imissed  0
     #send request to dperf server at client
     curl http://6.6.241.27/
 
-## Running the tests
-    Test HTTP CPS as shown below.
+## 运行测试
+    运行一个HTTP CPS测试。
 
     #run server at some host
     ./build/dperf -c test/http/server-cps.conf
@@ -89,16 +89,16 @@ ierrors 0                  oerrors  0                  imissed  0
     #run client at another host
     ./build/dperf -c test/http/client-cps.conf
 
-## Documentation
- - [configuration](docs/configuration.md)
- - [design](docs/design.md)
- - [build](docs/build.md) 
+## 文档
+ - [配置手册](docs/configuration-CN.md)
+ - [设计原理](docs/design-CN.md)
+ - [编译指导](docs/build.md) 
 
-## Contributing
-dperf welcomes your contribution.
+## 贡献
+dperf欢迎大家贡献。
 
-## Authors
-* **Jianzhang Peng** - *Initial work* - [Jianzhang Peng](https://github.com/pengjianzhang)
+## 作者 
+* **Jianzhang Peng** - *初试工作* - [Jianzhang Peng](https://github.com/pengjianzhang)
 
-## License
-dperf is distributed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+## 许可
+dperf基于[Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)许可证。

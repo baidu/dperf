@@ -1,157 +1,245 @@
 # Configuration
 
+## mode
+- syntax: mode client | server
+- default: -
+- required: yes
+- mode: -
+
+Set the running mode of dperf. dperf can be run as a client or a server.
+
 ## daemon
 - syntax: daemon
 - default: -
 - required: no
-Run in daemon. Statistics are output in the file '/var/log/dperf/dperf-ctl.log'.
+- mode: client, server
+
+In daemon mode, dperf statistics are written to the log file ('/var/log/dperf/dperf-ctl.log'), otherwise output to stdout.
 
 ## keepalive
 - syntax: keepalive
 - default: - 
 - required: no
-The server enables keepalive to test the bandwidth and the number of concurrent connections.
+- mode: server
 
-## mode
-- syntax: mode client | server
-- default: -
-- required: yes
-Set dperf running mode: client or server
+Keepalive means that multiple requests and responses can be sent in one connection.
+'keepalive' needs to be explicitly enabled on the dperf server.
+After 'keepalive' is enabled, the dperf server will not actively close the connection, it will wait for the client's FIN or RST.
+When 'keepalive' is not enabled, the dperf server closes the connection at the fastest speed in the world by directly setting the FIN Flag at the response packet.
+
+There is no need to enable 'keepalive' for the dperf client. When the dperf client finds 'cc' in the configuration file, 'keepalive' will be enable automatically.
  
 ## cpu
 - syntax: cpu n0 n1 n2-n3...
 - default: -
 - required: yes
-How many threads are running, and on which CPUs these threads are running.
+- mode: client, server
 
-    Example:
-    cpu 0-3 12-15
-    cpu 0 1 2 3 4 5
+Set which CPUs dperf runs on. dperf is a multithread program.
+It starts a worker thread on each CPU, and each thread uses only 1 RX queue and 1 TX queue.
+If you use multiple network interface ports, dperf will distribute the CPU equally according to the configuration order of the network interface port.
+
+On a multi-NUMA system, it is necessary to note that the CPU needs to be on the same NUMA node as the network interface port, which is a requirement of DPDK.
+
+Example:
+- cpu 0-3 12-15
+- cpu 0 1 2 3 4 5
 
 ## socket_mem
 - syntax: socket_mem n0,n1,n2...
 - default: -
 - required: no
-Pass the "--socket MEM" parameter to dpdk so that multiple dperf instances can run on a host.
+- mode: client, server
 
-    Example:
-    socket_mem  40960,0
-    socket_mem  0,40960
+This is the DPDK "--socket" parameter, and dperf passes it to DPDK. Using'--socket_mem',
+we can run a dperf client and a dperf server on the same host at the same time,
+so that we can build a load test environment with one host.
+
+Example:
+- socket_mem  40960,0
+- socket_mem  0,40960
+
+Note: The unit of the parameter is MB.
+
+Reference:
+[Linux-specific EAL parameters](http://doc.dpdk.org/guides/linux_gsg/linux_eal_parameters.html#linux-specific-eal-parameters)
+
+[Multi-process Support](http://doc.dpdk.org/guides/prog_guide/multi_proc_support.html)
 
 ## port
-- syntax: port PCI IPAddress Gateway [Gateway-Mac]
+- syntax: port PCI IPAddress Gateway [GatewayMAC]
 - default: -
 - required: yes
-Set the network card used by dperf. You can assign multiple network cards to dpef. Dperf will take over these network cards from the operating system.
+- mode: client, server
+
+Configure the network interface port used by dperf. 
+If you want to use multiple network interface ports, you only need to configure multiple 'port's. 
+As a DPDK program, dperf will take over these network interface ports from the operating system. 
+Before starting dperf, you need to use the DPDK script 'dpdk-devbind.py' for driver binding (except for Mellanox network interfaces).
+- PCI: The PCI number of the network interface port, use 'dpdk-devbind.py -s' to get it from the system.
+- IPAddress: This IP  Address is used to interconnect with the 'Gateway'
+- Gateway: Gateway's IP address. dperf has no routing capability. It will send all packets to the gateway, except for ARP, NS, and ND.
+- Gateway-MAC: the MAC address of the 'Gateway', which can be omitted.
+
+Reference:
+[binding-and-unbinding-network-ports](http://doc.dpdk.org/guides/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules)
 
 ## duration
 - syntax: duration Time
 - default: duration 100s
 - required: yes 
-Set the running time of dperf. Dperf will slowly increase the pressure when it starts, and will delay for a few seconds when it exits. You can also make dperf exit through a signal (SIGINT). 
+- mode: client, server
 
-    Example:
-    duration 1.5d
-    duration 2h
-    duration 3.5m
-    duration 100s
-    duration 100
+Set the running time of dperf, after this time dperf will exit.
+
+After dperf is started, there is a slow start phase, and the CPS will gradually increase.
+There is also a short buffer time when exiting. You can also use the signal 'SIGINT' to make dperf exit gracefully immediately.
+
+Example:
+- duration 1.5d
+- duration 2h
+- duration 3.5m
+- duration 100s
+- duration 100
 
 ## cps
 - syntax: cps Number
 - default: -
 - required: yes
-Sets the number of new connections per second(CPS) sent by clients.
+- mode: client
 
-    Example:
-    cps 10m
-    cps 1.5m
-    cps 2k
-    cps 100
+This is the total target for the number of new connections per second for all worker threads.
+dperf evenly distributes the total target to each worker thread, so it is recommended to set'cps' to an integer multiple of the number of worker threads.
+In the slow start phase, CPS will gradually increase.
+
+Example:
+- cps 10m
+- cps 1.5m
+- cps 2k
+- cps 100
 
 ## cc
 - syntax: cc Number 
 - default: -
 - required: no
-Set the target of the number of concurrent connections that the client needs to establish. Usually need to cooperate with 'keepalive_request_interval' and 'keepalive_request_num' sets the request interval and the number of requests for a single connection. 
+- mode: client
 
-    Example:
-    cc 100m
-    cc 1.5m
-    cc 2k
-    cc 100
+Set the total target for the number of concurrent connections on the client side.
+When 'cc' is set, the client will enable 'keepalive'.
+When the target value is high, we need to increase the time interval between two requests to reduce network bandwidth usage.
+
+Example:
+- cc 100m
+- cc 1.5m
+- cc 2k
+- cc 100
 
 ## synflood
 - syntax: synflood
 - default: -
 - required: no
-The client only sends SYN packets.
+- mode: client
 
-## keepalive_request_interval Time, eg 1ms, 1s, 60s, default 1s
+If this flag is enabled, the dperf client will only send SYN packets and will not establish connections.
+
+## keepalive_request_interval
 - syntax: keepalive_request_interval Time
 - default: keepalive_request_interval 1s
 - required: no
-Set the interval between two requests in the same connection.
+- mode: client
 
-    Example:
-    keepalive_request_interval 1ms
-    keepalive_request_interval 1s
-    keepalive_request_interval 60s
+Set the interval between two requests in the a connection. It only takes effect after setting 'cc'.
+
+Example:
+- keepalive_request_interval 1ms
+- keepalive_request_interval 1s
+- keepalive_request_interval 60s
 
 ## keepalive_request_num Number
 - syntax: keepalive_request_num Number
 - default: -
 - required: no
-How many requests are sent in the same connection before closing the connection.
+- mode: client
 
-# launch_num
+How many requests are sent in the a connection before closing the connection. It only takes effect after setting 'cc'.
+
+## launch_num
 - syntax: launch_num Number
 - default: launch_num 4
 - required: no
+- mode: client
 
-How many connections are initiated by the client at a time. In case of packet loss, try to reduce the number to make the packet sending more smooth, so as to avoid the packet loss of the receiver's network card caused by the surge of packets.
+How many connections are initiated by the client at a time.
+In case of packet loss, try to reduce the number to make the packet sending more smooth,
+so as to avoid the packet loss of the receiver's network card caused by the surge of packets.
 
 ## client
 - syntax: client IPAddress Number
 - default: -
 - required: yes 
-Set the IP address range of the client. 'IPAddress' is the starting address. The last byte of the address in the address range cannot exceed 254. In client mode, only one client address range can be configured for each network card interface; Dperf uses it as the source address of the connection. In the server mode, multiple connections can be configured, indicating that the server only accepts connections within these IP ranges.
-Note: dperf will allocate all sockets at startup. Please do not set a large address range.
+- mode: client, server
+
+Set the client's IP address range.
+- 'IPAddress': starting address.
+- 'number': number of addresses, 1-254
+
+dperf uses the last two bytes to uniquely identify an IPv4 or IPv6 address.
+In a 'client' configuration, only the last byte of the address is allowed to be variable.
+
+In the client mode, the number of 'client' must be equal to the number of 'port', which has a one-to-one correspondence. 
+Indicates that the 'port' uses the address pool of the 'client' as the source addresses of the connections.
+
+In the server mode, the number of 'client' can be greater or less than the number of 'port'.
+Indicates that the server only accepts connections from these clients, and does not accept connections from unspecified clients.
 
 ## server
 - syntax: server IPAddress Number
 - default: -
 - required: yes 
-Set the IP address range of the server. Each network card interface can only be configured with one item. The 'number' must be equal to the number of CPUs.
+- mode: client, server
+
+Set the listening IP range of the server. The number of 'port' must be the same as the number of 'server', and each worker thread needs an independent listening IP.
 
 ## listen
 - syntax: listen Port Number
 - default: listen 80 1
 - required: yes
+
 Set the port ranges that the server listens to, and the client sends packets to these port ranges.
+
 Note: dperf will allocate all sockets at startup. Please do not set a large port range.
 
 ## payload_size
 - syntax: payload_size Number(1-1400)
 - default: payload_size 1
 - required: no
+- mode: client, server
 
-Set the size of the HTTP request, response or UDP payload in bytes. When testing CPS, it is recommended to set payload_size to 1. 1 means the smallest. Since the request or response will include HTTP headers, the real packet payload exceeds 1.
+Set the size of the request or response in bytes.
+If 'Number' is less than the minimum value of dperf, the minimum value is used.
+You can use 1 to represent the minimum value.
 
 ## mss
 - syntax: mss Number
 - default: mss 1460
 - required: no
-Set tcp mss option.
+- mode: client, server
+
+Set tcp MSS option.
 
 ## protocol
 - syntax: protocol tcp | udp
 - default: protocol tcp
 - required: no
+- mode: client, server
+
+TCP or UDP protocol. Regardless of the TCP or UDP protocol, the dperf client sends an HTTP Request, and the dperf server sends an HTTP Response.
 
 ## tx_burst
 - syntax: tx_burst Number(1-1024)
 - default: tx_burst 8
 - required: no
+- mode: client, server
 
-Set the number of packets sent at one time. A smaller value can make the data packet sending smoother and avoid packet loss at the receiving side, but it increases the CPU consumption of dperf.
+Use the DPDK API to send packets, the maximum number of packets sent at a time.
+A smaller value can make the packets sending smoother and avoid packet loss at the receiving side, but it increases the CPU consumption of dperf.
