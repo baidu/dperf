@@ -68,10 +68,10 @@ ierrors 0                  oerrors  0                  imissed  0
 
     #bind NIC
     modprobe uio
-    insmod /root/dpdk/dpdk-stable-19.11.10/$TARGET/kmod/igb_uio.ko
+    modprobe uio_pci_generic
 
     #Suppose your PCI number is 0000:1b:00.0
-    /root/dpdk/dpdk-stable-19.11.10/usertools/dpdk-devbind.py -b igb_uio 0000:1b:00.0
+    /root/dpdk/dpdk-stable-19.11.10/usertools/dpdk-devbind.py -b uio_pci_generic 0000:1b:00.0
 
     #run dperf server
     #dperf server bind at 6.6.241.27:80,  gateway is 6.6.241.1
