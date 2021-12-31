@@ -90,8 +90,8 @@ ierrors 0                  oerrors  0                  imissed  0
     ./build/dperf -c test/http/client-cps.conf
 
 ## Documentation
- - [configuration](docs/configuration-CN.md)
- - [design](docs/design-CN.md)
+ - [configuration](docs/configuration.md)
+ - [design](docs/design.md)
  - [build](docs/build.md) 
 
 ## Contributing
