@@ -163,7 +163,7 @@ Example:
 
 在一个长连接内，发送多少个请求后再关闭连接。只有在设置'cc'后才生效。
 
-# launch_num
+## launch_num
 - syntax: launch_num Number
 - default: launch_num 4
 - required: no

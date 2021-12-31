@@ -163,7 +163,7 @@ Example:
 
 How many requests are sent in the a connection before closing the connection. It only takes effect after setting 'cc'.
 
-# launch_num
+## launch_num
 - syntax: launch_num Number
 - default: launch_num 4
 - required: no
