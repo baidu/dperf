@@ -33,7 +33,7 @@ However, a connection of the general TCP protocol stack may occupy 16K resources
 dperf requires the use of continuous client addresses, continuous listening addresses, and continuous listening ports. The source address and destination address used by dperf must all be written in the configuration file. When dperf starts, according to the combination of address and port, the socket is applied for at once to form a 3-dimensional array lookup table. In order to reduce memory consumption, the client address uses the lowest two bytes to index, the server address is not indexed, each thread is associated with a server IP, and the listening port is indexed by a serial number. dperf does not use a hash algorithm to find the socket, it only needs to access the array, and it only takes a few instructions. 
 
 ### Customized TCP Stack
-I originally planned to use the FreeBSD protocol stack, but due to some reasons, I need to complete the demo within 2 weeks. So I need to reduce the workload and difficulty, then the question becomes: What kind of TCP protocol stack can be received for the stress tester of the four-layer load balancer?
+I originally planned to use the FreeBSD protocol stack, but due to some reasons, I need to complete the demo within 2 weeks. So I needed to reduce the workload and difficulty. I had to abandon the FreeBSD protocol stack and redesign a TCP protocol stack. Then the question became: What kind of TCP protocol stack is for the stress tester of the four-layer load balancer? Is it acceptable? 
 
 This is the result of my thinking:
 
