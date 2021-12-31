@@ -70,6 +70,7 @@ ierrors 0                  oerrors  0                  imissed  0
     modprobe uio
     modprobe uio_pci_generic
 
+    #Mellanox网卡!! 请跳过绑定!!
     #Suppose your PCI number is 0000:1b:00.0
     /root/dpdk/dpdk-stable-19.11.10/usertools/dpdk-devbind.py -b uio_pci_generic 0000:1b:00.0
 
