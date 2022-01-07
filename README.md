@@ -94,6 +94,7 @@ ierrors 0                  oerrors  0                  imissed  0
  - [configuration](docs/configuration.md)
  - [design](docs/design.md)
  - [build](docs/build.md) 
+ - [statistics](docs/statistics.md)
 
 ## Contributing
 dperf welcomes your contribution.
