@@ -93,7 +93,7 @@ ierrors 0                  oerrors  0                  imissed  0
     #dperf server bind at 6.6.241.27:80,  gateway is 6.6.241.1
     ./build/dperf -c test/http/server-cps.conf
     
-    #向dperf server端发送测试请求到dperf server，例子中server端地址为6.6.241.27
+    #向dperf server端发送测试请求，例子中server端地址为6.6.241.27
     curl http://6.6.241.27/
 
 ## 运行测试
