@@ -1,4 +1,4 @@
-# dperf Statistics description
+# statistics description
 
 ### seconds
 The number of seconds since the start of the program.
