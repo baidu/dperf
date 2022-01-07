@@ -40,6 +40,8 @@ dperf 是一个云时代的高性能网络压力测试软件。
 |4|4|400,000,000|40|41|
 
 ### 测试环境配置（客户端、服务器）
+dperf 的以上性能数据，基于下面的配置测试得到：
+
 - 内存: 512GB(大页 100GB)
 - 网卡: Mellanox MT27710 25Gbps * 2
 - 内核: 4.19.90
@@ -82,24 +84,25 @@ ierrors 0                  oerrors  0                  imissed  0
     modprobe uio
     modprobe uio_pci_generic
     
-    #Mellanox网卡!! 请跳过绑定!!
+    #如果使用的是Mellanox网卡，请跳过这一步!！
     #Suppose your PCI number is 0000:1b:00.0
     /root/dpdk/dpdk-stable-19.11.10/usertools/dpdk-devbind.py -b uio_pci_generic 0000:1b:00.0
     
-    #run dperf server
+    #验证已经安装成功
+    #开启 dperf server 端
     #dperf server bind at 6.6.241.27:80,  gateway is 6.6.241.1
     ./build/dperf -c test/http/server-cps.conf
     
-    #send request to dperf server at client
+    #向dperf server端发送测试请求到dperf server，例子中server端地址为6.6.241.27
     curl http://6.6.241.27/
 
 ## 运行测试
-    运行一个HTTP CPS测试。
+    运行一个HTTP CPS压力测试。
     
-    #run server at some host
+    #在server端运行dperf
     ./build/dperf -c test/http/server-cps.conf
     
-    #run client at another host
+    #以另一台机器作为client端，运行dperf
     ./build/dperf -c test/http/client-cps.conf
 
 ## 文档
