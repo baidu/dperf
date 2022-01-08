@@ -155,7 +155,7 @@ int config_keyword_parse(const char *file_path, const struct config_keyword *key
 {
     int ret = 0;
     int argc = 0;
-    int line_num = -1;
+    int line_num = 0;
     FILE *fp = NULL;
     char *argv[CONFIG_ARG_NUM_MAX];
     char config_line[CONFIG_LINE_MAX];
