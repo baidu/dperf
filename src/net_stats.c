@@ -217,7 +217,7 @@ static inline int net_stats_print_retransmit(struct net_stats *stats, char *buf,
     } else {
         net_stats_format_print(stats->udp_drop, udp_drop, STATS_BUF_LEN);
         net_stats_format_print(stats->udp_rto, udp_rto, STATS_BUF_LEN);
-        SNPRINTF(p, len, "udpRTO   %-18s udpDrop %-18s\n", udp_rto, udp_drop);
+        SNPRINTF(p, len, "udpRt   %-18s udpDrop  %-18s\n", udp_rto, udp_drop);
     }
     return p - buf;
 
