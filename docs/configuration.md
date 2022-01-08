@@ -245,7 +245,7 @@ Use the DPDK API to send packets, the maximum number of packets sent at a time.
 A smaller value can make the packets sending smoother and avoid packet loss at the receiving side, but it increases the CPU consumption of dperf.
 
 ## slow_start
-- syntax: slow_start Number(10-600)
+- syntax: slow_start Seconds(10-600)
 - default: slow_start 30
 - required: no
 - mode: client

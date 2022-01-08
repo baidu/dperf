@@ -242,7 +242,7 @@ TCP或者UDP协议。不论是TCP还是UDP协议，dperf客户端都是发送HTT
 较小的值，可以让报文发送的更加平顺，可以有效避免接收方丢包，但是增加了dperf的CPU消耗。
 
 ## slow_start
-- syntax: slow_start Number(10-600)
+- syntax: slow_start Seconds(10-600)
 - default: slow_start 30
 - required: no
 - mode: client
