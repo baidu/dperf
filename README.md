@@ -9,7 +9,7 @@ dperf is a network load tester for cloud.
 - High performance：
   - Based on DPDK, dperf can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of concurrent connections. 
 - Detailed statistics：
-  - It can give detailed statistics and find every packet loss.
+  - Provides detailed statistics and find every packet loss.
 - Support multiple scenarios：
   - Stress testing and stability testing for Layer 4 Load Balancer and other Layer 4 gateways 
   - Network  performance testing for servers on cloud 
