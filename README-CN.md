@@ -7,9 +7,9 @@ dperf 是一个云时代的高性能网络压力测试软件。
 ## 优点
 
 - 性能强大：
-  - 基于 DPDK，使用一台普通 x86 服务器就可以产生巨大的流量：千万级的 HTTP 每秒新建连接数，数百Gbps的带宽，几十亿的并发连接数。
+  - 基于 DPDK，使用一台普通 x86 服务器就可以产生巨大的流量：千万级的 HTTP 每秒新建连接数，数百Gbps的带宽，几十亿的并发连接数
 - 统计信息详细：
-  - 能够输出详细的统计信息，并且识别每一个丢包。
+  - 能够输出详细的统计信息，并且识别每一个丢包
 - 使用场景丰富：
   - 可用于对四层负载均衡等四层网关进行性能压力测试、长稳测试
   - 可用于对云上虚拟机的网络性能进行测试
@@ -47,7 +47,7 @@ dperf 的以上性能数据，基于下面的配置测试得到：
 - 内核: 4.19.90
 
 ## 统计数据
-dperf 每秒输出多种统计数据。
+dperf 每秒输出多种统计数据：
 - TPS, CPS,  各种维度的PPS
 - TCP/Socket/HTTP级别的错误数
 - 丢包数
@@ -97,8 +97,7 @@ ierrors 0                  oerrors  0                  imissed  0
     curl http://6.6.241.27/
 
 ## 运行测试
-    运行一个HTTP CPS压力测试。
-    
+下面的例子运行一个HTTP CPS压力测试。    
     #在server端运行dperf
     ./build/dperf -c test/http/server-cps.conf
     
@@ -114,7 +113,7 @@ ierrors 0                  oerrors  0                  imissed  0
 dperf 欢迎大家贡献。
 
 ## 作者 
-* **Jianzhang Peng** - *初试工作* - [Jianzhang Peng](https://github.com/pengjianzhang)
+* **Jianzhang Peng** - *初始工作* - [Jianzhang Peng](https://github.com/pengjianzhang)
 
 ## 许可
 dperf基于 [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可证。
