@@ -108,6 +108,7 @@ ierrors 0                  oerrors  0                  imissed  0
  - [配置手册](docs/configuration-CN.md)
  - [设计原理](docs/design-CN.md)
  - [编译指导](docs/build.md) 
+ - [统计说明](docs/statistics-CN.md)
 
 ## 贡献
 dperf 欢迎大家贡献。

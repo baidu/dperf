@@ -39,7 +39,10 @@
 #define ND_TTL              255
 #define DEFAULT_LAUNCH      4
 #define DELAY_SEC           4
-#define SLOW_START_SEC      10
+#define SLOW_START_DEFAULT  30
+#define SLOW_START_MIN      10
+#define SLOW_START_MAX      600
+
 #define LOG_DIR             "/var/log/dperf"
 
 struct config {
@@ -57,6 +60,7 @@ struct config {
     int payload_size;
     int mss;
 
+    int slow_start;
     uint32_t launch_num;
     int duration;
     int cps;        /* connection per seconds */

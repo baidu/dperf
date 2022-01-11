@@ -255,11 +255,11 @@ void work_space_exit_all(void)
     }
 }
 
-void work_space_client_launch_deceleration(int times)
+void work_space_set_launch_interval(uint64_t launch_interval)
 {
     int i = 0;
-    uint64_t interval = 0;
     struct work_space *ws = NULL;
+    uint64_t interval = 0;
 
     for (i = 0; i < THREAD_NUM_MAX; i++) {
         ws = g_work_space_all[i];
@@ -267,17 +267,15 @@ void work_space_client_launch_deceleration(int times)
             continue;
         }
 
-        interval = ws->client_launch.launch_interval_default;
+        interval = launch_interval;
         if (interval >= g_tsc_per_second) {
-            continue;
+            interval = g_tsc_per_second;
         }
 
-        if (times > 0) {
-            interval *= times;
-            if (interval > g_tsc_per_second) {
-                interval = g_tsc_per_second;
-            }
+        if (interval <= ws->client_launch.launch_interval_default) {
+            interval = ws->client_launch.launch_interval_default;
         }
+
         ws->client_launch.launch_interval = interval;
     }
 }
