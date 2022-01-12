@@ -1,8 +1,20 @@
-# dperf is a network load tester for cloud [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/baidu/dperf/blob/main/LICENSE)
+# dperf [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/baidu/dperf/blob/main/LICENSE)
 
 English | [中文](README-CN.md)
 
-Based on DPDK, dperf can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of connections. It can give detailed statistics and find every packet loss.
+dperf is a network load tester for cloud.
+
+## Advantage
+
+- High performance：
+  - Based on DPDK, dperf can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of concurrent connections. 
+- Detailed statistics：
+  - Provides detailed statistics and find every packet loss.
+- Support multiple scenarios：
+  - Load testing and stability testing for Layer 4 Load Balancer and other Layer 4 gateways 
+  - Network  performance testing for servers on cloud 
+  - Performance test of network package processing capability for NIC and CPU
+  - Can be used as a high performance HTTP server or client for load testing
 
 ## Performance
 ### HTTP Connections per Second
@@ -28,12 +40,14 @@ Based on DPDK, dperf can generate huge traffic with a single x86 server: tens of
 |4|4|400,000,000|40|41|
 
 ### Client & Server Configuration
+Above performance is obtained with below configurations:
+
 - MEM: 512GB(hugepage 100GB)
 - NIC: Mellanox MT27710 25Gbps * 2
 - Kernel: 4.19.90
 
 ## Statistics
-dperf outputs various statistics every second.
+dperf outputs various statistics every second：
 - TPS, CPS, various PPS
 - Errors of TCP/Socket/HTTP
 - Packets loss/drop
@@ -54,40 +68,40 @@ ierrors 0                  oerrors  0                  imissed  0
     #set hugepages
     #edit '/boot/grub2/grub.cfg' like this, and reboot the OS
     #linux16 /vmlinuz-... nopku transparent_hugepage=never default_hugepagesz=1G hugepagesz=1G hugepages=8
-
+    
     #download & build dpdk
     #download and unpack dpdk
     TARGET=x86_64-native-linuxapp-gcc
     #TARGET=arm64-armv8a-linuxapp-gcc
     cd /root/dpdk/dpdk-stable-19.11.10
     make install T=$TARGET -j16
-
+    
     #build dperf
     cd dperf
     make -j8 RTE_SDK=/root/dpdk/dpdk-stable-19.11.10 RTE_TARGET=$TARGET
-
+    
     #bind NIC
     modprobe uio
     modprobe uio_pci_generic
-
-    #Mellanox Interface!! Skip this step!!
+    
+    #skip this step if using Mellanox interface card!!
     #Suppose your PCI number is 0000:1b:00.0
     /root/dpdk/dpdk-stable-19.11.10/usertools/dpdk-devbind.py -b uio_pci_generic 0000:1b:00.0
-
-    #run dperf server
+    
+    #verify if dperf is installed successfully
+    #start dperf server
     #dperf server bind at 6.6.241.27:80,  gateway is 6.6.241.1
     ./build/dperf -c test/http/server-cps.conf
-
-    #send request to dperf server at client
+    
+    #send request to dperf server from a client
     curl http://6.6.241.27/
 
 ## Running the tests
-    Test HTTP CPS as shown below.
-
-    #run server at some host
+Below example will start a HTTP CPS stress test.    
+    #run dperf server
     ./build/dperf -c test/http/server-cps.conf
-
-    #run client at another host
+    
+    #from another host, run dperf client
     ./build/dperf -c test/http/client-cps.conf
 
 ## Documentation

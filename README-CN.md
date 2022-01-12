@@ -1,8 +1,20 @@
-# dperf is a network load tester for cloud [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/baidu/dperf/blob/main/LICENSE)
+# dperf [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/baidu/dperf/blob/main/LICENSE)
 
 [English](README.md) | 中文
 
-基于DPDK，使用一台普通x86服务器，dperf可以产生巨大的流量：千万级的HTTP每秒新建连接数，数百Gbps的带宽，几十亿的并发连接数。dperf能够输出详细的统计信息，并且识别每一个丢包。
+dperf 是一个云时代的高性能网络压力测试软件。
+
+## 优点
+
+- 性能强大：
+  - 基于 DPDK，使用一台普通 x86 服务器就可以产生巨大的流量：千万级的 HTTP 每秒新建连接数，数百Gbps的带宽，几十亿的并发连接数
+- 统计信息详细：
+  - 能够输出详细的统计信息，并且识别每一个丢包
+- 使用场景丰富：
+  - 可用于对四层负载均衡等四层网关进行性能压力测试、长稳测试
+  - 可用于对云上虚拟机的网络性能进行测试
+  - 可用于对网卡性能、CPU的网络报文处理能力进行测试
+  - 压测场景下，可作为高性能的HTTP Server或HTTP Client单独使用
 
 ## 性能
 ### HTTP每秒新建连接数
@@ -28,12 +40,14 @@
 |4|4|400,000,000|40|41|
 
 ### 测试环境配置（客户端、服务器）
+dperf 的以上性能数据，基于下面的配置测试得到：
+
 - 内存: 512GB(大页 100GB)
 - 网卡: Mellanox MT27710 25Gbps * 2
 - 内核: 4.19.90
 
 ## 统计数据
-dperf每秒输出多种统计数据。
+dperf 每秒输出多种统计数据：
 - TPS, CPS,  各种维度的PPS
 - TCP/Socket/HTTP级别的错误数
 - 丢包数
@@ -54,40 +68,40 @@ ierrors 0                  oerrors  0                  imissed  0
     #set hugepages
     #edit '/boot/grub2/grub.cfg' like this, and reboot the OS
     #linux16 /vmlinuz-... nopku transparent_hugepage=never default_hugepagesz=1G hugepagesz=1G hugepages=8
-
+    
     #download & build dpdk
     #download and unpack dpdk
     TARGET=x86_64-native-linuxapp-gcc
     #TARGET=arm64-armv8a-linuxapp-gcc
     cd /root/dpdk/dpdk-stable-19.11.10
     make install T=$TARGET -j16
-
+    
     #build dperf
     cd dperf
     make -j8 RTE_SDK=/root/dpdk/dpdk-stable-19.11.10 RTE_TARGET=$TARGET
-
+    
     #bind NIC
     modprobe uio
     modprobe uio_pci_generic
-
-    #Mellanox网卡!! 请跳过绑定!!
+    
+    #如果使用的是Mellanox网卡，请跳过这一步!！
     #Suppose your PCI number is 0000:1b:00.0
     /root/dpdk/dpdk-stable-19.11.10/usertools/dpdk-devbind.py -b uio_pci_generic 0000:1b:00.0
-
-    #run dperf server
+    
+    #验证已经安装成功
+    #开启 dperf server 端
     #dperf server bind at 6.6.241.27:80,  gateway is 6.6.241.1
     ./build/dperf -c test/http/server-cps.conf
-
-    #send request to dperf server at client
+    
+    #向dperf server端发送测试请求，例子中server端地址为6.6.241.27
     curl http://6.6.241.27/
 
 ## 运行测试
-    运行一个HTTP CPS测试。
-
-    #run server at some host
+下面的例子运行一个HTTP CPS压力测试。    
+    #在server端运行dperf
     ./build/dperf -c test/http/server-cps.conf
-
-    #run client at another host
+    
+    #以另一台机器作为client端，运行dperf
     ./build/dperf -c test/http/client-cps.conf
 
 ## 文档
@@ -97,10 +111,10 @@ ierrors 0                  oerrors  0                  imissed  0
  - [统计说明](docs/statistics-CN.md)
 
 ## 贡献
-dperf欢迎大家贡献。
+dperf 欢迎大家贡献。
 
 ## 作者 
-* **Jianzhang Peng** - *初试工作* - [Jianzhang Peng](https://github.com/pengjianzhang)
+* **Jianzhang Peng** - *初始工作* - [Jianzhang Peng](https://github.com/pengjianzhang)
 
 ## 许可
-dperf基于[Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)许可证。
+dperf基于 [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可证。
