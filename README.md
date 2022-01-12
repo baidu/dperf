@@ -111,7 +111,7 @@ Below example will start a HTTP CPS stress test.
  - [statistics](docs/statistics.md)
 
 ## Contributing
-dperf welcomes your contribution.
+dperf welcomes your contribution. See the [CONTRIBUTING](CONTRIBUTING.md) file for details.
 
 ## Authors
 * Jianzhang Peng - *Initial work*

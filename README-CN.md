@@ -111,7 +111,7 @@ ierrors 0                  oerrors  0                  imissed  0
  - [统计说明](docs/statistics-CN.md)
 
 ## 贡献
-dperf 欢迎大家贡献。
+dperf 欢迎大家贡献。详情请参阅[贡献指南](CONTRIBUTING.md)。
 
 ## 作者 
 * Jianzhang Peng - *项目发起人*
