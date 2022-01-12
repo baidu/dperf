@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-dperf 是一个100Gbps的网络性能压力测试仪软件。
+dperf 是一个100Gbps的网络性能与压力测试软件。
 
 ## 优点
 
