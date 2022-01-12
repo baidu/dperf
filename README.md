@@ -2,14 +2,14 @@
 
 English | [中文](README-CN.md)
 
-dperf is a network load tester for cloud.
+dperf is a DPDK based 100Gbps network performance and load testing software.
 
 ## Advantage
 
 - High performance：
   - Based on DPDK, dperf can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of concurrent connections. 
 - Detailed statistics：
-  - Provides detailed statistics and find every packet loss.
+  - Provides detailed statistics and identify every packet loss.
 - Support multiple scenarios：
   - Load testing and stability testing for Layer 4 Load Balancer and other Layer 4 gateways 
   - Network  performance testing for servers on cloud 
@@ -111,10 +111,10 @@ Below example will start a HTTP CPS stress test.
  - [statistics](docs/statistics.md)
 
 ## Contributing
-dperf welcomes your contribution.
+dperf welcomes your contribution. See the [CONTRIBUTING](CONTRIBUTING.md) file for details.
 
 ## Authors
-* **Jianzhang Peng** - *Initial work* - [Jianzhang Peng](https://github.com/pengjianzhang)
+* Jianzhang Peng - *Initial work*
 
 ## License
 dperf is distributed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
