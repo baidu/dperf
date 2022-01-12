@@ -108,6 +108,7 @@ Below example will start a HTTP CPS stress test.
  - [configuration](docs/configuration.md)
  - [design](docs/design.md)
  - [build](docs/build.md) 
+ - [statistics](docs/statistics.md)
 
 ## Contributing
 dperf welcomes your contribution.

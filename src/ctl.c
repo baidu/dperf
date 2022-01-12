@@ -55,16 +55,25 @@ static void ctl_log_close(FILE *fp)
 static void ctl_slow_start(FILE *fp, int *seconds)
 {
     int i = 0;
-    int times = 0;
+    uint64_t launch_interval = 0;
+    uint64_t cps = 0;
+    uint64_t step = 0;
+    int launch_num = g_config.launch_num;
+    int slow_start = g_config.slow_start;
 
-    for (i = 0; i < SLOW_START_SEC; i++) {
-        times = SLOW_START_SEC - i;
-        work_space_client_launch_deceleration(times);
+    step = (g_config.cps / g_config.cpu_num) / slow_start;
+    for (i = 1; i <= slow_start; i++) {
+        cps = step * i;
+        launch_interval = (g_tsc_per_second / (cps / launch_num));
+        work_space_set_launch_interval(launch_interval);
         sleep(1);
         net_stats_print_speed(fp, (*seconds)++);
+        if (g_stop) {
+            break;
+        }
     }
 
-    work_space_client_launch_deceleration(0);
+    work_space_set_launch_interval(0);
 }
 
 static void *ctl_thread_main(void *data)

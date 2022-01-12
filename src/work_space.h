@@ -196,6 +196,6 @@ bool work_space_ip_exist(const struct work_space *ws, uint32_t ip);
 bool work_space_ip6_exist(const struct work_space *ws, const ipaddr_t *addr);
 void work_space_update_gw(struct work_space *ws, struct eth_addr *ea);
 struct rte_mbuf *work_space_alloc_mbuf(struct work_space *ws);
-void work_space_client_launch_deceleration(int times);
+void work_space_set_launch_interval(uint64_t launch_interval);
 
 #endif

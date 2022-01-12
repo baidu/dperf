@@ -52,6 +52,7 @@ static int config_parse_mss(int argc, char *argv[], void *data);
 static int config_parse_synflood(int argc, char *argv[], void *data);
 static int config_parse_protocol(int argc, char *argv[], void *data);
 static int config_parse_tx_burst(int argc, char *argv[], void *data);
+static int config_parse_slow_start(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -79,6 +80,9 @@ static struct config_keyword g_config_keywords[] = {
     {"mss", config_parse_mss, "Number, default 1460"},
     {"protocol", config_parse_protocol, "tcp/udp, default tcp"},
     {"tx_burst", config_parse_tx_burst, "Number[1-1024]"},
+    {"slow_start", config_parse_slow_start,
+        "Number[" DEFAULT_STR(SLOW_START_MIN) "-" DEFAULT_STR(SLOW_START_MAX) "],"
+        " default " DEFAULT_STR(SLOW_START_DEFAULT)},
     {NULL, NULL, NULL}
 };
 
@@ -557,6 +561,23 @@ static inline int config_parse_tx_burst(int argc, char *argv[], void *data)
     return 0;
 }
 
+static int config_parse_slow_start(int argc, char *argv[], void *data)
+{
+    int val = 0;
+    struct config *cfg = data;
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    val = config_parse_number(argv[1], false, false);
+    if ((val < SLOW_START_MIN) || (val > SLOW_START_MAX)) {
+        return -1;
+    }
+    cfg->slow_start = val;
+    return 0;
+}
+
 static int config_parse_payload_size(int argc, char *argv[], void *data)
 {
     int payload_size = 0;
@@ -865,6 +886,24 @@ static int config_check_server_addr(const struct config *cfg)
     return 0;
 }
 
+static int config_check_slow_start(struct config *cfg)
+{
+
+    if (cfg->server) {
+        if (cfg->slow_start != 0) {
+            printf("slow_start in server config\n");
+            return -1;
+        }
+        return 0;
+    }
+
+    if (cfg->slow_start == 0) {
+        cfg->slow_start = SLOW_START_DEFAULT;
+    }
+
+    return 0;
+}
+
 int config_parse(int argc, char **argv, struct config *cfg)
 {
     int opt = 0;
@@ -954,6 +993,10 @@ int config_parse(int argc, char **argv, struct config *cfg)
 
     if (cfg->launch_num == 0) {
         cfg->launch_num = DEFAULT_LAUNCH;
+    }
+
+    if (config_check_slow_start(cfg) < 0) {
+        return -1;
     }
 
     if (config_check_client_addr(cfg) < 0) {
