@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-dperf 是一个云时代的高性能网络压力测试软件。
+dperf 是一个100Gbps的网络性能压力测试仪软件。
 
 ## 优点
 
@@ -114,7 +114,7 @@ ierrors 0                  oerrors  0                  imissed  0
 dperf 欢迎大家贡献。
 
 ## 作者 
-* **Jianzhang Peng** - *初始工作* - [Jianzhang Peng](https://github.com/pengjianzhang)
+* Jianzhang Peng - *项目发起人*
 
 ## 许可
 dperf基于 [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可证。
