@@ -11,10 +11,10 @@ dperf is a network load tester for cloud.
 - Detailed statistics：
   - Provides detailed statistics and find every packet loss.
 - Support multiple scenarios：
-  - Stress testing and stability testing for Layer 4 Load Balancer and other Layer 4 gateways 
+  - Load testing and stability testing for Layer 4 Load Balancer and other Layer 4 gateways 
   - Network  performance testing for servers on cloud 
   - Performance test of network package processing capability for NIC and CPU
-  - Can be used as high performance HTTP server and/or client in stress test
+  - Can be used as a high performance HTTP server or client for load testing
 
 ## Performance
 ### HTTP Connections per Second
