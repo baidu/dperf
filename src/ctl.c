@@ -33,13 +33,19 @@
 #include "work_space.h"
 #include "net_stats.h"
 
-#define CTL_LOG LOG_DIR"/dperf-ctl.log"
+#define CTL_CLIENT_LOG LOG_DIR"/dperf-ctl-client.log"
+#define CTL_SERVER_LOG LOG_DIR"/dperf-ctl-server.log"
+
 static bool g_stop = false;
 
 static FILE *ctl_log_open(struct config *cfg)
 {
     if (cfg->daemon) {
-        return fopen(CTL_LOG, "a");
+        if (cfg->server) {
+            return fopen(CTL_SERVER_LOG, "a");
+        } else {
+            return fopen(CTL_SERVER_LOG, "a");
+        }
     } else {
         return NULL;
     }
