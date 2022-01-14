@@ -44,7 +44,7 @@ static FILE *ctl_log_open(struct config *cfg)
         if (cfg->server) {
             return fopen(CTL_SERVER_LOG, "a");
         } else {
-            return fopen(CTL_SERVER_LOG, "a");
+            return fopen(CTL_CLIENT_LOG, "a");
         }
     } else {
         return NULL;
