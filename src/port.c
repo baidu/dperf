@@ -96,7 +96,6 @@ static int port_init(struct netif_port *port)
         printf("cannot found port id by pic %s\n", port->pci);
         return -1;
     }
-    rte_eth_stats_reset(port_id);
     port->id = port_id;
     if (port_init_mbuf_pool(port) < 0) {
         printf("port %s init mbuf pool error\n", port->pci);
