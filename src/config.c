@@ -904,6 +904,33 @@ static int config_check_slow_start(struct config *cfg)
     return 0;
 }
 
+static int config_check_target(struct config *cfg)
+{
+    int i = 0;
+    uint32_t socket_num = 0;
+    uint64_t cc = 0;
+    uint64_t cps = 0;
+    uint64_t cps_cc = 0;
+
+    cps = cfg->cps / cfg->cpu_num;
+    cps_cc = cps * RETRANSMIT_TIMEOUT_SEC;
+    cc = cfg->cc / cfg->cpu_num;
+    for (i = 0; i < cfg->cpu_num; i++) {
+        socket_num = config_get_total_socket_num(cfg, i);
+        if (socket_num < cc) {
+            printf("Error: insufficient sockets. worker=%d sockets=%u cc=%lu\n", i, socket_num, cc);
+            return -1;
+        }
+
+        if (socket_num < cps_cc) {
+            printf("Error: insufficient sockets. worker=%d sockets=%u cps's cc=%lu\n", i, socket_num, cps_cc);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 int config_parse(int argc, char **argv, struct config *cfg)
 {
     int opt = 0;
@@ -1026,6 +1053,10 @@ int config_parse(int argc, char **argv, struct config *cfg)
     }
 
     if (config_check_logdir(cfg) < 0) {
+        return -1;
+    }
+
+    if (config_check_target(cfg) < 0) {
         return -1;
     }
 

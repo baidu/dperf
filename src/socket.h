@@ -41,9 +41,10 @@ enum {
 
 extern const char *g_sk_states[];
 
-#define RETRANSMIT_NUM_MAX  4
-#define RETRANSMIT_TIMEOUT  (TICKS_PER_SEC * 2)
-#define REQUEST_INTERVAL_DEFAULT  (TICKS_PER_SEC * 60)
+#define RETRANSMIT_NUM_MAX          4
+#define RETRANSMIT_TIMEOUT_SEC      2
+#define RETRANSMIT_TIMEOUT          (TICKS_PER_SEC * RETRANSMIT_TIMEOUT_SEC)
+#define REQUEST_INTERVAL_DEFAULT    (TICKS_PER_SEC * 60)
 
 struct socket_node {
     struct socket_node *next;
