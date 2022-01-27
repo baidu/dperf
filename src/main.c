@@ -59,7 +59,10 @@ int main(int argc, char **argv)
     }
 
     if (g_config.daemon) {
-       daemon(1, 1);
+        if (daemon(1, 1) != 0) {
+            printf("daemon error\n");
+            return 1;
+        }
     }
 
     if (ctl_thread_start(&g_config, &thread) < 0) {
