@@ -24,7 +24,7 @@
 static void vxlan_set_innter_eth_hdr(struct work_space *ws, struct mbuf_data *mdata)
 {
     struct vxlan *vxlan = NULL;
-    struct eth_hdr *eth;
+    struct eth_hdr *eth = NULL;
 
     vxlan = ws->port->vxlan;
     eth = (struct eth_hdr *)(mdata->data);
@@ -93,9 +93,9 @@ static void vxlan_set_udphdr(struct work_space *ws, struct udphdr *uh, uint16_t 
 
 int vxlan_encapsulate(struct mbuf_data *mdata, struct work_space *ws)
 {
+    uint16_t inner_len = 0;
     struct vxlan *vxlan = NULL;
     struct vxlan_headers vxhs;
-    uint16_t inner_len = 0;
 
     vxlan = ws->port->vxlan;
     inner_len = mdata->total_len;

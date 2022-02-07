@@ -51,10 +51,10 @@ static void work_space_wait_all(struct work_space *ws)
 
 static void work_space_get_port(struct work_space *ws)
 {
+    int queue_id = 0;
     struct config *cfg = ws->cfg;
     struct netif_port *port = NULL;
     struct vxlan *vxlan = NULL;
-    int queue_id = 0;
 
     port = config_port_get(cfg, ws->id, &queue_id);
     ws->w_queue_id = queue_id;

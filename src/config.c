@@ -699,7 +699,6 @@ static int config_parse_vxlan(int argc, char *argv[], void *data)
     }
 
     cfg->vxlan_num++;
-
     return 0;
 }
 
@@ -793,9 +792,9 @@ static int config_set_port_ip_range(struct config *cfg)
 
 static int config_check_vxlan(struct config *cfg)
 {
+    int i = 0;
     struct vxlan *vxlan = NULL;
     struct netif_port *port = NULL;
-    int i = 0;
 
     if (cfg->vxlan_num == 0) {
         return 0;

@@ -49,14 +49,14 @@ static inline void tcp_process_rst(struct socket *sk, struct rte_mbuf *m)
 
 static inline struct rte_mbuf *tcp_new_packet(struct work_space *ws, struct socket *sk, uint8_t tcp_flags)
 {
+    uint16_t csum_ip = 0;
+    uint16_t csum_tcp = 0;
     uint16_t snd_una = 0;
     struct rte_mbuf *m = NULL;
     struct iphdr *iph = NULL;
     struct ip6_hdr *ip6h = NULL;
     struct tcphdr *th = NULL;
     struct mbuf_cache *p = NULL;
-    uint16_t csum_tcp = 0;
-    uint16_t csum_ip = 0;
 
     if (tcp_flags & TH_SYN) {
         p = &ws->tcp_opt;

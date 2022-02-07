@@ -37,10 +37,10 @@ static inline int vxlan_check(struct work_space *ws, struct vxlan_headers *vxhs)
 
     iph = &vxhs->iph;
     uh = &vxhs->uh;
+    /* Consider that the VXLAN packet is legitimate, simply check. */
     if ((iph->protocol == IPPROTO_UDP) && 
         (iph->daddr == ws->vtep_ip) &&
         (uh->dest == htons(VXLAN_PORT)) &&
-//        (rte_pktmbuf_data_len(m) >= VXLAN_HEADERS_SIZE) &&
         (vxhs->vxh.vni == ws->vni)) {
         return 0;
     }
@@ -51,11 +51,11 @@ static inline int vxlan_check(struct work_space *ws, struct vxlan_headers *vxhs)
 static inline void vxlan_input(struct work_space *ws, struct rte_mbuf *m,
     l4_input_t tcp_input, l4_input_t udp_input)
 {
-    struct eth_hdr *eth = NULL;
+    uint8_t proto = 0;
     struct iphdr *iph = NULL;
     struct ip6_hdr *ip6h = NULL;
+    struct eth_hdr *eth = NULL;
     struct vxlan_headers *vxhs = NULL;
-    uint8_t proto = 0;
 
     vxhs = (struct vxlan_headers *)mbuf_eth_hdr(m);
     net_stats_rx(m);
