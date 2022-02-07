@@ -38,7 +38,7 @@ static void neigh_resolve_gateway_mac_address(struct work_space *ws)
      * 1. request gw's mac
      * 2. broadcast local mac
      * */
-    if (ws->ipv6) {
+    if (ws->port->ipv6) {
         icmp6_ns_request(ws);
     } else {
         arp_request_gw(ws);
@@ -66,7 +66,9 @@ int neigh_check_gateway(struct work_space *ws)
     for (i = 0; i < DELAY_SEC * 1000; i++) {
         neigh_resolve_gateway_mac_address(ws);
         for (j = 0; j < 1000; j++) {
-            if (ws->ipv6) {
+            if (ws->vxlan) {
+                server_recv_mbuf(ws, vxlan_input, tcp_drop, udp_drop);
+            } else if (ws->ipv6) {
                 server_recv_mbuf(ws, ipv6_input, tcp_drop, udp_drop);
             } else {
                 server_recv_mbuf(ws, ipv4_input, tcp_drop, udp_drop);

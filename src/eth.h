@@ -24,7 +24,8 @@
 #include <rte_version.h>
 #include <rte_ether.h>
 
-#define ETH_ADDR_LEN  6
+#define ETH_ADDR_LEN        6
+#define ETH_ADDR_STR_LEN    17
 
 struct eth_addr {
     uint8_t bytes[ETH_ADDR_LEN];

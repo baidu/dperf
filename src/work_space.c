@@ -53,12 +53,20 @@ static void work_space_get_port(struct work_space *ws)
 {
     struct config *cfg = ws->cfg;
     struct netif_port *port = NULL;
+    struct vxlan *vxlan = NULL;
     int queue_id = 0;
 
     port = config_port_get(cfg, ws->id, &queue_id);
     ws->w_queue_id = queue_id;
     ws->port = port;
     ws->w_port_id = port->id;
+
+    if (cfg->vxlan) {
+        ws->vxlan = cfg->vxlan;
+        vxlan = port->vxlan;
+        ws->vtep_ip = ip_range_get(&vxlan->vtep_local, ws->queue_id);
+        ws->vni = VXLAN_HTON(vxlan->vni);
+    }
 }
 
 static int work_space_open_log(struct work_space *ws)
@@ -177,31 +185,56 @@ void work_space_close(struct work_space *ws)
 
 bool work_space_ip_exist(const struct work_space *ws, uint32_t ip)
 {
-    if (ws->port->local_ip.ip == ip) {
+    struct netif_port *port = NULL;
+    struct vxlan *vxlan = NULL;
+
+    port = ws->port;
+
+    if ((!port->ipv6) && (port->local_ip.ip == ip)) {
         return true;
     }
 
-    return ip_range_exist(ws->port->local_ip_range, ip);
+    if (ws->vxlan) {
+        vxlan = port->vxlan;
+        return ip_range_exist(&vxlan->vtep_local, ip);
+    }
+
+    if (!ws->ipv6) {
+        return ip_range_exist(port->local_ip_range, ip);
+    }
+
+    return false;
 }
 
 bool work_space_ip6_exist(const struct work_space *ws, const ipaddr_t *addr)
 {
-    struct ip_range *ip_range = ws->port->local_ip_range;
-    ipaddr_t *laddr = &ws->port->local_ip;
+    struct netif_port *port = NULL;
+    struct ip_range *ip_range = NULL;
+    ipaddr_t *laddr = NULL;
 
-    if (ipaddr_eq(laddr, addr)) {
-        return true;
+    port = ws->port;
+    ip_range = port->local_ip_range;
+    laddr = &port->local_ip;
+
+    if (ws->port->ipv6) {
+        if (ipaddr_eq(laddr, addr)) {
+            return true;
+        }
     }
 
-    return ip_range_exist_ipv6(ip_range, addr);
+    if (ws->ipv6) {
+        return ip_range_exist_ipv6(ip_range, addr);
+    }
+
+    return false;
 }
 
 void work_space_update_gw(struct work_space *ws, struct eth_addr *ea)
 {
     int i = 0;
-    struct netif_port *port = ws->port;
+    struct netif_port *port = NULL;
 
-    printf("Get gateway's MAC address successfully\n");
+    port = ws->port;
     eth_addr_copy(&port->gateway_mac, ea);
     for (i = 0; i < THREAD_NUM_MAX; i++) {
         ws = g_work_space_all[i];
@@ -214,6 +247,8 @@ void work_space_update_gw(struct work_space *ws, struct eth_addr *ea)
         mbuf_cache_set_dmac(&ws->tcp_data, ea);
         mbuf_cache_set_dmac(&ws->udp, ea);
     }
+
+    printf("Get gateway's MAC address successfully\n");
 }
 
 struct rte_mbuf *work_space_alloc_mbuf(struct work_space *ws)

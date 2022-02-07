@@ -28,8 +28,11 @@ int eth_addr_init(struct eth_addr *mac, const char *mac_str)
 {
     int i = 0;
     int ret = 0;
-    int num[6];
+    int num[ETH_ADDR_LEN];
 
+    if (strlen(mac_str) != ETH_ADDR_STR_LEN) {
+        return -1;
+    }
     ret = sscanf(mac_str, "%x:%x:%x:%x:%x:%x", &num[0], &num[1], &num[2], &num[3], &num[4], &num[5]);
     if (ret != 6) {
         return -1;

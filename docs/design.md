@@ -56,6 +56,13 @@ dperf once used the time wheel timer. One time wheel timer consumes 32 bytes, an
 ### HTTP protocol implementation
 The dperf server is very stupid. It receives any 1 data packet (the first character is G, the beginning of GET), it considers it to be a complete request, and sends a fixed response. The dperf client is also very stupid. It receives any data message. If the 10th character is '2' (assuming "HTTP/1.1 200 OK"), it is considered a successful response. 
 
+### VXLAN
+Considering that many NICs do not have VXLAN inner-layer packet checksum offloading and offloading capabilities, dperf does not use these advanced functions to support to more NICs.
+- classification. dperf uses the destination IP of the outer packet to classify traffic. Each queue is a vtep.
+- ipv4/ipv6. The outer layer only supports IPV4, and the inner layer supports both IPV4 and IPV6.
+- addressing. The MAC address of inner-layer packets needs to be specified in the configuration. Dynamic addressing of inner-layer packets is not supported.
+- Checksum. The outer packets use hardware offload, and the inner packets use incremental checksum correction.
+
 ### Other optimizations
 - dperf uses inline extensively to avoid function calls;
 - Socket memory is allocated from large pages to avoid missing page tables;

@@ -115,7 +115,7 @@ Below example will start a HTTP CPS stress test.
  - dperf requires exclusive use of the network interfaces.
  - dperf uses the FDIR feature. For the network interface that do not have this feature, dperf can only run in 'single-threaded' mode.
  - dperf does not have routing capability. It is recommended to build a test environment with a switch.
- - dperf does not support bonding. Vxlan will be in the next version.
+ - dperf does not support bonding.
 
 ## Contributing
 dperf welcomes your contribution. See the [CONTRIBUTING](CONTRIBUTING.md) file for details.

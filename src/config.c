@@ -31,6 +31,7 @@
 #include "socket.h"
 #include "udp.h"
 #include "version.h"
+#include "vxlan.h"
 
 static int config_parse_daemon(int argc, char *argv[], void *data);
 static int config_parse_keepalive(int argc, char *argv[], void *data);
@@ -53,6 +54,7 @@ static int config_parse_synflood(int argc, char *argv[], void *data);
 static int config_parse_protocol(int argc, char *argv[], void *data);
 static int config_parse_tx_burst(int argc, char *argv[], void *data);
 static int config_parse_slow_start(int argc, char *argv[], void *data);
+static int config_parse_vxlan(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -71,7 +73,7 @@ static struct config_keyword g_config_keywords[] = {
     {"synflood", config_parse_synflood, ""},
     {"keepalive_request_interval", config_parse_keepalive_request_interval,
         "Time, eg 1ms, 1s, 60s, default " DEFAULT_STR(DEFAULT_INTERVAL) "s"},
-    {"keepalive_request_num", config_parse_keepalive_request_num, "Number"},
+    {"keepalive_request_num", config_parse_keepalive_request_num, "Number[0-" DEFAULT_STR(KEEPALIVE_REQ_NUM) "]"},
     {"launch_num", config_parse_launch_num, "Number, default " DEFAULT_STR(DEFAULT_LAUNCH)},
     {"client", config_parse_client, "IPAddress Number"},
     {"server", config_parse_server, "IPAddress Number"},
@@ -83,6 +85,7 @@ static struct config_keyword g_config_keywords[] = {
     {"slow_start", config_parse_slow_start,
         "Number[" DEFAULT_STR(SLOW_START_MIN) "-" DEFAULT_STR(SLOW_START_MAX) "],"
         " default " DEFAULT_STR(SLOW_START_DEFAULT)},
+    {"vxlan", config_parse_vxlan, "vni inner-smac inner-dmac vtep-local num vtep-remote num"},
     {NULL, NULL, NULL}
 };
 
@@ -257,10 +260,13 @@ static int config_parse_socket_mem(int argc, char *argv[], void *data)
     return 0;
 }
 
-static int config_parse_ip(struct config *cfg, const char *str, ipaddr_t *ip)
+static int config_parse_ip(const char *str, ipaddr_t *ip)
 {
-    int af = ipaddr_init(ip, str);
+    return ipaddr_init(ip, str);
+}
 
+static int config_set_af(struct config *cfg, int af)
+{
     if ((af > 0) && ((cfg->af == 0) || (cfg->af == af))) {
         cfg->af = af;
         cfg->ipv6 = (af == AF_INET6);
@@ -272,6 +278,8 @@ static int config_parse_ip(struct config *cfg, const char *str, ipaddr_t *ip)
 
 static int config_parse_port(int argc, char *argv[], void *data)
 {
+    int af_local = 0;
+    int af_gateway = 0;
     struct netif_port *port = NULL;
     struct config *cfg = data;
 
@@ -288,13 +296,18 @@ static int config_parse_port(int argc, char *argv[], void *data)
     }
     strcpy(port->pci, argv[1]);
 
-    if (config_parse_ip(cfg, argv[2], &port->local_ip) < 0) {
+    if ((af_local = config_parse_ip(argv[2], &port->local_ip)) < 0) {
         return -1;
     }
 
-    if (config_parse_ip(cfg, argv[3], &port->gateway_ip) < 0) {
+    if ((af_gateway = config_parse_ip(argv[3], &port->gateway_ip)) < 0) {
         return -1;
     }
+
+    if (af_local != af_gateway) {
+        return -1;
+    }
+    port->ipv6 = af_local == AF_INET6;
 
     if (argc == 5) {
         if (eth_addr_init(&port->gateway_mac, argv[4]) != 0) {
@@ -333,8 +346,15 @@ static int config_parse_listen(int argc, char *argv[], void *data)
     return 0;
 }
 
-static int config_parse_ip_range(struct config *cfg, int argc, char *argv[], struct ip_range *ip_range)
+/*
+ * return:
+ *  -1       fail
+ *  AF_INET  ok
+ *  AF_INET6 ok
+ **/
+static int config_parse_ip_range(int argc, char *argv[], struct ip_range *ip_range)
 {
+    int af = 0;
     int num = 0;
     ipaddr_t ip;
 
@@ -342,7 +362,7 @@ static int config_parse_ip_range(struct config *cfg, int argc, char *argv[], str
         return -1;
     }
 
-    if (config_parse_ip(cfg, argv[1], &ip) < 0) {
+    if ((af = config_parse_ip(argv[1], &ip)) < 0) {
         return -1;
     }
 
@@ -352,16 +372,16 @@ static int config_parse_ip_range(struct config *cfg, int argc, char *argv[], str
 
     num = config_parse_number(argv[2], false, false);
     if (ip_range_init(ip_range, ip, num) < 0) {
-        printf("bad client ip range\n");
+        printf("bad client ip range %s %s\n", argv[1], argv[2]);
         return -1;
     }
 
-    return 0;
+    return af;
 }
 
 static int config_parse_ip_group(struct config *cfg, int argc, char *argv[], struct ip_group *ip_group)
 {
-    int ret = 0;
+    int af = 0;
     struct ip_range *ip_range = NULL;
 
     if (ip_group->num >= IP_RANGE_NUM_MAX) {
@@ -369,12 +389,14 @@ static int config_parse_ip_group(struct config *cfg, int argc, char *argv[], str
     }
 
     ip_range = &ip_group->ip_range[ip_group->num];
-    ret = config_parse_ip_range(cfg, argc, argv, ip_range);
-    if (ret == 0) {
-        ip_group->num++;
+    af = config_parse_ip_range(argc, argv, ip_range);
+    if (config_set_af(cfg, af) < 0) {
+        return -1;
     }
 
-    return ret;
+    ip_group->num++;
+
+    return 0;
 }
 
 static int config_parse_client(int argc, char *argv[], void *data)
@@ -523,6 +545,11 @@ static int config_parse_keepalive_request_num(int argc, char *argv[], void *data
     if (val < 0) {
         return -1;
     }
+
+    if (val > KEEPALIVE_REQ_NUM) {
+        return -1;
+    }
+
     cfg->keepalive_request_num = val;
     return 0;
 }
@@ -633,6 +660,49 @@ static int config_parse_protocol(int argc, char *argv[], void *data)
     }
 }
 
+static int config_parse_vxlan(int argc, char *argv[], void *data)
+{
+    struct config *cfg = data;
+    struct vxlan *vxlan = NULL;
+
+    if (argc != 8) {
+        return -1;
+    }
+
+    if (cfg->vxlan_num >= NETIF_PORT_MAX) {
+        return -1;
+    }
+
+    vxlan = &cfg->vxlans[cfg->vxlan_num];
+    vxlan->vni = atoi(argv[1]);
+    if ((vxlan->vni <= 0) || (vxlan->vni > VNI_MAX)) {
+        printf("bad vni %s\n", argv[1]);
+        return -1;
+    }
+
+    if (eth_addr_init(&vxlan->inner_smac, argv[2]) != 0) {
+        printf("bad mac %s\n", argv[2]);
+        return -1;
+    }
+
+    if (eth_addr_init(&vxlan->inner_dmac, argv[3]) != 0) {
+        printf("bad mac %s\n", argv[3]);
+        return -1;
+    }
+
+    if (config_parse_ip_range(3, &argv[3], &vxlan->vtep_local) != AF_INET) {
+        return -1;
+    }
+
+    if (config_parse_ip_range(3, &argv[5], &vxlan->vtep_remote) != AF_INET) {
+        return -1;
+    }
+
+    cfg->vxlan_num++;
+
+    return 0;
+}
+
 static void config_manual(void)
 {
     config_keyword_help(g_config_keywords);
@@ -716,6 +786,67 @@ static int config_set_port_ip_range(struct config *cfg)
             return -1;
         }
         i++;
+    }
+
+    return 0;
+}
+
+static int config_check_vxlan(struct config *cfg)
+{
+    struct vxlan *vxlan = NULL;
+    struct netif_port *port = NULL;
+    int i = 0;
+
+    if (cfg->vxlan_num == 0) {
+        return 0;
+    }
+
+    if (cfg->vxlan_num != cfg->port_num) {
+        printf("The number of 'vxlan' and 'port' are not equal.\n");
+        return -1;
+    }
+
+    config_for_each_port(cfg, port) {
+        vxlan = &cfg->vxlans[i];
+        if (vxlan->vtep_local.num != port->queue_num) {
+            printf("The number of vtep_local and queue_num are not equal.\n");
+            return -1;
+        }
+
+        if ((vxlan->vtep_remote.num > 1) && (vxlan->vtep_remote.num != port->queue_num)) {
+            printf("Bad vtep_remote num.\n");
+            return -1;
+        }
+
+        port->vxlan = vxlan;
+        i++;
+    }
+
+    if ((cfg->payload_size + VXLAN_HEADERS_SIZE) > PAYLOAD_SIZE_MAX) {
+        printf("Bad payload_size %d\n", cfg->payload_size);
+        return -1;
+    }
+
+    cfg->vxlan = true;
+    return 0;
+}
+
+static int config_check_af(struct config *cfg)
+{
+    struct netif_port *port = NULL;
+
+    config_for_each_port(cfg, port) {
+        if (cfg->vxlan) {
+            if (port->ipv6) {
+                printf("Underlay address not support IPV6.\n");
+                return -1;
+            }
+        } else {
+            if (cfg->ipv6 != port->ipv6) {
+                printf("Bad port address.\n");
+                return -1;
+            }
+        }
     }
 
     return 0;
@@ -933,6 +1064,7 @@ static int config_check_target(struct config *cfg)
 
 int config_parse(int argc, char **argv, struct config *cfg)
 {
+    int conf = 0;
     int opt = 0;
     int test = 0;
     const char *optstr = "hvtmc:";
@@ -949,6 +1081,7 @@ int config_parse(int argc, char **argv, struct config *cfg)
                 if (config_keyword_parse(optarg, g_config_keywords, cfg) < 0) {
                     return -1;
                 }
+                conf = 1;
                 break;
             case 'h':
                 config_help();
@@ -968,6 +1101,11 @@ int config_parse(int argc, char **argv, struct config *cfg)
             default:
                 return -1;
         }
+    }
+
+    if (conf == 0) {
+        printf("No configuration file\n");
+        return -1;
     }
 
     if (cfg->protocol == 0) {
@@ -1011,7 +1149,6 @@ int config_parse(int argc, char **argv, struct config *cfg)
             cfg->keepalive = 0;
             cfg->keepalive_request_interval = 0;
         }
-
     } else {
         cfg->cc = 0;
         cfg->cps = 0;
@@ -1041,6 +1178,14 @@ int config_parse(int argc, char **argv, struct config *cfg)
     http_set_payload(cfg->payload_size);
     udp_set_payload(cfg->payload_size);
     if (config_check_port(cfg) != 0) {
+        return -1;
+    }
+
+    if (config_check_vxlan(cfg) < 0) {
+        return -1;
+    }
+
+    if (config_check_af(cfg) < 0) {
         return -1;
     }
 
