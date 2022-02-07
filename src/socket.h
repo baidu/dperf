@@ -65,14 +65,15 @@ struct socket {
     uint8_t state:4;
     uint8_t retrans:3;
     uint8_t keepalive:1;
-
     uint16_t log:1;
+    uint16_t keepalive_request_num:15;
 
     /* ------16 bytes------  */
     uint64_t timer_ticks;
     uint16_t csum_tcp_data;
-    uint16_t id;
-    int keepalive_request_num;
+    uint16_t csum_ip;
+    uint16_t csum_ip_opt;
+    uint16_t csum_ip_data;
 
     /* ------16 bytes------  */
     uint32_t laddr;

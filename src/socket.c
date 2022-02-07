@@ -24,6 +24,7 @@
 #include "tcp.h"
 #include "udp.h"
 #include "net_stats.h"
+#include "csum.h"
 #include <rte_malloc.h>
 
 const char* g_sk_states[] = {
@@ -64,58 +65,9 @@ void socket_log(struct socket *sk, const char *tag)
             sk->rcv_nxt, sk->snd_nxt, sk->snd_una, g_sk_states[sk->state]);
 }
 
-#define L4_DATA_LEN(mcache) ((mcache)->data.l4_len + (mcache)->data.data_len)
-
-static inline uint16_t mbuf_cal_pseudo_csum_ipv6(uint8_t proto, struct in6_addr *saddr, struct in6_addr *daddr,
-    uint16_t len)
-{
-    struct {
-        struct in6_addr saddr;
-        struct in6_addr daddr;
-        uint8_t zero;
-        uint8_t proto;
-        uint16_t len;
-    } hdr;
-
-    hdr.saddr = *saddr;
-    hdr.daddr = *daddr;
-    hdr.zero = 0;
-    hdr.proto = proto;
-    hdr.len = htons(len);
-
-    return rte_raw_cksum((void *)&hdr, sizeof(hdr));
-}
-
-static inline void socket_init_pseudo_csum_ipv6(struct socket *sk, struct work_space *ws, uint8_t proto,
-    struct in6_addr *laddr, struct in6_addr *faddr)
-{
-    if (proto == IPPROTO_TCP) {
-        sk->csum_tcp = mbuf_cal_pseudo_csum_ipv6(proto, laddr, faddr, L4_DATA_LEN(&ws->tcp));
-        sk->csum_tcp_opt = mbuf_cal_pseudo_csum_ipv6(proto, laddr, faddr, L4_DATA_LEN(&ws->tcp_opt));
-        sk->csum_tcp_data = mbuf_cal_pseudo_csum_ipv6(proto, laddr, faddr, L4_DATA_LEN(&ws->tcp_data));
-    } else {
-        sk->csum_udp = mbuf_cal_pseudo_csum_ipv6(proto, laddr, faddr, L4_DATA_LEN(&ws->udp));
-    }
-}
-
-static inline void socket_init_pseudo_csum(struct socket *sk, struct work_space *ws, uint8_t proto,
-    uint32_t lip, uint32_t fip)
-{
-    if (proto == IPPROTO_TCP) {
-        sk->csum_tcp = mbuf_cal_pseudo_csum(proto, lip, fip, L4_DATA_LEN(&ws->tcp));
-        sk->csum_tcp_opt = mbuf_cal_pseudo_csum(proto, lip, fip, L4_DATA_LEN(&ws->tcp_opt));
-        sk->csum_tcp_data = mbuf_cal_pseudo_csum(proto, lip, fip, L4_DATA_LEN(&ws->tcp_data));
-    } else {
-        sk->csum_udp = mbuf_cal_pseudo_csum(proto, lip, fip, L4_DATA_LEN(&ws->udp));
-    }
-}
-
 static void socket_init(struct work_space *ws, struct socket *sk, uint32_t client_ip, uint16_t client_port,
      uint32_t server_ip, uint16_t server_port)
 {
-    uint8_t proto = ws->cfg->protocol;
-    ipaddr_t caddr;
-    ipaddr_t saddr;
     uint32_t seed = 0;
 
     sk->state = 0; /* TCP_CLOSED; */
@@ -135,14 +87,8 @@ static void socket_init(struct work_space *ws, struct socket *sk, uint32_t clien
 
     seed = (uint32_t)rte_rdtsc();
     sk->snd_nxt = rand_r(&seed);
-    if (ws->ipv6) {
-        ipaddr_join(&ws->port->client_ip_range.start, client_ip, &caddr);
-        ipaddr_join(&ws->port->server_ip_range.start, server_ip, &saddr);
-        socket_init_pseudo_csum_ipv6(sk, ws, proto, &caddr.in6, &saddr.in6);
-    } else {
-        socket_init_pseudo_csum(sk, ws, proto, client_ip, server_ip);
-    }
 
+    socket_init_csum(ws, sk);
     socket_node_init(&sk->node);
 }
 

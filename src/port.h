@@ -25,6 +25,7 @@
 #include "ip.h"
 #include "ip_range.h"
 #include "eth.h"
+#include "vxlan.h"
 
 #define THREAD_NUM_MAX      64
 #define NETIF_PORT_MAX      4
@@ -43,6 +44,7 @@ struct netif_port {
     int id;
     int queue_num;
     bool enable;
+    bool ipv6; /* local_ip, gateway_ip's address family */
     ipaddr_t local_ip;
     ipaddr_t gateway_ip;
     struct eth_addr gateway_mac;
@@ -52,6 +54,8 @@ struct netif_port {
     struct ip_range *local_ip_range;
     struct ip_range client_ip_range; /* only used by client; server use all client ip range */
     struct ip_range server_ip_range;
+
+    struct vxlan *vxlan;
 };
 
 extern uint8_t g_dev_tx_offload_ipv4_cksum;

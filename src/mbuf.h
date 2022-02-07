@@ -19,8 +19,6 @@
 #ifndef __MBUF_H
 #define __MBUF_H
 
-#include "mbuf.h"
-
 #include <rte_mbuf.h>
 #include <rte_arp.h>
 #include <pthread.h>
@@ -59,96 +57,6 @@
 #define mbuf_push_tcphdr(m) RTE_PKTMBUF_PUSH(m, struct tcphdr)
 #define mbuf_push_data(m, size) (uint8_t*)rte_pktmbuf_append(m, (size))
 
-static inline void mbuf_ip_csum(struct rte_mbuf *m, int offload)
-{
-    struct iphdr *iph = NULL;
-
-    iph = mbuf_ip_hdr(m);
-    iph->check = 0;
-    if (offload == 0) {
-        iph->check = RTE_IPV4_CKSUM(iph);
-    }
-
-    m->ol_flags |= PKT_TX_IP_CKSUM;
-    m->l2_len = sizeof(struct eth_hdr);
-    m->l3_len = sizeof(struct iphdr);
-}
-
-static inline void mbuf_ip_csum_offload(struct rte_mbuf *m)
-{
-    mbuf_ip_csum(m, g_dev_tx_offload_ipv4_cksum);
-}
-
-static inline void mbuf_ip_csum_compute(struct rte_mbuf *m)
-{
-    mbuf_ip_csum(m, 0);
-}
-
-static inline uint16_t mbuf_cal_pseudo_csum(uint8_t proto, uint32_t sip, uint32_t dip, uint16_t len)
-{
-    uint32_t csum = 0;
-
-    csum = (sip & 0x0000ffffUL) + (sip >> 16);
-    csum += (dip & 0x0000ffffUL) + (dip >> 16);
-
-    csum += (uint16_t)proto << 8;
-    csum += htons(len);
-
-    csum = (csum & 0x0000ffffUL) + (csum >> 16);
-    csum = (csum & 0x0000ffffUL) + (csum >> 16);
-
-    return (uint16_t)csum;
-}
-
-static inline void mbuf_csum_offload(struct rte_mbuf *m, uint64_t ol_flags)
-{
-    struct ip6_hdr *ip6h = NULL;
-    struct iphdr *iph = NULL;
-    struct tcphdr *th = NULL;
-
-    iph = mbuf_ip_hdr(m);
-    th = mbuf_tcp_hdr(m);
-    m->l2_len = sizeof(struct eth_hdr);
-
-    if (iph->version == 4) {
-        m->l3_len = sizeof(struct iphdr);
-        iph->ttl = DEFAULT_TTL;
-        iph->check = 0;
-
-        if (unlikely(g_dev_tx_offload_tcpudp_cksum == 0)) {
-            th->th_sum = 0;
-            th->th_sum = RTE_IPV4_UDPTCP_CKSUM(iph, th);
-        } else {
-            m->ol_flags = ol_flags | PKT_TX_IPV4;
-        }
-
-        if (g_dev_tx_offload_ipv4_cksum) {
-            m->ol_flags |= PKT_TX_IP_CKSUM | PKT_TX_IPV4;
-        } else {
-            iph->check = RTE_IPV4_CKSUM(iph);
-        }
-    } else {
-        ip6h = (struct ip6_hdr *)iph;
-        ip6h->ip6_hops = DEFAULT_TTL;
-        if (unlikely(g_dev_tx_offload_tcpudp_cksum == 0)) {
-            th->th_sum = 0;
-            th->th_sum = RTE_IPV6_UDPTCP_CKSUM(iph, th);
-        } else {
-            m->l3_len = sizeof(struct ip6_hdr);
-            m->ol_flags = ol_flags | PKT_TX_IPV6;
-        }
-    }
-}
-
-static inline void mbuf_iptcp_csum_offload(struct rte_mbuf *m)
-{
-    mbuf_csum_offload(m, PKT_TX_TCP_CKSUM);
-}
-
-static inline void mbuf_ipudp_csum_offload(struct rte_mbuf *m)
-{
-    mbuf_csum_offload(m, PKT_TX_UDP_CKSUM);
-}
 
 static inline void mbuf_prefetch(struct rte_mbuf *m)
 {
