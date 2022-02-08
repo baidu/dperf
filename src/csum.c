@@ -62,7 +62,7 @@ static inline uint16_t csum_pseudo_ipv6(uint8_t proto, struct in6_addr *saddr, s
     return rte_raw_cksum((void *)&hdr, sizeof(hdr));
 }
 
-static inline void socket_init_pseudo_csum_ipv6(struct socket *sk, struct work_space *ws, uint8_t proto)
+static inline void csum_init_pseudo_ipv6(struct socket *sk, struct work_space *ws, uint8_t proto)
 {
     struct in6_addr laddr;
     struct in6_addr faddr;
@@ -85,7 +85,7 @@ static inline void socket_init_pseudo_csum_ipv6(struct socket *sk, struct work_s
     }
 }
 
-static inline void socket_init_pseudo_csum_ipv4(struct socket *sk, struct work_space *ws, uint8_t proto,
+static inline void csum_init_pseudo_ipv4(struct socket *sk, struct work_space *ws, uint8_t proto,
     uint32_t lip, uint32_t fip)
 {
     if (proto == IPPROTO_TCP) {
@@ -97,13 +97,14 @@ static inline void socket_init_pseudo_csum_ipv4(struct socket *sk, struct work_s
     }
 }
 
-static void socket_init_pseudo_csum(struct work_space *ws, struct socket *sk)
+static void csum_init_pseudo(struct work_space *ws, struct socket *sk)
 {
     uint8_t proto = ws->cfg->protocol;
+
     if (ws->ipv6) {
-        socket_init_pseudo_csum_ipv6(sk, ws, proto);
+        csum_init_pseudo_ipv6(sk, ws, proto);
     } else {
-        socket_init_pseudo_csum_ipv4(sk, ws, proto, sk->laddr, sk->faddr);
+        csum_init_pseudo_ipv4(sk, ws, proto, sk->laddr, sk->faddr);
     }
 }
 
@@ -111,7 +112,7 @@ static void csum_inner_tcp_udp_ipv4(struct socket *sk, struct mbuf_cache *mcache
 {
     struct iphdr *iph = NULL;
     struct tcphdr *th = NULL;
-    struct mbuf_data *mdata;
+    struct mbuf_data *mdata = NULL;
 
     mdata = &mcache->data;
     iph = (struct iphdr *)((uint8_t*)(mdata->data) + VXLAN_HEADERS_SIZE + sizeof(struct eth_hdr));
@@ -131,7 +132,7 @@ static void csum_inner_tcp_udp_ipv4(struct socket *sk, struct mbuf_cache *mcache
     th->th_dport = 0;
 }
 
-static void socket_init_inner_csum_ipv4(struct work_space *ws, struct socket *sk)
+static void csum_init_inner_ipv4(struct work_space *ws, struct socket *sk)
 {
     if (ws->cfg->protocol == IPPROTO_TCP) {
         csum_inner_tcp_udp_ipv4(sk, &ws->tcp, &sk->csum_ip, &sk->csum_tcp);
@@ -162,7 +163,7 @@ static void csum_inner_tcp_udp_tcp_ipv6(struct socket *sk, struct mbuf_cache *mc
     th->th_dport = 0;
 }
 
-static void socket_init_inner_csum_ipv6(struct work_space *ws, struct socket *sk)
+static void csum_init_inner_ipv6(struct work_space *ws, struct socket *sk)
 {
     if (ws->cfg->protocol == IPPROTO_TCP) {
         csum_inner_tcp_udp_tcp_ipv6(sk, &ws->tcp, &sk->csum_tcp);
@@ -173,16 +174,16 @@ static void socket_init_inner_csum_ipv6(struct work_space *ws, struct socket *sk
     }
 }
 
-static void socket_init_inner_csum(struct work_space *ws, struct socket *sk)
+static void csum_init_inner(struct work_space *ws, struct socket *sk)
 {
     if (ws->ipv6) {
-        socket_init_inner_csum_ipv6(ws, sk);
+        csum_init_inner_ipv6(ws, sk);
     } else {
-        socket_init_inner_csum_ipv4(ws, sk);
+        csum_init_inner_ipv4(ws, sk);
     }
 }
 
-void socket_init_csum(struct work_space *ws, struct socket *sk)
+void csum_init_socket(struct work_space *ws, struct socket *sk)
 {
     /*
      * 1. for the inner packet's checksum, many network interface cannot offload it,
@@ -190,73 +191,89 @@ void socket_init_csum(struct work_space *ws, struct socket *sk)
      * 2. But most hardware can offload underlay packet's checksum.
      */
     if (ws->vxlan) {
-        socket_init_inner_csum(ws, sk);
+        csum_init_inner(ws, sk);
     } else {
-        socket_init_pseudo_csum(ws, sk);
+        csum_init_pseudo(ws, sk);
     }
 }
 
-int csum_check(struct rte_mbuf *m)
+static int csum_check_ipv4(struct iphdr *iph)
 {
-    struct iphdr *iph = NULL;
-    struct ip6_hdr *ip6h = NULL;
     struct tcphdr *th = NULL;
     struct udphdr *uh = NULL;
     uint16_t csum_ip = 0;
     uint16_t csum_tcp = 0;
     uint16_t csum_udp = 0;
-    uint16_t csum_new = 0;
 
-    iph = (struct iphdr *)((uint8_t *)mbuf_eth_hdr(m) + VXLAN_HEADERS_SIZE + sizeof(struct eth_hdr));
-    ip6h = (struct ip6_hdr *)iph;
-    if (iph->version == 4) {
-        th = (struct tcphdr *)((uint8_t *)iph + sizeof(struct iphdr));
-        uh = (struct udphdr *)th;
-        csum_ip = iph->check;
-        iph->check = 0;
+    th = (struct tcphdr *)((uint8_t *)iph + sizeof(struct iphdr));
+    uh = (struct udphdr *)th;
+    csum_ip = iph->check;
+    iph->check = 0;
 
-        if (csum_ip != RTE_IPV4_CKSUM(iph)) {
-            printf("csum ip error\n");
+    if (csum_ip != RTE_IPV4_CKSUM(iph)) {
+        printf("csum ip error\n");
+        return -1;
+    }
+    if (iph->protocol == IPPROTO_TCP) {
+        csum_tcp = th->th_sum;
+        th->th_sum = 0;
+        if (csum_tcp != RTE_IPV4_UDPTCP_CKSUM(iph, th)) {
+            printf("csum tcp error\n");
             return -1;
         }
-        if (iph->protocol == IPPROTO_TCP) {
-            csum_tcp = th->th_sum;
-            th->th_sum = 0;
-            if (csum_tcp != RTE_IPV4_UDPTCP_CKSUM(iph, th)) {
-                printf("csum tcp/udp error\n");
-                return -1;
-            }
-            th->th_sum = csum_tcp;
-        } else {
-            csum_udp = uh->check;
-            uh->check = 0;
-            if (csum_udp != RTE_IPV4_UDPTCP_CKSUM(iph, uh)) {
-                printf("csum tcp/udp error\n");
-                return -1;
-            }
-            uh->check = 0;
-        }
-        iph->check = csum_ip;
+        th->th_sum = csum_tcp;
     } else {
-        th = (struct tcphdr *)((uint8_t *)ip6h + sizeof(struct ip6_hdr));
-        uh = (struct udphdr *)th;
-        if (ip6h->ip6_nxt == IPPROTO_TCP) {
-            csum_tcp = th->th_sum;
-            th->th_sum = 0;
-            csum_new = RTE_IPV6_UDPTCP_CKSUM(ip6h, th);
-            if (csum_tcp != csum_new) {
-                printf("ipv6 csum tcp/udp error old %x new %x\n", csum_tcp, csum_new);
-                return -1;
-            }
-        } else {
-            csum_udp = uh->check;
-            uh->check = 0;
-            if (csum_udp != RTE_IPV6_UDPTCP_CKSUM(ip6h, uh)) {
-                printf("ipv6 csum tcp/udp error old %x new %x\n", csum_tcp, csum_new);
-                return -1;
-            }
-            uh->check = csum_udp;
+        csum_udp = uh->check;
+        uh->check = 0;
+        if (csum_udp != RTE_IPV4_UDPTCP_CKSUM(iph, uh)) {
+            printf("csum udp error\n");
+            return -1;
         }
+        uh->check = 0;
+    }
+    iph->check = csum_ip;
+
+    return 0;
+}
+
+static int csum_check_ipv6(struct ip6_hdr *ip6h)
+{
+    struct tcphdr *th = NULL;
+    struct udphdr *uh = NULL;
+    uint16_t csum_tcp = 0;
+    uint16_t csum_udp = 0;
+
+    th = (struct tcphdr *)((uint8_t *)ip6h + sizeof(struct ip6_hdr));
+    uh = (struct udphdr *)th;
+    if (ip6h->ip6_nxt == IPPROTO_TCP) {
+        csum_tcp = th->th_sum;
+        th->th_sum = 0;
+        if (csum_tcp != RTE_IPV6_UDPTCP_CKSUM(ip6h, th)) {
+            printf("csum tcp error\n");
+            return -1;
+        }
+    } else {
+        csum_udp = uh->check;
+        uh->check = 0;
+        if (csum_udp != RTE_IPV6_UDPTCP_CKSUM(ip6h, uh)) {
+            printf("csum udp error\n");
+            return -1;
+        }
+        uh->check = csum_udp;
+    }
+
+    return 0;
+}
+
+int csum_check(struct rte_mbuf *m)
+{
+    struct iphdr *iph = NULL;
+
+    iph = (struct iphdr *)((uint8_t *)mbuf_eth_hdr(m) + VXLAN_HEADERS_SIZE + sizeof(struct eth_hdr));
+    if (iph->version == 4) {
+        return csum_check_ipv4(iph);
+    } else {
+        return csum_check_ipv6((struct ip6_hdr *)iph);
     }
 
     return 0;

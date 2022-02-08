@@ -88,7 +88,7 @@ static void socket_init(struct work_space *ws, struct socket *sk, uint32_t clien
     seed = (uint32_t)rte_rdtsc();
     sk->snd_nxt = rand_r(&seed);
 
-    socket_init_csum(ws, sk);
+    csum_init_socket(ws, sk);
     socket_node_init(&sk->node);
 }
 

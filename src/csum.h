@@ -125,7 +125,7 @@ static inline void csum_offload_ip_tcpudp(struct rte_mbuf *m, uint64_t ol_flags)
 
 struct work_space;
 struct socket;
-void socket_init_csum(struct work_space *ws, struct socket *sk);
+void csum_init_socket(struct work_space *ws, struct socket *sk);
 int csum_check(struct rte_mbuf *m);
 
 #endif

@@ -61,6 +61,7 @@ static void vxlan_set_eth_hdr(struct work_space *ws, struct eth_hdr *eh)
 
 static void vxlan_set_iphdr(struct work_space *ws, struct iphdr *iph, uint16_t inner_len)
 {
+    uint16_t tot_len = 0;
     uint32_t saddr = 0;
     uint32_t daddr = 0;
     struct vxlan *vxlan = ws->port->vxlan;
@@ -72,9 +73,14 @@ static void vxlan_set_iphdr(struct work_space *ws, struct iphdr *iph, uint16_t i
         daddr = ip_range_get(&vxlan->vtep_remote, 0);
     }
 
+    tot_len = sizeof(struct iphdr) +
+              sizeof(struct udphdr) +
+              sizeof(struct vxlan_header) +
+              inner_len;
+
     iph->ihl = 5;
     iph->version = 4;
-    iph->tot_len = htons(20 + 8 + 8 + inner_len);
+    iph->tot_len = htons(tot_len);
     iph->ttl = DEFAULT_TTL;
     iph->protocol = IPPROTO_UDP;
     iph->frag_off = htons(0x4000);
@@ -86,9 +92,12 @@ static void vxlan_set_iphdr(struct work_space *ws, struct iphdr *iph, uint16_t i
 
 static void vxlan_set_udphdr(struct work_space *ws, struct udphdr *uh, uint16_t inner_len)
 {
+    uint16_t len = 0;
+
+    len = sizeof(struct udphdr) + sizeof(struct vxlan_header) + inner_len;
     uh->dest = htons(VXLAN_PORT);
-    uh->source = htons(8000 + ws->id);
-    uh->len = htons(8 + 8 + inner_len);
+    uh->source = htons(VXLAN_SPORT + ws->id);
+    uh->len = htons(len);
 }
 
 int vxlan_encapsulate(struct mbuf_data *mdata, struct work_space *ws)
@@ -106,7 +115,7 @@ int vxlan_encapsulate(struct mbuf_data *mdata, struct work_space *ws)
     vxlan_set_iphdr(ws, &vxhs.iph, inner_len);
     vxlan_set_udphdr(ws, &vxhs.uh, inner_len);
     vxhs.vxh.vni = VXLAN_HTON(vxlan->vni);
-    vxhs.vxh.flags = 0x08;
+    vxhs.vxh.flags = 0x08;  /* vni valid */
 
     return vxlan_push_headers(mdata, &vxhs);
 }

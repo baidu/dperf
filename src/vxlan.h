@@ -49,6 +49,7 @@ struct vxlan_headers {
 #define VXLAN_HEADERS_SIZE  sizeof(struct vxlan_headers)
 #define VNI_MAX             0xffffff
 #define VXLAN_PORT          4789
+#define VXLAN_SPORT         6666
 #define VXLAN_HTON(vni)     htonl((vni) << 8)
 
 struct mbuf_data;
