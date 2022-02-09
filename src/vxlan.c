@@ -83,7 +83,7 @@ static void vxlan_set_iphdr(struct work_space *ws, struct iphdr *iph, uint16_t i
     iph->tot_len = htons(tot_len);
     iph->ttl = DEFAULT_TTL;
     iph->protocol = IPPROTO_UDP;
-    iph->frag_off = htons(0x4000);
+    iph->frag_off = IP_FLAG_DF;
 
     iph->saddr = saddr;
     iph->daddr = daddr;

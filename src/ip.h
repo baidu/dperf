@@ -25,6 +25,7 @@
 
 #define IP6_ADDR_SIZE   16
 
+#define IP_FLAG_DF  htons(0x4000)
 
 /*
  * The lower 32 bits represent an IPv6 address.

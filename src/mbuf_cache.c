@@ -163,7 +163,7 @@ static int mbuf_data_push_ipv4(struct mbuf_data *data)
     iph.version = 4;
     iph.tot_len = htons(20);
     iph.ttl = DEFAULT_TTL;
-    iph.frag_off = htons(0x4000);
+    iph.frag_off = IP_FLAG_DF;
     /* protocol: set later*/
 
     data->l3_len = len;

@@ -214,7 +214,7 @@ static void tcp_rst_set_ip(struct iphdr *iph)
     iph->version = 4;
     iph->tot_len = htons(40);
     iph->ttl = DEFAULT_TTL;
-    iph->frag_off = htons(0x4000);
+    iph->frag_off = IP_FLAG_DF;
     iph->protocol = IPPROTO_TCP;
     iph->saddr = saddr;
     iph->daddr = daddr;
