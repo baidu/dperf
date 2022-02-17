@@ -64,13 +64,13 @@ static inline void csum_ipv4(struct rte_mbuf *m, int offload)
 
     iph = mbuf_ip_hdr(m);
     iph->check = 0;
-    if (offload == 0) {
+    if (offload != 0) {
+        m->ol_flags |= PKT_TX_IP_CKSUM;
+        m->l2_len = sizeof(struct eth_hdr);
+        m->l3_len = sizeof(struct iphdr);
+    } else {
         iph->check = RTE_IPV4_CKSUM(iph);
     }
-
-    m->ol_flags |= PKT_TX_IP_CKSUM;
-    m->l2_len = sizeof(struct eth_hdr);
-    m->l3_len = sizeof(struct iphdr);
 }
 
 static inline void csum_ip_offload(struct rte_mbuf *m)
