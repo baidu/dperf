@@ -49,7 +49,7 @@ dperf once used the time wheel timer. One time wheel timer consumes 32 bytes, an
 
 ### Zero Copy, Zero Sockbuf, Zero Checksum
 - Zero copy. Except for the startup phase, dperf does not copy any data, including Ethernet header/IP header/transport layer header/payload, because these contents are almost fixed.
-- Zero receive buffer. dperf does not care about the content of the payload. These contents are nothing more than the filler of the message. dper only cares about how many bytes are received.
+- Zero receive buffer. dperf does not care about the content of the payload. These contents are nothing more than the filler of the message. dperf only cares about how many bytes are received.
 - Zero sending buffer. The ordinary protocol stack needs to send buffers, and only after receiving the confirmation from the other party, can these buffers be released, otherwise it is retransmitted; in addition, it needs to be considered that the sequence number of the other party's confirmation may be anywhere in the buffer, not necessarily confirming a message At the end of; the management of the sending buffer is a more complicated task. The data sent is the same, so dperf does not need a socket-level sending buffer, just a global message pool.
 - Zero checksum. Usually we will use the network card function to offload the checksum of the message, but we have to calculate the pseudo header; for the same connection, the message type is fixed, dperf has already calculated the tail and head checksum, the whole process does not Checksum calculation. 
 
