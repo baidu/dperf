@@ -42,6 +42,7 @@
 #define SLOW_START_DEFAULT  30
 #define SLOW_START_MIN      10
 #define SLOW_START_MAX      600
+#define KEEPALIVE_REQ_NUM   32767  /* 15 bits */
 
 #define LOG_DIR             "/var/log/dperf"
 
@@ -49,6 +50,7 @@ struct config {
     bool server;
     bool keepalive;
     bool ipv6;
+    bool vxlan;
     bool daemon;
     bool synflood;
     uint8_t tx_burst;
@@ -77,6 +79,9 @@ struct config {
 
     struct netif_port ports[NETIF_PORT_MAX];
     int port_num;
+
+    struct vxlan vxlans[NETIF_PORT_MAX];
+    int vxlan_num;
 
     int listen;
     int listen_num;

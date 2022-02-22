@@ -32,6 +32,7 @@
 #include "tcp.h"
 #include "tick.h"
 #include "socket.h"
+#include "csum.h"
 
 struct socket_table;
 
@@ -78,8 +79,12 @@ struct work_space {
         };
     };
 
+    uint16_t ip_id;
     bool exit;
     bool stop;
+    uint32_t vni:24;
+    uint32_t vxlan:8;
+    uint32_t vtep_ip; /* each queue has a vtep ip */
     struct tick_time time;
     struct cpuload load;
     struct client_launch client_launch;
@@ -159,6 +164,24 @@ static inline void work_space_tx_send(struct work_space *ws, struct rte_mbuf *mb
     if (((queue->tail - queue->head) >= queue->tx_burst) || (queue->tail == TX_QUEUE_SIZE)) {
         work_space_tx_flush(ws);
     }
+}
+
+static inline void work_space_tx_send_tcp(struct work_space *ws, struct rte_mbuf *mbuf)
+{
+    uint64_t ol_flags = PKT_TX_TCP_CKSUM;
+
+    if (ws->vxlan) {
+        ol_flags = PKT_TX_UDP_CKSUM;
+    }
+
+    csum_offload_ip_tcpudp(mbuf, ol_flags);
+    work_space_tx_send(ws, mbuf);
+}
+
+static inline void work_space_tx_send_udp(struct work_space *ws, struct rte_mbuf *mbuf)
+{
+    csum_offload_ip_tcpudp(mbuf, PKT_TX_UDP_CKSUM);
+    work_space_tx_send(ws, mbuf);
 }
 
 static inline uint64_t work_space_client_launch_num(struct work_space *ws)

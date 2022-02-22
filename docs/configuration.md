@@ -155,13 +155,14 @@ Example:
 - keepalive_request_interval 1s
 - keepalive_request_interval 60s
 
-## keepalive_request_num Number
+## keepalive_request_num Number(0-32767)
 - syntax: keepalive_request_num Number
-- default: -
+- default: 0
 - required: no
 - mode: client
 
 How many requests are sent in the a connection before closing the connection. It only takes effect after setting 'cc'.
+0 means unlimited.
 
 ## launch_num
 - syntax: launch_num Number
@@ -251,3 +252,13 @@ A smaller value can make the packets sending smoother and avoid packet loss at t
 - mode: client
 
 The client gradually increases the number of new connections per second during the slow start time.
+
+## vxlan
+- syntax: vxlan vni innerSMAC innerDMAC localVtepIPAddr Number remoteVtepIPAddr Number
+- default: -
+- required: no
+- mode: client, server
+
+One 'vxlan' can be set per 'port'. 'innerSMAC' is the source MAC address of the inner packet, and 'innerDMAC' is the destination address of the inner packet.
+'localVtepIPAddr' is the starting address of local vtep. Each NIC queue needs a local vtep address for traffic classification.
+'remoteVtepIPAddr' is the starting address of the remote vtep. Number is the number of vtep addresses.

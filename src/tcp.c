@@ -47,44 +47,33 @@ static inline void tcp_process_rst(struct socket *sk, struct rte_mbuf *m)
     mbuf_free2(m);
 }
 
-static inline struct rte_mbuf *work_space_mbuf_tcp_alloc(struct work_space *ws, struct socket *sk,
-    uint8_t tcp_flags, uint16_t *data_len)
-{
-    struct tcphdr *th = NULL;
-    struct mbuf_cache *p = NULL;
-    struct rte_mbuf *m = NULL;
-
-    if (tcp_flags & TH_SYN) {
-        p = &ws->tcp_opt;
-    } else if (tcp_flags & TH_PUSH) {
-        p = &ws->tcp_data;
-        *data_len = p->data.data_len;
-    } else {
-        p = &ws->tcp;
-    }
-
-    m = mbuf_cache_alloc(p);
-    th = mbuf_tcp_hdr(m);
-    if (tcp_flags & TH_SYN) {
-        th->th_sum = sk->csum_tcp_opt;
-    } else if (tcp_flags & TH_PUSH) {
-        th->th_sum = sk->csum_tcp_data;
-    } else {
-        th->th_sum = sk->csum_tcp;
-    }
-
-    return m;
-}
-
 static inline struct rte_mbuf *tcp_new_packet(struct work_space *ws, struct socket *sk, uint8_t tcp_flags)
 {
+    uint16_t csum_ip = 0;
+    uint16_t csum_tcp = 0;
     uint16_t snd_una = 0;
     struct rte_mbuf *m = NULL;
     struct iphdr *iph = NULL;
     struct ip6_hdr *ip6h = NULL;
-    struct tcphdr *tcph = NULL;
+    struct tcphdr *th = NULL;
+    struct mbuf_cache *p = NULL;
 
-    m = work_space_mbuf_tcp_alloc(ws, sk, tcp_flags, &snd_una);
+    if (tcp_flags & TH_SYN) {
+        p = &ws->tcp_opt;
+        csum_tcp = sk->csum_tcp_opt;
+        csum_ip = sk->csum_ip_opt;
+    } else if (tcp_flags & TH_PUSH) {
+        p = &ws->tcp_data;
+        csum_tcp = sk->csum_tcp_data;
+        csum_ip = sk->csum_ip_data;
+        snd_una = p->data.data_len;
+    } else {
+        p = &ws->tcp;
+        csum_tcp = sk->csum_tcp;
+        csum_ip = sk->csum_ip;
+    }
+
+    m = mbuf_cache_alloc(p);
     if (unlikely(m == NULL)) {
         return NULL;
     }
@@ -97,24 +86,40 @@ static inline struct rte_mbuf *tcp_new_packet(struct work_space *ws, struct sock
         sk->snd_una += snd_una;
     }
 
-    iph = mbuf_ip_hdr(m);
-    ip6h = mbuf_ip6_hdr(m);
-    tcph = mbuf_tcp_hdr(m);
+    /* update vxlan inner header */
+    if (ws->vxlan) {
+        iph = (struct iphdr *)((uint8_t *)mbuf_eth_hdr(m) + VXLAN_HEADERS_SIZE + sizeof(struct eth_hdr));
+        if (ws->ipv6) {
+            ip6h = (struct ip6_hdr *)iph;
+            th = (struct tcphdr *)((uint8_t *)ip6h + sizeof(struct ip6_hdr));
+        } else {
+            th = (struct tcphdr *)((uint8_t *)iph + sizeof(struct iphdr));
+            iph->check = csum_update(csum_ip, 0, htons(ws->ip_id));
+        }
 
-    if (!g_config.ipv6) {
-        iph->id = htons(sk->id++);
+        csum_tcp = csum_update_tcp_seq(csum_tcp, htonl(sk->snd_nxt), htonl(sk->rcv_nxt));
+        csum_tcp = csum_update(csum_tcp, 0, htons(tcp_flags));
+    } else {
+        iph = mbuf_ip_hdr(m);
+        th = mbuf_tcp_hdr(m);
+    }
+
+    if (!ws->ipv6) {
+        iph->id = htons(ws->ip_id++);
         iph->saddr = sk->laddr;
         iph->daddr = sk->faddr;
     } else {
+        ip6h = (struct ip6_hdr *)iph;
         ip6h->ip6_src.s6_addr32[3] = sk->laddr;
         ip6h->ip6_dst.s6_addr32[3] = sk->faddr;
     }
 
-    tcph->th_sport = sk->lport;
-    tcph->th_dport = sk->fport;
-    tcph->th_flags = tcp_flags;
-    tcph->th_seq = htonl(sk->snd_nxt);
-    tcph->th_ack = htonl(sk->rcv_nxt);
+    th->th_sport = sk->lport;
+    th->th_dport = sk->fport;
+    th->th_flags = tcp_flags;
+    th->th_seq = htonl(sk->snd_nxt);
+    th->th_ack = htonl(sk->rcv_nxt);
+    th->th_sum = csum_tcp;
 
 #ifdef DPERF_DEBUG
     if ((tcp_flags & TH_SYN) && ((sk->lport == htons(80)) || (sk->fport == htons(80)))) {
@@ -176,8 +181,7 @@ static struct rte_mbuf *tcp_reply(struct work_space *ws, struct socket *sk, uint
 
     m = tcp_new_packet(ws, sk, tcp_flags);
     if (m) {
-        mbuf_iptcp_csum_offload(m);
-        work_space_tx_send(ws, m);
+        work_space_tx_send_tcp(ws, m);
     }
 
     if ((sk->state != SK_CLOSED) && (tcp_flags & (TH_PUSH | TH_SYN | TH_FIN))) {
@@ -210,7 +214,7 @@ static void tcp_rst_set_ip(struct iphdr *iph)
     iph->version = 4;
     iph->tot_len = htons(40);
     iph->ttl = DEFAULT_TTL;
-    iph->frag_off = htons(0x4000);
+    iph->frag_off = IP_FLAG_DF;
     iph->protocol = IPPROTO_TCP;
     iph->saddr = saddr;
     iph->daddr = daddr;
@@ -264,6 +268,13 @@ static void tcp_reply_rst(struct work_space *ws, struct rte_mbuf *m)
     struct eth_hdr *eth = NULL;
     struct iphdr *iph = NULL;
     struct tcphdr *th = NULL;
+
+    /* not support rst yet */
+    if (ws->vxlan) {
+        net_stats_tcp_drop();
+        mbuf_free2(m);
+        return;
+    }
 
     eth = mbuf_eth_hdr(m);
     iph = mbuf_ip_hdr(m);
@@ -669,7 +680,7 @@ static inline void tcp_do_keepalive(struct work_space *ws, struct socket *sk)
             sk->keepalive_request_num++;
             tcp_reply(ws, sk, TH_ACK | TH_PUSH);
             if (unlikely((g_config.keepalive_request_num > 0)
-                         && (sk->keepalive_request_num > g_config.keepalive_request_num))) {
+                         && (sk->keepalive_request_num >= g_config.keepalive_request_num))) {
                 sk->keepalive = 0;
             }
         } else {
@@ -746,6 +757,16 @@ static void tcp_client_run_loop_ipv6(struct work_space *ws)
     client_loop(ws, ipv6_input, tcp_client_process, udp_drop, tcp_client_socket_timer_process, tcp_client_launch);
 }
 
+static void tcp_server_run_loop_vxlan(struct work_space *ws)
+{
+    server_loop(ws, vxlan_input, tcp_server_process, udp_drop, tcp_server_socket_timer_process);
+}
+
+static void tcp_client_run_loop_vxlan(struct work_space *ws)
+{
+    client_loop(ws, vxlan_input, tcp_client_process, udp_drop, tcp_client_socket_timer_process, tcp_client_launch);
+}
+
 int tcp_init(struct work_space *ws)
 {
     const char *data = NULL;
@@ -756,14 +777,18 @@ int tcp_init(struct work_space *ws)
 
     if (g_config.server) {
         data = http_get_response();
-        if (ws->ipv6) {
+        if (ws->vxlan) {
+            ws->run_loop = tcp_server_run_loop_vxlan;
+        } else if (ws->ipv6) {
             ws->run_loop = tcp_server_run_loop_ipv6;
         } else {
             ws->run_loop = tcp_server_run_loop_ipv4;
         }
     } else {
         data = http_get_request();
-        if (ws->ipv6) {
+        if (ws->vxlan) {
+            ws->run_loop = tcp_client_run_loop_vxlan;
+        } else if (ws->ipv6) {
             ws->run_loop = tcp_client_run_loop_ipv6;
         } else {
             ws->run_loop = tcp_client_run_loop_ipv4;

@@ -59,18 +59,30 @@ static inline struct rte_mbuf *udp_new_packet(struct work_space *ws, struct sock
         return NULL;
     }
 
-    iph = mbuf_ip_hdr(m);
-    ip6h = mbuf_ip6_hdr(m);
+    if (ws->vxlan) {
+        iph = (struct iphdr *)((uint8_t *)mbuf_eth_hdr(m) + VXLAN_HEADERS_SIZE + sizeof(struct eth_hdr));
+        if (ws->ipv6) {
+            ip6h = (struct ip6_hdr *)iph;
+            uh = (struct udphdr *)((uint8_t *)ip6h + sizeof(struct ip6_hdr));
+        } else {
+            uh = (struct udphdr *)((uint8_t *)iph + sizeof(struct iphdr));
+            iph->check = csum_update(sk->csum_ip, 0, htons(ws->ip_id));
+        }
+    } else {
+        iph = mbuf_ip_hdr(m);
+        ip6h = (struct ip6_hdr *)iph;
+        uh = mbuf_udp_hdr(m);
+    }
 
     if (!ws->ipv6) {
-        iph->id = htons(sk->id++);
+        iph->id = htons(ws->ip_id++);
         iph->saddr = sk->laddr;
         iph->daddr = sk->faddr;
     } else {
         ip6h->ip6_src.s6_addr32[3] = sk->laddr;
         ip6h->ip6_dst.s6_addr32[3] = sk->faddr;
     }
-    uh = mbuf_udp_hdr(m);
+
     uh->source = sk->lport;
     uh->dest = sk->fport;
     uh->check = sk->csum_udp;
@@ -84,8 +96,7 @@ static inline struct rte_mbuf* udp_send(struct work_space *ws, struct socket *sk
 
     m = udp_new_packet(ws, sk);
     if (m) {
-        mbuf_ipudp_csum_offload(m);
-        work_space_tx_send(ws, m);
+        work_space_tx_send_udp(ws, m);
     }
 
     return m;
@@ -199,6 +210,16 @@ static void udp_client_run_loop_ipv6(struct work_space *ws)
     client_loop(ws, ipv6_input, tcp_drop, udp_client_process, udp_client_socket_timer_process, udp_client_launch);
 }
 
+static void udp_server_run_loop_vxlan(struct work_space *ws)
+{
+    server_loop(ws, vxlan_input, tcp_drop, udp_server_process, udp_server_socket_timer_process);
+}
+
+static void udp_client_run_loop_vxlan(struct work_space *ws)
+{
+    client_loop(ws, vxlan_input, tcp_drop, udp_client_process, udp_client_socket_timer_process, udp_client_launch);
+}
+
 int udp_init(struct work_space *ws)
 {
     if (g_config.protocol != IPPROTO_UDP) {
@@ -206,13 +227,17 @@ int udp_init(struct work_space *ws)
     }
 
     if (g_config.server) {
-        if (ws->ipv6) {
+        if (ws->vxlan) {
+            ws->run_loop = udp_server_run_loop_vxlan;
+        } else if (ws->ipv6) {
             ws->run_loop = udp_server_run_loop_ipv6;
         } else {
             ws->run_loop = udp_server_run_loop_ipv4;
         }
     } else {
-        if (ws->ipv6) {
+        if (ws->vxlan) {
+            ws->run_loop = udp_client_run_loop_vxlan;
+        } else if (ws->ipv6) {
             ws->run_loop = udp_client_run_loop_ipv6;
         } else {
             ws->run_loop = udp_client_run_loop_ipv4;
