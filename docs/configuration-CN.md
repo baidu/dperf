@@ -18,7 +18,7 @@
 
 ## keepalive
 - syntax: keepalive
-- default: - 
+- default: -
 - required: no
 - mode: server
 
@@ -29,7 +29,7 @@ dperf作为服务器运行时(server模式)，需要明确开启'keepalive'。
 当'keepalve'没有开启，dperf server通过在响应报文中置上FIN, 以最快的速度关闭连接。（想一下，调用POSIX socket API的程序能做到这一点吗？）
 
 dperf client不需要显示设置'keepalive'。当配置了'cc'后，'keepalive'会自动打开。
- 
+
 ## cpu
 - syntax: cpu n0 n1 n2-n3...
 - default: -
@@ -155,13 +155,14 @@ Example:
 - keepalive_request_interval 1s
 - keepalive_request_interval 60s
 
-## keepalive_request_num Number
+## keepalive_request_num Number(0-32767)
 - syntax: keepalive_request_num Number
-- default: -
+- default: 0
 - required: no
 - mode: client
 
 在一个长连接内，发送多少个请求后再关闭连接。只有在设置'cc'后才生效。
+0表示无限。
 
 ## launch_num
 - syntax: launch_num Number
@@ -248,3 +249,13 @@ TCP或者UDP协议。不论是TCP还是UDP协议，dperf客户端都是发送HTT
 - mode: client
 
 客户端在慢启动时间内逐步增加每秒新建连接数。
+
+## vxlan
+- syntax: vxlan vni innerSMAC innerDMAC localVtepIPAddr Number remoteVtepIPAddr Number
+- default: -
+- required: no
+- mode: client, server
+
+每个'port'可以设置一个'vxlan'。'innerSMAC'是内层报文的源MAC地址，'innerDMAC'是内层报文的目的地址。
+'localVtepIPAddr'是local vtep的起始地址，每个网卡队列需要一个local vtep地址，用于分流。
+'remoteVtepIPAddr'是remote vtep的起始地址。Number是vtep地址的数量。

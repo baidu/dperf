@@ -77,14 +77,19 @@ void arp_request_gw(struct work_space *ws)
     uint32_t ip = 0;
     struct netif_port *port = NULL;
     struct ip_range *ip_range = NULL;
+    struct vxlan *vxlan = NULL;
 
-    if (ws->ipv6) {
+    port = ws->port;
+    if (port->ipv6) {
         return;
     }
 
-    port = ws->port;
-    ip_range = port->local_ip_range;
-
+    if (ws->vxlan) {
+        vxlan = port->vxlan;
+        ip_range = &vxlan->vtep_local;
+    } else {
+        ip_range = port->local_ip_range;
+    }
     arp_request_gw2(ws, port->local_ip.ip);
     for (i = 0; i < ip_range->num; i++) {
         ip = ip_range_get(ip_range, i);

@@ -22,6 +22,7 @@
 
 #include "udp.h"
 #include "work_space.h"
+#include "vxlan.h"
 
 struct tcp_opt_mss {
     uint8_t kind;
@@ -31,6 +32,12 @@ struct tcp_opt_mss {
 
 static int mbuf_cache_init(struct mbuf_cache *pool, const char *name, struct work_space *ws, struct mbuf_data *mdata)
 {
+    if (ws->cfg->vxlan) {
+        if (vxlan_encapsulate(mdata, ws) < 0) {
+            return -1;
+        }
+    }
+
     pool->mbuf_pool = mbuf_pool_create(name, ws->port->id, ws->queue_id);
     if (pool->mbuf_pool == NULL) {
         return -1;
@@ -156,7 +163,7 @@ static int mbuf_data_push_ipv4(struct mbuf_data *data)
     iph.version = 4;
     iph.tot_len = htons(20);
     iph.ttl = DEFAULT_TTL;
-    iph.frag_off = htons(0x4000);
+    iph.frag_off = IP_FLAG_DF;
     /* protocol: set later*/
 
     data->l3_len = len;

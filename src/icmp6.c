@@ -70,7 +70,7 @@ static void icmp6_ns_process(struct work_space *ws, struct rte_mbuf *m)
     icmp6_nd_na_set((struct nd_neighbor_advert *)icmp6h, smac);
 
     icmp6h->icmp6_cksum = 0;
-    icmp6h->icmp6_cksum = RTE_IPV6_UDPTCP_CKSUM(ip6h, icmp6h)
+    icmp6h->icmp6_cksum = RTE_IPV6_UDPTCP_CKSUM(ip6h, icmp6h);
 
     work_space_tx_send(ws, m);
     net_stats_icmp_tx();
@@ -110,7 +110,7 @@ static void icmp6_echo_process(struct work_space *ws, struct rte_mbuf *m)
     icmp6h->icmp6_code = 0;
 
     icmp6h->icmp6_cksum = 0;
-    icmp6h->icmp6_cksum = RTE_IPV6_UDPTCP_CKSUM(ip6h, icmp6h)
+    icmp6h->icmp6_cksum = RTE_IPV6_UDPTCP_CKSUM(ip6h, icmp6h);
 
     net_stats_icmp_tx();
     work_space_tx_send(ws, m);

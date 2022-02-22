@@ -48,7 +48,7 @@ void icmp_process(struct work_space *ws, struct rte_mbuf *m)
 
     iph->ttl = DEFAULT_TTL;
     /* hns3 dose not support IP csum offload */
-    mbuf_ip_csum_compute(m);
+    csum_ip_compute(m);
 
     eth_addr_swap(eth);
     work_space_tx_send(ws, m);

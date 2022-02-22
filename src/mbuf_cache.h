@@ -31,6 +31,7 @@
 struct mbuf_data {
     uint8_t data[MBUF_DATA_MAX_SIZE];
     bool ipv6;
+    bool vxlan;
     uint16_t l2_len;
     uint16_t l3_len;
     uint16_t l4_len;

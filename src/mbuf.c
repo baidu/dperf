@@ -92,7 +92,8 @@ void mbuf_log(struct rte_mbuf *m, const char *tag)
                     ntohl(th->th_seq), ntohl(th->th_ack),
                     th->th_off, ntohs(iph->tot_len), len);
         } else {
-            fprintf(log, "muf: %s -> %s " IPV4_FMT " ->" IPV4_FMT " proto %u\n",
+            fprintf(log, "sec %lu ticks %lu %s muf: %s -> %s " IPV4_FMT " ->" IPV4_FMT " proto %u\n",
+                g_current_seconds, g_current_ticks, tag,
                 smac, dmac, IPV4_STR(iph->saddr), IPV4_STR(iph->daddr), iph->protocol);
         }
     } else if (eh->type == htons(ETHER_TYPE_IPv6)) {

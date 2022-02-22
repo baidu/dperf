@@ -196,6 +196,30 @@ static int flow_init_port(struct netif_port *port, bool server, bool ipv6)
     return 0;
 }
 
+static int flow_init_vxlan(struct netif_port *port)
+{
+    int ret = 0;
+    int queue_id = 0;
+    bool ipv6 = false;  /* vxlan outer headers is ipv4 */
+    ipaddr_t local_ip;
+    ipaddr_t remote_ip;
+    struct vxlan *vxlan = NULL;
+
+    vxlan = port->vxlan;
+    memset(&remote_ip, 0, sizeof(ipaddr_t));
+    rte_flow_flush(port->id, NULL);
+    for (queue_id = 0; queue_id < port->queue_num; queue_id++) {
+        ip_range_get2(&vxlan->vtep_local, queue_id, &local_ip);
+
+        ret = flow_new(port->id, queue_id, remote_ip, local_ip, ipv6);
+        if (ret < 0) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 int flow_init(struct config *cfg)
 {
     struct netif_port *port = NULL;
@@ -205,8 +229,14 @@ int flow_init(struct config *cfg)
         if (port->queue_num == 1) {
             continue;
         }
-        if (flow_init_port(port, cfg->server, ipv6) < 0) {
-            return -1;
+        if (cfg->vxlan) {
+            if (flow_init_vxlan(port) < 0) {
+                return -1;
+            }
+        } else {
+            if (flow_init_port(port, cfg->server, ipv6) < 0) {
+                return -1;
+            }
         }
     }
 
