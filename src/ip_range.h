@@ -64,7 +64,7 @@ static inline int ip_range_init(struct ip_range *ip_range, ipaddr_t start, int n
      * 1. the last byte cannot be 0 or 255, which are illegal unicast addresses.
      * 2. address cannot be 0.0.0.0
      */
-    if ((start.ip == 0) || (num <= 0) || ((last_byte + num) >= 255)) {
+    if ((start.ip == 0) || (num <= 0) || ((last_byte + num - 1) >= 255)) {
         return -1;
     }
 
