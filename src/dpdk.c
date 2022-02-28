@@ -30,6 +30,7 @@
 #include "mbuf.h"
 #include "flow.h"
 #include "tick.h"
+#include "kni.h"
 
 static void dpdk_set_lcores(struct config *cfg, char *lcores)
 {
@@ -130,6 +131,11 @@ int dpdk_init(struct config *cfg, char *argv0)
         return -1;
     }
 
+    if (kni_start(cfg) < 0) {
+        printf("kni start fail\n");
+        return -1;
+    }
+
     if (flow_init(cfg) < 0) {
         printf("flow init fail\n");
         return -1;
@@ -144,6 +150,7 @@ void dpdk_close(struct config *cfg)
 {
     flow_flush(cfg);
     port_stop_all(cfg);
+    kni_stop(cfg);
 }
 
 void dpdk_run(int (*lcore_main)(void*), void* data)

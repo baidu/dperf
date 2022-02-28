@@ -19,6 +19,7 @@
 #include "icmp.h"
 #include "mbuf.h"
 #include "work_space.h"
+#include "kni.h"
 
 /*
  * 1. reply to ping request
@@ -32,11 +33,17 @@ void icmp_process(struct work_space *ws, struct rte_mbuf *m)
 
     net_stats_icmp_rx();
     if (icmph->type != ICMP_ECHO) {
+        if (ws->kni) {
+            return kni_recv(ws, m);
+        }
         mbuf_free(m);
         return;
     }
 
     if (!work_space_ip_exist(ws, iph->daddr)) {
+        if (ws->kni) {
+            return kni_recv(ws, m);
+        }
         mbuf_free(m);
         return;
     }

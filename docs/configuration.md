@@ -262,3 +262,15 @@ The client gradually increases the number of new connections per second during t
 One 'vxlan' can be set per 'port'. 'innerSMAC' is the source MAC address of the inner packet, and 'innerDMAC' is the destination address of the inner packet.
 'localVtepIPAddr' is the starting address of local vtep. Each NIC queue needs a local vtep address for traffic classification.
 'remoteVtepIPAddr' is the starting address of the remote vtep. Number is the number of vtep addresses.
+
+## kni
+- syntax: kni [ifName]
+- default: -
+- required: no
+- mode: client, server
+
+Enable the kni interface. We create a kni interface for each 'port'. Common interface Names are vEth/vnic, etc. The default name is dperf.
+The IP address and routing of the kni interface need to be manually configured.
+It is recommended to assign a separate IP to the kni interface.
+When only one CPU is enabled, the kni interface IP can be the traffic IP;
+If multiple CPUs are used, the kni interface IP can use the first traffic IP of the server.

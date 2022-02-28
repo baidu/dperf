@@ -44,6 +44,7 @@ static int lcore_main(__rte_unused void *arg1)
         exit(-1);
     }
 
+    ws->start = 1;
     ws->run_loop(ws);
     work_space_close(ws);
 

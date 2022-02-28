@@ -22,6 +22,7 @@
 #include "cpuload.h"
 #include "work_space.h"
 #include "icmp6.h"
+#include "kni.h"
 
 /* optimal value, don't change */
 #define MBUF_PREFETCH_NUM 4
@@ -38,7 +39,7 @@ static inline int vxlan_check(struct work_space *ws, struct vxlan_headers *vxhs)
     iph = &vxhs->iph;
     uh = &vxhs->uh;
     /* Consider that the VXLAN packet is legitimate, simply check. */
-    if ((iph->protocol == IPPROTO_UDP) && 
+    if ((iph->protocol == IPPROTO_UDP) &&
         (iph->daddr == ws->vtep_ip) &&
         (uh->dest == htons(VXLAN_PORT)) &&
         (vxhs->vxh.vni == ws->vni)) {
@@ -81,6 +82,10 @@ static inline void vxlan_input(struct work_space *ws, struct rte_mbuf *m,
         return icmp_process(ws, m);
     } else if (vxhs->eh.type == htons(ETHER_TYPE_ARP)) {
         return arp_process(ws, m);
+    }
+
+    if (ws->kni) {
+        return kni_recv(ws, m);
     }
 
 out:
@@ -126,6 +131,10 @@ static inline void ipv4_input(struct work_space *ws, struct rte_mbuf *m,
         return arp_process(ws, m);
     }
 
+    if (ws->kni) {
+        return kni_recv(ws, m);
+    }
+
     net_stats_other_rx();
     mbuf_free(m);
 }
@@ -160,15 +169,25 @@ static inline void ipv6_input(struct work_space *ws, struct rte_mbuf *m,
         }
     }
 
+    if (ws->kni) {
+        return kni_recv(ws, m);
+    }
+
     net_stats_other_rx();
     mbuf_free(m);
 }
 
 static inline int slow_timer_run(struct work_space *ws)
 {
-    struct tick_time *tt = &ws->time;
+    struct tick_time *tt = NULL;
+    uint64_t seconds = 0;
 
-    uint64_t seconds = tsc_time_go(&tt->second, tt->tsc);
+    if (ws->kni) {
+        kni_send(ws);
+    }
+
+    tt = &ws->time;
+    seconds = tsc_time_go(&tt->second, tt->tsc);
     if (unlikely(seconds > 0)) {
         net_stats_timer_handler(ws);
         if (ws->exit) {

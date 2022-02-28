@@ -26,6 +26,7 @@
 #include "mbuf.h"
 #include "port.h"
 #include "work_space.h"
+#include "kni.h"
 
 static struct eth_addr g_mac_zero = {.bytes = {0, 0, 0, 0, 0, 0}};
 static struct eth_addr g_mac_full = {.bytes = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
@@ -123,6 +124,10 @@ static void arp_process_reply(struct work_space *ws, struct rte_mbuf *m)
         work_space_update_gw(ws, &eth->s_addr);
     }
 
+    if (ws->kni) {
+        return kni_recv(ws, m);
+    }
+
     mbuf_free(m);
 }
 
@@ -134,6 +139,9 @@ static void arp_process_request(struct work_space *ws, struct rte_mbuf *m)
     arph = mbuf_arphdr(m);
     dip = arph->ar_tip;
     if (!work_space_ip_exist(ws, dip)) {
+        if (ws->kni) {
+            return kni_recv(ws, m);
+        }
         mbuf_free(m);
         return;
     }

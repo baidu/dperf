@@ -259,3 +259,14 @@ TCP或者UDP协议。不论是TCP还是UDP协议，dperf客户端都是发送HTT
 每个'port'可以设置一个'vxlan'。'innerSMAC'是内层报文的源MAC地址，'innerDMAC'是内层报文的目的地址。
 'localVtepIPAddr'是local vtep的起始地址，每个网卡队列需要一个local vtep地址，用于分流。
 'remoteVtepIPAddr'是remote vtep的起始地址。Number是vtep地址的数量。
+
+## kni
+- syntax: kni [ifName]
+- default: -
+- required: no
+- mode: client, server
+
+开启kni接口。我们给每个'port'创建一个kni接口。常见的接口名称是vEth/vnic等，默认名称是dperf。
+kni接口的IP地址与路由需要手动配置，建议为kni接口分配独立的IP。
+当只开启了1个CPU是，kni接口IP可以是流量IP；
+如果使用了多个CPU，kni接口IP可以使用server的第一个流量IP。
