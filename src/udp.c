@@ -120,6 +120,9 @@ static void udp_client_process(struct work_space *ws, struct rte_mbuf *m)
 
     sk = socket_client_lookup(&ws->socket_table, iph, th);
     if (unlikely(sk == NULL)) {
+        if (ws->kni) {
+            return kni_recv(ws, m);
+        }
         goto out;
     }
 
@@ -143,6 +146,9 @@ static void udp_server_process(struct work_space *ws, struct rte_mbuf *m)
 
     sk = socket_server_lookup(&ws->socket_table, iph, th);
     if (unlikely(sk == NULL)) {
+        if (ws->kni) {
+            return kni_recv(ws, m);
+        }
         goto out;
     }
 
@@ -250,6 +256,9 @@ int udp_init(struct work_space *ws)
 void udp_drop(__rte_unused struct work_space *ws, struct rte_mbuf *m)
 {
     if (m) {
+        if (ws->kni) {
+            return kni_recv(ws, m);
+        }
         MBUF_LOG(m, "drop");
         net_stats_udp_drop();
         mbuf_free2(m);

@@ -599,6 +599,9 @@ static inline void tcp_server_process(struct work_space *ws, struct rte_mbuf *m)
 
     sk = socket_server_lookup(&ws->socket_table, iph, th);
     if (unlikely(sk == NULL)) {
+        if (ws->kni) {
+            return kni_recv(ws, m);
+        }
         MBUF_LOG(m, "drop-no-socket");
         tcp_reply_rst(ws, m);
         return;
@@ -638,6 +641,9 @@ static inline void tcp_client_process(struct work_space *ws, struct rte_mbuf *m)
 
     sk = socket_client_lookup(&ws->socket_table, iph, th);
     if (unlikely(sk == NULL)) {
+        if (ws->kni) {
+            return kni_recv(ws, m);
+        }
         MBUF_LOG(m, "drop-no-socket");
         tcp_reply_rst(ws, m);
         return;
@@ -813,6 +819,9 @@ int tcp_init(struct work_space *ws)
 void tcp_drop(__rte_unused struct work_space *ws, struct rte_mbuf *m)
 {
     if (m) {
+        if (ws->kni) {
+            return kni_recv(ws, m);
+        }
         net_stats_udp_drop();
         mbuf_free(m);
     }

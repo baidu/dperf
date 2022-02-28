@@ -35,6 +35,26 @@ __thread struct work_space *g_work_space;
 static struct work_space *g_work_space_all[THREAD_NUM_MAX];
 static rte_atomic32_t g_wait_count;
 
+void work_space_wait_start(void)
+{
+    int i = 0;
+    struct work_space *ws = NULL;
+    int num = 0;
+    int total = g_config.cpu_num;
+
+    while (num != total) {
+        num = 0;
+        for (i = 0; i < total; i++) {
+            ws = g_work_space_all[i];
+            if ((ws == NULL) || (!ws->start)) {
+                usleep(1000);
+                break;
+            }
+            num++;
+        }
+    }
+}
+
 static void work_space_wait_all(struct work_space *ws)
 {
     int num = ws->cfg->cpu_num;
@@ -57,15 +77,19 @@ static void work_space_get_port(struct work_space *ws)
     struct vxlan *vxlan = NULL;
 
     port = config_port_get(cfg, ws->id, &queue_id);
-    ws->w_queue_id = queue_id;
+    ws->queue_id = queue_id;
     ws->port = port;
-    ws->w_port_id = port->id;
+    ws->port_id = port->id;
 
     if (cfg->vxlan) {
         ws->vxlan = cfg->vxlan;
         vxlan = port->vxlan;
         ws->vtep_ip = ip_range_get(&vxlan->vtep_local, ws->queue_id);
         ws->vni = VXLAN_HTON(vxlan->vni);
+    }
+
+    if (ws->port->kni && (ws->queue_id == 0)) {
+        ws->kni = true;
     }
 }
 
@@ -146,9 +170,9 @@ struct work_space *work_space_new(struct config *cfg, int id)
 
     g_work_space = ws;
     g_work_space_all[id] = ws;
-    ws->w_server = cfg->server;
-    ws->w_id = id;
-    ws->w_ipv6 = cfg->af == AF_INET6;
+    ws->server = cfg->server;
+    ws->id = id;
+    ws->ipv6 = cfg->af == AF_INET6;
     ws->cfg = cfg;
     ws->tx_queue.tx_burst = cfg->tx_burst;
     work_space_get_port(ws);

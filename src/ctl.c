@@ -32,6 +32,7 @@
 
 #include "work_space.h"
 #include "net_stats.h"
+#include "kni.h"
 
 #define CTL_CLIENT_LOG LOG_DIR"/dperf-ctl-client.log"
 #define CTL_SERVER_LOG LOG_DIR"/dperf-ctl-server.log"
@@ -94,7 +95,8 @@ static void *ctl_thread_main(void *data)
     count = cfg->duration;
 
     fp = ctl_log_open(cfg);
-    net_states_wait();
+    work_space_wait_start();
+    kni_link_up(cfg);
 
     /* slow start */
     if (cfg->server == 0) {

@@ -21,6 +21,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <rte_kni.h>
 
 #include "ip.h"
 #include "ip_range.h"
@@ -55,6 +56,7 @@ struct netif_port {
     struct ip_range client_ip_range; /* only used by client; server use all client ip range */
     struct ip_range server_ip_range;
 
+    struct rte_kni *kni;
     struct vxlan *vxlan;
 };
 

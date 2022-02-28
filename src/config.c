@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <getopt.h>
 #include <dirent.h>
+#include <string.h>
 
 #include "client.h"
 #include "config_keyword.h"
@@ -32,6 +33,7 @@
 #include "udp.h"
 #include "version.h"
 #include "vxlan.h"
+#include "kni.h"
 
 static int config_parse_daemon(int argc, char *argv[], void *data);
 static int config_parse_keepalive(int argc, char *argv[], void *data);
@@ -55,6 +57,7 @@ static int config_parse_protocol(int argc, char *argv[], void *data);
 static int config_parse_tx_burst(int argc, char *argv[], void *data);
 static int config_parse_slow_start(int argc, char *argv[], void *data);
 static int config_parse_vxlan(int argc, char *argv[], void *data);
+static int config_parse_kni(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -86,6 +89,7 @@ static struct config_keyword g_config_keywords[] = {
         "Number[" DEFAULT_STR(SLOW_START_MIN) "-" DEFAULT_STR(SLOW_START_MAX) "],"
         " default " DEFAULT_STR(SLOW_START_DEFAULT)},
     {"vxlan", config_parse_vxlan, "vni inner-smac inner-dmac vtep-local num vtep-remote num"},
+    {"kni", config_parse_kni, "[ifName], default " KNI_NAME_DEFAULT},
     {NULL, NULL, NULL}
 };
 
@@ -699,6 +703,42 @@ static int config_parse_vxlan(int argc, char *argv[], void *data)
     }
 
     cfg->vxlan_num++;
+    return 0;
+}
+
+static int config_parse_kni(int argc, char *argv[], void *data)
+{
+    struct config *cfg = data;
+    const char *ifname = NULL;
+
+    if (argc > 2) {
+        return -1;
+    }
+
+    if (cfg->kni == true) {
+        printf("duplicate kni\n");
+        return -1;
+    }
+
+    if (argc == 2) {
+        ifname = argv[1];
+    } else {
+        ifname = KNI_NAME_DEFAULT;
+    }
+
+    if (strlen(ifname) >= (RTE_KNI_NAMESIZE - 2)) {
+        printf("long kni name\n");
+        return -1;
+    }
+
+    if (isalpha(ifname[0]) == 0) {
+        printf("invalid kni name\n");
+        return -1;
+    }
+
+    strcpy(cfg->kni_ifname, ifname);
+    cfg->kni = true;
+
     return 0;
 }
 

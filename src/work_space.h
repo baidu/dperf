@@ -60,28 +60,18 @@ struct client_launch {
 };
 
 struct work_space {
-    union {
-        /* read only */
-        struct {
-            const uint8_t id;
-            const uint8_t ipv6:1;
-            const uint8_t server:1;
-            const uint8_t port_id;
-            const uint8_t queue_id;
-        };
-        /* write once */
-        struct {
-            uint8_t w_id;
-            uint8_t w_ipv6:1;
-            uint8_t w_server:1;
-            uint8_t w_port_id;
-            uint8_t w_queue_id;
-        };
-    };
+    /* read mostly */
+    uint8_t id;
+    uint8_t ipv6:1;
+    uint8_t server:1;
+    uint8_t kni:1;
+    uint8_t port_id;
+    uint8_t queue_id;
 
     uint16_t ip_id;
     bool exit;
     bool stop;
+    bool start;
     uint32_t vni:24;
     uint32_t vxlan:8;
     uint32_t vtep_ip; /* each queue has a vtep ip */
@@ -220,5 +210,6 @@ bool work_space_ip6_exist(const struct work_space *ws, const ipaddr_t *addr);
 void work_space_update_gw(struct work_space *ws, struct eth_addr *ea);
 struct rte_mbuf *work_space_alloc_mbuf(struct work_space *ws);
 void work_space_set_launch_interval(uint64_t launch_interval);
+void work_space_wait_start(void);
 
 #endif

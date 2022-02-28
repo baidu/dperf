@@ -72,7 +72,7 @@ static void net_stats_format_print(uint64_t val, char *buf, int len)
 } while (0)
 
 #define STATS_BUF_LEN 64
-static inline int net_stats_print_socket(struct net_stats *stats, char *buf, int buf_len)
+static int net_stats_print_socket(struct net_stats *stats, char *buf, int buf_len)
 {
     char *p = buf;
     char open[STATS_BUF_LEN];
@@ -93,7 +93,7 @@ err:
     return -1;
 }
 
-static inline int net_stats_print_http(struct net_stats *stats, char *buf, int buf_len)
+static int net_stats_print_http(struct net_stats *stats, char *buf, int buf_len)
 {
     char *p = buf;
     int len = buf_len;
@@ -113,7 +113,7 @@ err:
     return -1;
 }
 
-static inline int net_stats_print_pkt(struct net_stats *stats, char *buf, int buf_len)
+static int net_stats_print_pkt(struct net_stats *stats, char *buf, int buf_len)
 {
     char *p = buf;
     int len = buf_len;
@@ -138,7 +138,7 @@ err:
     return -1;
 }
 
-static inline int net_stats_print_tcp_flags(struct net_stats *stats, char *buf, int buf_len)
+static int net_stats_print_tcp_flags(struct net_stats *stats, char *buf, int buf_len)
 {
     char *p = buf;
     char rst_rx[STATS_BUF_LEN];
@@ -166,7 +166,7 @@ err:
     return -1;
 }
 
-static inline int net_stats_print_other_protocols(struct net_stats *stats, char *buf, int buf_len)
+static int net_stats_print_other_protocols(struct net_stats *stats, char *buf, int buf_len)
 {
     char *p = buf;
     char arp_rx[STATS_BUF_LEN];
@@ -192,7 +192,7 @@ err:
     return -1;
 }
 
-static inline int net_stats_print_retransmit(struct net_stats *stats, char *buf, int buf_len)
+static int net_stats_print_retransmit(struct net_stats *stats, char *buf, int buf_len)
 {
     char *p = buf;
     char syn_rt[STATS_BUF_LEN];
@@ -225,6 +225,23 @@ err:
     return -1;
 }
 
+static int net_stats_print_kni(struct net_stats *stats, char *buf, int buf_len)
+{
+    char *p = buf;
+    char kni_rx[STATS_BUF_LEN];
+    char kni_tx[STATS_BUF_LEN];
+    int len = buf_len;
+
+    net_stats_format_print(stats->kni_rx, kni_rx, STATS_BUF_LEN);
+    net_stats_format_print(stats->kni_tx, kni_tx, STATS_BUF_LEN);
+
+    SNPRINTF(p, len, "kniRx   %-18s kniTx    %-18s\n", kni_rx, kni_tx);
+
+    return p - buf;
+err:
+    return -1;
+}
+
 #define buf_skip(p, len, skip) do { \
     if (skip < 0) {                 \
         goto err;                   \
@@ -241,6 +258,11 @@ static int net_stats_print(struct net_stats *stats, char *buf, int buf_len)
 
     ret = net_stats_print_pkt(stats, p, len);
     buf_skip(p, len, ret);
+
+    if (g_config.kni) {
+        ret = net_stats_print_kni(stats, p, len);
+        buf_skip(p, len, ret);
+    }
 
     ret = net_stats_print_other_protocols(stats, p, len);
     buf_skip(p, len, ret);
@@ -260,6 +282,7 @@ static int net_stats_print(struct net_stats *stats, char *buf, int buf_len)
         ret = net_stats_print_http(stats, p, len);
         buf_skip(p, len, ret);
     }
+
     return p - buf;
 
 err:
@@ -281,7 +304,7 @@ static void net_stats_add(struct net_stats *result, struct net_stats *s)
 }
 
 __thread uint64_t g_current_ms = 0;
-static inline uint64_t net_stats_elapse_ms(void)
+static uint64_t net_stats_elapse_ms(void)
 {
     struct timeval tv;
     uint64_t now_ms, ret;
@@ -466,26 +489,4 @@ void net_stats_init(struct work_space *ws)
 {
     memset(&g_net_stats, 0, sizeof(struct net_stats));
     g_net_stats_all[ws->id] = &g_net_stats;
-}
-
-void net_states_wait(void)
-{
-    int i = 0;
-    struct net_stats *s = NULL;
-    int empty = 0;
-    while (1) {
-        empty = 0;
-        FOR_EACH_NET_STATS(s, i) {
-            if (s == NULL) {
-                empty++;
-                break;
-            }
-        }
-
-        if (empty == 0) {
-            return;
-        } else {
-            sleep(1);
-        }
-    }
 }

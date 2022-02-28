@@ -179,7 +179,7 @@ static inline struct socket *socket_client_lookup(const struct socket_table *st,
     return NULL;
 }
 
-static inline struct socket* socket_server_lookup(const struct socket_table *st, const struct iphdr *iph,
+static inline struct socket *socket_server_lookup(const struct socket_table *st, const struct iphdr *iph,
     const struct tcphdr *th)
 {
     uint32_t saddr = 0;

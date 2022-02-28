@@ -51,10 +51,13 @@ struct config {
     bool keepalive;
     bool ipv6;
     bool vxlan;
+    bool kni;
     bool daemon;
     bool synflood;
     uint8_t tx_burst;
     uint8_t protocol;   /* TCP/UDP */
+
+    char kni_ifname[RTE_KNI_NAMESIZE];
     int af;
     int keepalive_request_interval;
     int keepalive_request_num;

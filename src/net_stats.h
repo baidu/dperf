@@ -57,6 +57,9 @@ struct net_stats {
     uint64_t icmp_rx;
     uint64_t icmp_tx;
 
+    uint64_t kni_rx;
+    uint64_t kni_tx;
+
     uint64_t other_rx;
 
     uint64_t udp_rto;
@@ -74,7 +77,6 @@ struct net_stats {
 };
 
 struct work_space;
-void net_states_wait(void);
 void net_stats_init(struct work_space *ws);
 void net_stats_timer_handler(struct work_space *ws);
 void net_stats_print_total(FILE *fp);
@@ -107,6 +109,8 @@ extern __thread struct net_stats g_net_stats;
 #define net_stats_arp_tx()          do {g_net_stats.arp_tx++;} while (0)
 #define net_stats_icmp_rx()         do {g_net_stats.icmp_rx++;} while (0)
 #define net_stats_icmp_tx()         do {g_net_stats.icmp_tx++;} while (0)
+#define net_stats_kni_rx()          do {g_net_stats.kni_rx++;} while (0)
+#define net_stats_kni_tx()          do {g_net_stats.kni_tx++;} while (0)
 #define net_stats_other_rx()        do {g_net_stats.other_rx++;} while (0)
 #define net_stats_rx(m)             do {                                                \
                                         g_net_stats.pkt_rx++;                           \
