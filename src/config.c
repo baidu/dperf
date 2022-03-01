@@ -33,6 +33,7 @@
 #include "udp.h"
 #include "version.h"
 #include "vxlan.h"
+#include "bond.h"
 #include "kni.h"
 
 static int config_parse_daemon(int argc, char *argv[], void *data);
@@ -69,7 +70,7 @@ static struct config_keyword g_config_keywords[] = {
     {"mode", config_parse_mode, "client/server"},
     {"cpu", config_parse_cpu, "n0 n1 n2-n3..., eg 0-4 7 8 9 10"},
     {"socket_mem", config_parse_socket_mem, "n0,n1,n2..."},
-    {"port", config_parse_port, "PCI IPAddress Gateway [Gateway-Mac], eg 0000:13:00.0 192.168.1.3 192.168.1.1"},
+    {"port", config_parse_port, "PCI/bondMode:Policy(PCI0,PCI1,...) IPAddress Gateway [Gateway-Mac], eg 0000:13:00.0 192.168.1.3 192.168.1.1"},
     {"duration", config_parse_duration, "Time, eg 1.5d, 2h, 3.5m, 100s, 100"},
     {"cps", config_parse_cps, "Number, eg 1m, 1.5m, 2k, 100"},
     {"cc", config_parse_cc, "Number, eg 100m, 1.5m, 2k, 100"},
@@ -280,6 +281,100 @@ static int config_set_af(struct config *cfg, int af)
     }
 }
 
+#define BOND_STR_BASE   9
+#define BOND_STR_MIN    (BOND_STR_BASE + PCI_LEN)
+#define BOND_STR_MAX    (BOND_STR_BASE + ((PCI_LEN + 1) * PCI_NUM_MAX) - 1)
+#define BOND_NUM(len)   (((len) - BOND_STR_BASE + 1) / (PCI_LEN + 1))
+
+/*
+ * example:
+ * bond1:0(0000:81:10.0,0000:81:10.0,0000:81:10.0)
+ * */
+static int config_parse_bond(struct netif_port *port, char *str)
+{
+    uint8_t policy = 0;
+    uint8_t mode = 0;
+    int str_len = 0;
+    int pci_num = 0;
+    int i = 0;
+    int j = 0;
+    char *p = NULL;
+
+    str_len = strlen(str);
+    if ((str_len < BOND_STR_MIN) || (str_len > BOND_STR_MAX)) {
+        return -1;
+    } else {
+        pci_num = BOND_NUM(str_len);
+    }
+
+    p = str;
+    if (strncmp(p, "bond", 4) == 0) {
+        p += 4;
+    } else {
+        return -1;
+    }
+
+    if ((*p >= '0') && (*p <= '9')) {
+        mode = *p - '0';
+        if (mode > BONDING_MODE_ALB) {
+            return -1;
+        }
+        p++;
+    } else {
+        return -1;
+    }
+
+    if (*p != ':') {
+        return -1;
+    } else {
+        p++;
+    }
+
+    if ((*p >= '0') && (*p <= '3')) {
+        policy = *p - '0';
+        p++;
+    } else {
+        return -1;
+    }
+
+    if (*p == '(') {
+        p++;
+    } else {
+        return -1;
+    }
+
+    for (i = 0; i < pci_num; i++) {
+        memcpy(port->pci_list[i], p, PCI_LEN);
+        p += PCI_LEN;
+        if (i < (pci_num - 1)) {
+            if (*p != ',') {
+                return -1;
+            }
+        } else {
+            if ( *p != ')') {
+                return -1;
+            }
+        }
+        p++;
+    }
+
+    /* check dup pci */
+    for (i = 0; i < pci_num; i++) {
+        for (j = i + 1; j < pci_num; j++) {
+            if (strcmp(port->pci_list[i], port->pci_list[j]) == 0) {
+                printf("duplicate pci\n");
+                return -1;
+            }
+        }
+    }
+
+    port->pci_num = pci_num;
+    port->bond = true;
+    port->bond_mode = mode;
+    port->bond_policy = policy;
+    return 0;
+}
+
 static int config_parse_port(int argc, char *argv[], void *data)
 {
     int af_local = 0;
@@ -295,10 +390,17 @@ static int config_parse_port(int argc, char *argv[], void *data)
         return -1;
     }
     port = &cfg->ports[cfg->port_num];
-    if (strlen(argv[1]) != PCI_LEN) {
+    if (argv[1][0] == 'b') {
+        if (config_parse_bond(port, argv[1]) < 0) {
+            printf("bad bond \"%s\"\n", argv[1]);
+            return -1;
+        }
+    } else if (strlen(argv[1]) == PCI_LEN) {
+        strcpy(port->pci, argv[1]);
+        port->pci_num = 1;
+    } else {
         return -1;
     }
-    strcpy(port->pci, argv[1]);
 
     if ((af_local = config_parse_ip(argv[2], &port->local_ip)) < 0) {
         return -1;
@@ -319,6 +421,7 @@ static int config_parse_port(int argc, char *argv[], void *data)
         }
     }
 
+    sprintf(port->bond_name, "net_bonding%d", cfg->port_num);
     port->id = -1;
     cfg->port_num++;
     return 0;
@@ -891,6 +994,22 @@ static int config_check_af(struct config *cfg)
     return 0;
 }
 
+static int config_check_port_pci(struct netif_port *port0, struct netif_port *port1)
+{
+    int i = 0;
+    int j = 0;
+
+    for (i = 0; i < port0->pci_num; i++) {
+        for (j = 0; j < port1->pci_num; j++) {
+            if (strcmp(port0->pci_list[i], port1->pci_list[j]) == 0) {
+                return -1;
+            }
+        }
+    }
+
+    return 0;
+}
+
 static int config_check_port(struct config *cfg)
 {
     struct netif_port *port = NULL;
@@ -918,8 +1037,8 @@ static int config_check_port(struct config *cfg)
                 continue;
             }
 
-            if (strcmp(port0->pci, port1->pci) == 0) {
-                printf("duplicate pci %s\n", port0->pci);
+            if (config_check_port_pci(port0, port1) < 0) {
+                printf("duplicate pci\n");
                 return -1;
             }
         }

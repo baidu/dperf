@@ -67,27 +67,35 @@ Reference:
 [Multi-process Support](http://doc.dpdk.org/guides/prog_guide/multi_proc_support.html)
 
 ## port
-- syntax: port PCI IPAddress Gateway [GatewayMAC]
+- syntax: port PCI|BOND IPAddress Gateway [GatewayMAC]
 - default: -
 - required: yes
 - mode: client, server
 
-Configure the network interface port used by dperf. 
-If you want to use multiple network interface ports, you only need to configure multiple 'port's. 
-As a DPDK program, dperf will take over these network interface ports from the operating system. 
+Configure the network interface port used by dperf.
+If you want to use multiple network interface ports, you only need to configure multiple 'port's.
+As a DPDK program, dperf will take over these network interface ports from the operating system.
 Before starting dperf, you need to use the DPDK script 'dpdk-devbind.py' for driver binding (except for Mellanox network interfaces).
 - PCI: The PCI number of the network interface port, use 'dpdk-devbind.py -s' to get it from the system.
-- IPAddress: This IP  Address is used to interconnect with the 'Gateway'
-- Gateway: Gateway's IP address. dperf has no routing capability. It will send all packets to the gateway, except for ARP, NS, and ND.
+- BOND: The format is bondMode:Policy(PIC0,PCI1,...), Mode is [0-4], Policy is [0-2].
+- IPAddress: This IP  Address is used to interconnect with the 'Gateway'.
+- Gateway: Gateway IP address. dperf has no routing capability. It will send all packets to the gateway, except for ARP, NS, and ND.
 - Gateway-MAC: the MAC address of the 'Gateway', which can be omitted.
 
+Example:
+- port bond4:2(0000:81:10.0,0000:81:10.1) 10.235.20.12 10.235.20.1 00:00:64:01:01:01
+- port 0000:03:00.1 6.6.215.4 6.6.215.1
+
 Reference:
+
 [binding-and-unbinding-network-ports](http://doc.dpdk.org/guides/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules)
+
+[Link Bonding Poll Mode Driver Library](https://doc.dpdk.org/guides/prog_guide/link_bonding_poll_mode_drv_lib.html)
 
 ## duration
 - syntax: duration Time
 - default: duration 100s
-- required: yes 
+- required: yes
 - mode: client, server
 
 Set the running time of dperf, after this time dperf will exit.

@@ -63,6 +63,12 @@ Considering that many NICs do not have VXLAN inner-layer packet checksum offload
 - addressing. The MAC address of inner-layer packets needs to be specified in the configuration. Dynamic addressing of inner-layer packets is not supported.
 - Checksum. The outer packets use hardware offload, and the inner packets use incremental checksum correction.
 
+### Bond
+Since dperf supports multiple network cards, normally, we don't use bond; sometimes, we need to use bond mode.
+To support Mode 4, dperf sends lldp packets every 100ms.
+dperf requires that the network interfaces in the same bond belong to the same NUMA.
+Note that the PF of many network interfaces support Mode 4, and the VF dose not support Mode 4.
+
 ### Other optimizations
 - dperf uses inline extensively to avoid function calls;
 - Socket memory is allocated from large pages to avoid missing page tables;

@@ -49,13 +49,14 @@ static void dpdk_set_lcores(struct config *cfg, char *lcores)
 
 static int dpdk_append_pci(struct config *cfg, int argc, char *argv[], char *flag_pci)
 {
+    int i = 0;
     int num = 0;
     struct netif_port *port = NULL;
 
     config_for_each_port(cfg, port) {
-        if (strlen(port->pci) > 0) {
+        for (i = 0; i < port->pci_num; i++) {
             argv[argc] = flag_pci;
-            argv[argc+1] = port->pci;
+            argv[argc+1] = port->pci_list[i];
             argc += 2;
             num += 2;
         }
@@ -96,7 +97,7 @@ static int dpdk_eal_init(struct config *cfg, char *argv0)
 #endif
     char socket_mem[64] = "";
     char file_prefix[64] = "";
-    char *argv[4 + (NETIF_PORT_MAX * 2)] = {argv0, lcores, socket_mem, file_prefix, NULL};
+    char *argv[4 + (NETIF_PORT_MAX * PCI_NUM_MAX* 2)] = {argv0, lcores, socket_mem, file_prefix, NULL};
 
     if (dpdk_set_socket_mem(cfg, socket_mem, file_prefix) < 0) {
         printf("dpdk_set_socket_mem fail\n");

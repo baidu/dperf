@@ -22,6 +22,7 @@
 #include "cpuload.h"
 #include "work_space.h"
 #include "icmp6.h"
+#include "lldp.h"
 #include "kni.h"
 
 /* optimal value, don't change */
@@ -179,19 +180,29 @@ static inline void ipv6_input(struct work_space *ws, struct rte_mbuf *m,
 
 static inline int slow_timer_run(struct work_space *ws)
 {
-    struct tick_time *tt = NULL;
+    struct tick_time *tt = &ws->time;
+    uint64_t ms100 = 0;
     uint64_t seconds = 0;
 
     if (ws->kni) {
         kni_send(ws);
     }
 
-    tt = &ws->time;
-    seconds = tsc_time_go(&tt->second, tt->tsc);
-    if (unlikely(seconds > 0)) {
-        net_stats_timer_handler(ws);
-        if (ws->exit) {
-            return -1;
+    ms100 = tsc_time_go(&tt->ms100, tt->tsc);
+    if (unlikely(ms100 > 0)) {
+        /*
+         * lacp need to call tx_burst every 100ms
+         * let's send some lldp packets
+         * */
+        if (ws->lldp) {
+            lldp_send(ws);
+        }
+        seconds = tsc_time_go(&tt->second, tt->tsc);
+        if (unlikely(seconds > 0)) {
+            net_stats_timer_handler(ws);
+            if (ws->exit) {
+                return -1;
+            }
         }
     }
 

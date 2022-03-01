@@ -69,6 +69,7 @@ struct work_space {
     uint8_t queue_id;
 
     uint16_t ip_id;
+    bool lldp;
     bool exit;
     bool stop;
     bool start;
