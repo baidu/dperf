@@ -82,6 +82,10 @@ dperf客户端也非常傻，它收到任何一个数据包，如果第10个字�
 - dperf每1ms从kni接收一次报文, 所以dperf的kni只适用于传输少量报文
 - 每个port的kni的处理线程是这个port的第一个队列的处理线程
 
+### Bond
+由于dperf支持多网卡，通常情况下，我们不要使用bond；有时候，我们需要使用bond模式。
+为了支持Mode 4，dperf每100ms发送一些lldp报文。dperf要求同一bond内的网卡属于同一个NUMA。注意，很多网卡只有PF支持Mode 4， VF不支持Mode 4。
+
 ### 其他优化
 - dperf大量使用inline来避免函数调用;
 - socket的内存从大页分配，避免页表缺失;

@@ -23,6 +23,7 @@
 
 #include "mbuf.h"
 #include "config.h"
+#include "bond.h"
 
 uint8_t g_dev_tx_offload_ipv4_cksum;
 uint8_t g_dev_tx_offload_tcpudp_cksum;
@@ -85,23 +86,14 @@ static int port_init_mbuf_pool(struct netif_port *port)
     return 0;
 }
 
-static int port_init(struct netif_port *port)
+int port_config(struct netif_port *port)
 {
     int i = 0;
     uint16_t port_id = 0;
     int queue_num = 0;
     struct rte_eth_dev_info dev_info;
 
-    if (rte_eth_dev_get_port_by_name(port->pci, &port_id) != 0) {
-        printf("cannot found port id by pic %s\n", port->pci);
-        return -1;
-    }
-    port->id = port_id;
-    if (port_init_mbuf_pool(port) < 0) {
-        printf("port %s init mbuf pool error\n", port->pci);
-        return -1;
-    }
-
+    port_id = port->id;
     queue_num = port->queue_num;
     memset(&dev_info, 0, sizeof(dev_info));
     rte_eth_dev_info_get(port_id, &dev_info);
@@ -146,6 +138,62 @@ static int port_init(struct netif_port *port)
     return 0;
 }
 
+static int port_init_port_id(struct netif_port *port)
+{
+    int i = 0;
+    uint16_t port_id = 0;
+    char *pci = NULL;
+    int socket = 0;
+
+    for (i = 0; i < port->pci_num; i++) {
+        pci = port->pci_list[i];
+        if (rte_eth_dev_get_port_by_name(pci, &port_id) != 0) {
+            printf("cannot found port id by pic %s\n", pci);
+            return -1;
+        }
+
+        port->port_id_list[i] = port_id;
+        socket = rte_eth_dev_socket_id(port_id);
+        if (i == 0) {
+            port->socket = socket;
+        } else if (port->socket != socket) {
+            printf("slaves not in same socket\n ");
+            return -1;
+        }
+    }
+
+    if (port->bond) {
+        if ((port->id = bond_create(port)) < 0) {
+            return -1;
+        }
+    } else {
+        port->id = port->port_id_list[0];
+    }
+
+    return 0;
+}
+
+static int port_init(struct netif_port *port)
+{
+    if (port_init_port_id(port) < 0) {
+        return -1;
+    }
+
+    if (port_init_mbuf_pool(port) < 0) {
+        printf("port %s init mbuf pool error\n", port->pci);
+        return -1;
+    }
+
+    if (port->bond) {
+        if (bond_config_slaves(port) < 0) {
+            printf("bond init slaves error\n");
+            return -1;
+        }
+    }
+
+    return port_config(port);
+}
+
 int port_init_all(struct config *cfg)
 {
     int nb_ports = 0;
@@ -180,11 +228,16 @@ static int port_start(struct netif_port *port)
         rte_eth_allmulticast_enable(port_id);
         rte_eth_promiscuous_enable(port_id);
         rte_eth_stats_reset(port_id);
+
+        if (port->bond) {
+            return bond_wait(port);
+        }
+        return 0;
     } else {
         printf("port start error: %s\n", rte_strerror(rte_errno));
     }
 
-    return ret;
+    return -1;
 }
 
 int port_start_all(struct config *cfg)

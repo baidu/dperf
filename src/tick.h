@@ -35,6 +35,7 @@ struct tsc_time {
 struct tick_time {
     uint64_t tsc;
     struct tsc_time tick;
+    struct tsc_time ms100;
     struct tsc_time second;
 };
 

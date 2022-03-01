@@ -62,7 +62,14 @@ static int kni_set_mac(uint16_t port_id, struct rte_kni_conf *conf)
 
 static void kni_set_name(struct config *cfg, struct netif_port *port, char *name)
 {
-    snprintf(name, RTE_KNI_NAMESIZE, "%s%u", cfg->kni_ifname, port->id);
+    int idx = 0;
+
+    /*
+     * do not use 'port->id'.
+     * we want ifname id starting from zero.
+     * */
+    idx = port - &(cfg->ports[0]);
+    snprintf(name, RTE_KNI_NAMESIZE, "%s%d", cfg->kni_ifname, idx);
 }
 
 static struct rte_kni *kni_alloc(struct config *cfg, struct netif_port *port)

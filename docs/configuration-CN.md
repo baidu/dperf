@@ -67,7 +67,7 @@ Reference:
 [Multi-process Support](http://doc.dpdk.org/guides/prog_guide/multi_proc_support.html)
 
 ## port
-- syntax: port PCI IPAddress Gateway [GatewayMAC]
+- syntax: port PCI|BOND IPAddress Gateway [GatewayMAC]
 - default: -
 - required: yes
 - mode: client, server
@@ -75,18 +75,24 @@ Reference:
 配置dperf使用的网口。通过配置多条'port'，dperf就可以使用多个口。
 作为DPDK程序，dperf需要从操作系统接管这些网口。在启动dperf之前，你需要使用DPDK脚本'dpdk-devbind.py'绑定驱动（Mellanox网卡除外）。
 - PCI: 网口的PIC号，使用'dpdk-devbind.py -s'可查看PCI；
+- BOND: 格式为bondMode:Policy(PIC0,PCI1,...), Mode取值为[0-4], Policy为[0-2];
 - IPAddress: 给网口指定一个IP地址，用于与'Gateway'互连；
-- Gateway: 网关的IP地址。dperf没有路由能力，它只会把报文发给网关，ARP、NS、ND报文除外。
+- Gateway: 网关的IP地址。dperf没有路由能力，它只会把报文发给网关，ARP、NS、ND报文除外;
 - Gateway-MAC: 可选，网关的MAC地址。
+
+Example:
+- port bond4:2(0000:81:10.0,0000:81:10.1) 10.235.20.12 10.235.20.1 00:00:64:01:01:01
+- port 0000:03:00.1 6.6.215.4 6.6.215.1 b4:a9:fc:ab:7a:85
 
 Reference:
 
 [binding-and-unbinding-network-ports](http://doc.dpdk.org/guides/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules)
+[Link Bonding Poll Mode Driver Library](https://doc.dpdk.org/guides/prog_guide/link_bonding_poll_mode_drv_lib.html)
 
 ## duration
 - syntax: duration Time
 - default: duration 100s
-- required: yes 
+- required: yes
 - mode: client, server
 
 设置dperf的运行时长，超时后，dperf会自动优雅退出，并输出统计结果。

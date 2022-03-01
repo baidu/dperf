@@ -24,6 +24,7 @@
 #include "client.h"
 #include "server.h"
 #include "udp.h"
+#include "lldp.h"
 
 #include <rte_cycles.h>
 #include <rte_mempool.h>
@@ -179,6 +180,7 @@ struct work_space *work_space_new(struct config *cfg, int id)
 
     tcp_init(ws);
     udp_init(ws);
+    lldp_init(ws);
     if (work_space_open_log(ws) < 0) {
         goto err;
     }
@@ -193,7 +195,6 @@ struct work_space *work_space_new(struct config *cfg, int id)
     } else {
         client_init(ws);
     }
-
     work_space_wait_all(ws);
     return ws;
 
