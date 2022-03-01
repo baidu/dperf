@@ -82,11 +82,12 @@ Reference:
 
 Example:
 - port bond4:2(0000:81:10.0,0000:81:10.1) 10.235.20.12 10.235.20.1 00:00:64:01:01:01
-- port 0000:03:00.1 6.6.215.4 6.6.215.1 b4:a9:fc:ab:7a:85
+- port 0000:03:00.1 6.6.215.4 6.6.215.1
 
 Reference:
 
 [binding-and-unbinding-network-ports](http://doc.dpdk.org/guides/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules)
+
 [Link Bonding Poll Mode Driver Library](https://doc.dpdk.org/guides/prog_guide/link_bonding_poll_mode_drv_lib.html)
 
 ## duration
