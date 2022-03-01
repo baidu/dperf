@@ -63,6 +63,16 @@ Considering that many NICs do not have VXLAN inner-layer packet checksum offload
 - addressing. The MAC address of inner-layer packets needs to be specified in the configuration. Dynamic addressing of inner-layer packets is not supported.
 - Checksum. The outer packets use hardware offload, and the inner packets use incremental checksum correction.
 
+### KNI
+KNI is required in the following scenarios:
+- need to use dynamic routing protocol.
+- Missing management port.
+
+Implementation principle:
+- dperf forwards all the packets that do not hit the socket to the kni interface.
+- dperf receives a packet from the kni every 1ms, so the kni of dperf is only suitable for transmitting a small number of packets.
+- The processing thread of the kni of each port is the processing thread of the first queue of this port.
+
 ### Bond
 Since dperf supports multiple network cards, normally, we don't use bond; sometimes, we need to use bond mode.
 To support Mode 4, dperf sends lldp packets every 100ms.

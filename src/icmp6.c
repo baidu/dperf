@@ -19,6 +19,7 @@
 #include "icmp6.h"
 #include "mbuf.h"
 #include "work_space.h"
+#include "kni.h"
 
 struct icmp6_nd_opt {
     uint8_t  type;
@@ -57,6 +58,9 @@ static void icmp6_ns_process(struct work_space *ws, struct rte_mbuf *m)
     net_stats_icmp_rx();
     if ((!work_space_ip6_exist(ws, (ipaddr_t *)&(ns->nd_ns_target)))
             || (ip6h->ip6_hops != ND_TTL)) {
+        if (ws->kni) {
+            return kni_recv(ws, m);
+        }
         mbuf_free(m);
         return;
     }
@@ -87,6 +91,10 @@ static void icmp6_na_process(struct work_space *ws, struct rte_mbuf *m)
         work_space_update_gw(ws, &eth->s_addr);
     }
 
+    if (ws->kni) {
+        return kni_recv(ws, m);
+    }
+
     mbuf_free(m);
 }
 
@@ -98,6 +106,9 @@ static void icmp6_echo_process(struct work_space *ws, struct rte_mbuf *m)
     const struct eth_addr *smac = &(ws->port->local_mac);
 
     if (!work_space_ip6_exist(ws, (ipaddr_t *)&(ip6h->ip6_dst))) {
+        if (ws->kni) {
+            return kni_recv(ws, m);
+        }
         mbuf_free(m);
         return;
     }
@@ -135,6 +146,9 @@ void icmp6_process(struct work_space *ws, struct rte_mbuf *m)
     } else if (type == ND_NEIGHBOR_ADVERT) {
         icmp6_na_process(ws, m);
     } else {
+        if (ws->kni) {
+            return kni_recv(ws, m);
+        }
         mbuf_free(m);
     }
 }
