@@ -144,6 +144,7 @@ static int mbuf_data_push_ipv6(struct mbuf_data *data, struct work_space *ws)
 
     memset(&ip6h, 0, len);
     ip6h.ip6_vfc = (6 << 4);
+    ip6h.ip6_flow |= htonl(((uint32_t)g_config.tos) << 20);
     ip6h.ip6_hops = DEFAULT_TTL;
     ip6h.ip6_src = sip.in6;
     ip6h.ip6_dst = dip.in6;
@@ -161,6 +162,7 @@ static int mbuf_data_push_ipv4(struct mbuf_data *data)
     memset(&iph, 0, len);
     iph.ihl = 5;
     iph.version = 4;
+    iph.tos = g_config.tos;
     iph.tot_len = htons(20);
     iph.ttl = DEFAULT_TTL;
     iph.frag_off = IP_FLAG_DF;

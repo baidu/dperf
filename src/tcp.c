@@ -212,6 +212,7 @@ static void tcp_rst_set_ip(struct iphdr *iph)
     memset(iph, 0, sizeof(struct iphdr));
     iph->ihl = 5;
     iph->version = 4;
+    iph->tos = g_config.tos;
     iph->tot_len = htons(40);
     iph->ttl = DEFAULT_TTL;
     iph->frag_off = IP_FLAG_DF;
@@ -230,6 +231,7 @@ static void tcp_rst_set_ipv6(struct ip6_hdr *ip6h)
 
     memset(ip6h, 0, sizeof(struct ip6_hdr));
     ip6h->ip6_vfc = (6 << 4);
+    ip6h->ip6_flow |= htonl(((uint32_t)g_config.tos) << 20);
     ip6h->ip6_hops = DEFAULT_TTL;
     ip6h->ip6_src = ip6_src;
     ip6h->ip6_dst = ip6_dst;
