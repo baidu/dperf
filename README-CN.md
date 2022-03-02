@@ -115,7 +115,6 @@ ierrors 0                  oerrors  0                  imissed  0
  - dperf 要求独占使用网络接口。
  - dperf 使用FDIR 功能。对于不具备此功能的网络接口，dperf 只能以“单线程”模式运行。
  - dperf 没有路由功能。建议配合三层交换机搭建测试环境。
- - dperf 不支持bonding。Vxlan 将在下一个版本支持。
 
 ## 贡献
 dperf 欢迎大家贡献。详情请参阅[贡献指南](CONTRIBUTING.md)。
