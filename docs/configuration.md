@@ -282,3 +282,12 @@ The IP address and routing of the kni interface need to be manually configured.
 It is recommended to assign a separate IP to the kni interface.
 When only one CPU is enabled, the kni interface IP can be the traffic IP;
 If multiple CPUs are used, the kni interface IP can use the first traffic IP of the server.
+
+## tos
+- syntax: tos Number(0x00-0xff or 0-255)
+- default: 0
+- required: no
+- mode: client, server
+
+Set the tos of the IPv4 header or the traffic class of the IPv6 header, which can be in hexadecimal or decimal.
+Note: tos does not take effect on the packets sent by the kni interface.

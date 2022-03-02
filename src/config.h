@@ -54,6 +54,7 @@ struct config {
     bool kni;
     bool daemon;
     bool synflood;
+    uint8_t tos;
     uint8_t tx_burst;
     uint8_t protocol;   /* TCP/UDP */
 

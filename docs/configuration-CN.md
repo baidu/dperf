@@ -277,3 +277,12 @@ TCP或者UDP协议。不论是TCP还是UDP协议，dperf客户端都是发送HTT
 kni接口的IP地址与路由需要手动配置，建议为kni接口分配独立的IP。
 当只开启了1个CPU是，kni接口IP可以是流量IP；
 如果使用了多个CPU，kni接口IP可以使用server的第一个流量IP。
+
+## tos
+- syntax: tos Number(0x00-0xff or 0-255)
+- default: 0
+- required: no
+- mode: client, server
+
+设置IPv4头部的tos或者IPv6头部的traffic class，可以用16进制或者10进制。
+注意：tos对kni接口发出的报文不生效。

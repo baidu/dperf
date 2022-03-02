@@ -117,6 +117,7 @@ static void icmp6_echo_process(struct work_space *ws, struct rte_mbuf *m)
     eth_addr_copy(&eth->s_addr, smac);
 
     ip6h_swap_addr(ip6h);
+    ip6h->ip6_flow |= htonl(((uint32_t)g_config.tos) << 20);
     icmp6h->icmp6_type = ICMP6_ECHO_REPLY;
     icmp6h->icmp6_code = 0;
 

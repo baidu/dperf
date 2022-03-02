@@ -80,6 +80,7 @@ static void vxlan_set_iphdr(struct work_space *ws, struct iphdr *iph, uint16_t i
 
     iph->ihl = 5;
     iph->version = 4;
+    iph->tos = g_config.tos;
     iph->tot_len = htons(tot_len);
     iph->ttl = DEFAULT_TTL;
     iph->protocol = IPPROTO_UDP;

@@ -53,6 +53,7 @@ void icmp_process(struct work_space *ws, struct rte_mbuf *m)
 
     iph_swap_addr(iph);
 
+    iph->tos = g_config.tos;
     iph->ttl = DEFAULT_TTL;
     /* hns3 dose not support IP csum offload */
     csum_ip_compute(m);

@@ -59,6 +59,7 @@ static int config_parse_tx_burst(int argc, char *argv[], void *data);
 static int config_parse_slow_start(int argc, char *argv[], void *data);
 static int config_parse_vxlan(int argc, char *argv[], void *data);
 static int config_parse_kni(int argc, char *argv[], void *data);
+static int config_parse_tos(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -91,6 +92,7 @@ static struct config_keyword g_config_keywords[] = {
         " default " DEFAULT_STR(SLOW_START_DEFAULT)},
     {"vxlan", config_parse_vxlan, "vni inner-smac inner-dmac vtep-local num vtep-remote num"},
     {"kni", config_parse_kni, "[ifName], default " KNI_NAME_DEFAULT},
+    {"tos", config_parse_tos, "Number[0x00-0xff], default 0, eg 0x01 or 1"},
     {NULL, NULL, NULL}
 };
 
@@ -806,6 +808,55 @@ static int config_parse_vxlan(int argc, char *argv[], void *data)
     }
 
     cfg->vxlan_num++;
+    return 0;
+}
+
+/*
+ * ret in [min, max]
+ * */
+static int config_parse_hex(const char *str, int min, int max, int *ret)
+{
+    int len = 0;
+    long val = 0;
+    char *end = NULL;
+
+    len = strlen(str);
+    if ((len > 2) && (str[0] == '0') && ((str[1] == 'x') || (str[1] == 'X'))) {
+        val = strtol(str, &end, 16);
+        if (*end != 0) {
+            return -1;
+        }
+    } else {
+        val = atoi(str);
+    }
+
+    if ((val >= min) && (val <= max)) {
+        *ret = val;
+        return 0;
+    }
+
+    return -1;
+}
+
+static int config_parse_tos(int argc, char *argv[], void *data)
+{
+    int tos = 0;
+    struct config *cfg = data;
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    if (cfg->tos != 0) {
+        printf("duplicate tos\n");
+        return -1;
+    }
+
+    if (config_parse_hex(argv[1], 0, 0xff, &tos) < 0) {
+        printf("invalid tos %s\n", argv[1]);
+    }
+
+    cfg->tos = tos;
     return 0;
 }
 
