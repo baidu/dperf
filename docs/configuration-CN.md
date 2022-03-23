@@ -233,6 +233,15 @@ dperf使用IP地址(包含IPv4、IPv6)的最后两个字节标识一个客户端
 
 设置数据报文大小，包括以太网头部，不包括4字节FCS。使用packet_size可以设置最小包，最大包。
 
+## jumbo
+- syntax: jumbo
+- default: -
+- required: no
+- mode: client, server
+
+开启巨帧。开启巨帧后，pakcet_size可以设置到9724。
+注：packet_size不能超过网络环境的MTU。
+
 ## mss
 - syntax: mss Number
 - default: mss 1460

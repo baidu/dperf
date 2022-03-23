@@ -36,7 +36,7 @@ static int vxlan_push_headers(struct mbuf_data *mdata, struct vxlan_headers *vxh
 {
     int len = sizeof(struct vxlan_headers);
 
-    if ((mdata->total_len + len) > MBUF_DATA_MAX_SIZE) {
+    if ((mdata->total_len + len) > MBUF_DATA_SIZE) {
         return -1;
     }
 

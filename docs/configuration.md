@@ -236,6 +236,15 @@ If you want to set smaller data packets, use packet_size.
 
 Sets the data packet size, including the Ethernet header, excluding the 4-byte FCS. Use packet_size to set the minimum and maximum packets. 
 
+## jumbo
+- syntax: jumbo
+- default: -
+- required: no
+- mode: client, server
+
+Enable jumbo frames. After enabling jumbo frames, pakcet_size can be set to 9724.
+Note: packet_size cannot exceed the MTU of the network environment. 
+
 ## mss
 - syntax: mss Number
 - default: mss 1460

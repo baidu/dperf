@@ -48,7 +48,6 @@ static inline void http_parse_request(uint8_t *data, uint16_t len)
 }
 
 #define HTTP_DATA_MIN_SIZE  70
-#define HTTP_BUF_SIZE       2048
 void http_set_payload(int payload_size);
 const char *http_get_request(void);
 const char *http_get_response(void);
