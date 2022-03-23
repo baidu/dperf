@@ -98,6 +98,11 @@ int port_config(struct netif_port *port)
     memset(&dev_info, 0, sizeof(dev_info));
     rte_eth_dev_info_get(port_id, &dev_info);
 
+    if (g_config.jumbo) {
+        g_port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_JUMBO_FRAME;
+        g_port_conf.rxmode.max_rx_pkt_len = JUMBO_FRAME_MAX_LEN;
+    }
+
     if (dev_info.tx_offload_capa & DEV_TX_OFFLOAD_IPV4_CKSUM) {
         g_port_conf.txmode.offloads |= DEV_TX_OFFLOAD_IPV4_CKSUM;
         g_dev_tx_offload_ipv4_cksum = 1;

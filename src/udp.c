@@ -28,7 +28,7 @@
 #include "loop.h"
 #include "socket_timer.h"
 
-static char g_udp_data[2048] = "hello dperf!!\n";
+static char g_udp_data[MBUF_DATA_SIZE] = "hello dperf!!\n";
 
 void udp_set_payload(int page_size)
 {

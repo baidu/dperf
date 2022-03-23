@@ -33,6 +33,7 @@ struct rte_mempool *mbuf_pool_create(const char *str, uint16_t port_id, uint16_t
     int socket_id = 0;
     char name[RTE_RING_NAMESIZE];
     struct rte_mempool *mbuf_pool = NULL;
+    int mbuf_size = 0;
 
     socket_id = rte_eth_dev_socket_id(port_id);
     if (socket_id < 0) {
@@ -41,8 +42,14 @@ struct rte_mempool *mbuf_pool_create(const char *str, uint16_t port_id, uint16_t
     }
     snprintf(name, RTE_RING_NAMESIZE, "%s_%d_%d", str, port_id, queue_id);
 
+    if (g_config.jumbo) {
+        mbuf_size = JUMBO_MBUF_SIZE;
+    } else {
+        mbuf_size = RTE_MBUF_DEFAULT_BUF_SIZE;
+    }
+
     mbuf_pool = rte_pktmbuf_pool_create(name, NB_MBUF,
-                RTE_MEMPOOL_CACHE_MAX_SIZE, 0, RTE_MBUF_DEFAULT_BUF_SIZE, socket_id);
+                RTE_MEMPOOL_CACHE_MAX_SIZE, 0, mbuf_size, socket_id);
 
     return mbuf_pool;
 }

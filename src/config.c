@@ -61,6 +61,7 @@ static int config_parse_slow_start(int argc, char *argv[], void *data);
 static int config_parse_vxlan(int argc, char *argv[], void *data);
 static int config_parse_kni(int argc, char *argv[], void *data);
 static int config_parse_tos(int argc, char *argv[], void *data);
+static int config_parse_jumbo(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -95,6 +96,7 @@ static struct config_keyword g_config_keywords[] = {
     {"vxlan", config_parse_vxlan, "vni inner-smac inner-dmac vtep-local num vtep-remote num"},
     {"kni", config_parse_kni, "[ifName], default " KNI_NAME_DEFAULT},
     {"tos", config_parse_tos, "Number[0x00-0xff], default 0, eg 0x01 or 1"},
+    {"jumbo", config_parse_jumbo, ""},
     {NULL, NULL, NULL}
 };
 
@@ -916,6 +918,18 @@ static int config_parse_kni(int argc, char *argv[], void *data)
     return 0;
 }
 
+static int config_parse_jumbo(int argc, __rte_unused char *argv[], void *data)
+{
+    struct config *cfg = data;
+
+    if (argc > 1) {
+        return -1;
+    }
+
+    cfg->jumbo = true;
+    return 0;
+}
+
 static void config_manual(void)
 {
     config_keyword_help(g_config_keywords);
@@ -1317,9 +1331,14 @@ static int config_check_size(struct config *cfg)
     int packet_size_max = PACKET_SIZE_MAX;
     int headers_size = 0;
 
+
     if ((cfg->packet_size != 0) && (cfg->payload_size != 0)) {
         printf("Error: both payload_size and packet_size are set\n");
         return -1;
+    }
+
+    if (cfg->jumbo) {
+        packet_size_max = JUMBO_PKT_SIZE_MAX;
     }
 
     headers_size = config_packet_headers_size(cfg);

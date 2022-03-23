@@ -100,7 +100,7 @@ static int mbuf_data_push(struct mbuf_data *mdata, const uint8_t *data, uint16_t
 {
     uint8_t *p = NULL;
 
-    if (mdata->total_len + len > MBUF_DATA_MAX_SIZE) {
+    if (mdata->total_len + len > MBUF_DATA_SIZE) {
         return -1;
     }
 

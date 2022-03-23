@@ -46,8 +46,8 @@
     "\n"                        \
     "%s"
 
-static char http_rsp[HTTP_BUF_SIZE];
-static char http_req[HTTP_BUF_SIZE];
+static char http_rsp[MBUF_DATA_SIZE];
+static char http_req[MBUF_DATA_SIZE];
 static const char *http_rsp_body_default = "hello dperf!\r\n";
 
 const char *http_get_request(void)
@@ -63,7 +63,7 @@ const char *http_get_response(void)
 static void http_set_payload_client(char *dest, int payload_size)
 {
     int pad = 0;
-    char buf[HTTP_BUF_SIZE] = {0};
+    char buf[MBUF_DATA_SIZE] = {0};
 
     if (payload_size <= 0) {
         sprintf(dest, HTTP_REQ_FORMAT, buf);
@@ -82,7 +82,7 @@ static void http_set_payload_client(char *dest, int payload_size)
 static void http_set_payload_server(char *dest, int payload_size)
 {
     int pad = 0;
-    char buf[HTTP_BUF_SIZE] = {0};
+    char buf[MBUF_DATA_SIZE] = {0};
     const char *data = NULL;
 
     if (payload_size <= 0) {

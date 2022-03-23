@@ -45,6 +45,11 @@
 #define SLOW_START_MAX      600
 #define KEEPALIVE_REQ_NUM   32767  /* 15 bits */
 
+#define JUMBO_FRAME_MAX_LEN 0x2600
+#define JUMBO_PKT_SIZE_MAX  (JUMBO_FRAME_MAX_LEN - ETHER_CRC_LEN)
+#define JUMBO_MBUF_SIZE     (1024 * 11)
+#define MBUF_DATA_SIZE      (1024 * 10)
+
 #define LOG_DIR             "/var/log/dperf"
 
 struct config {
@@ -55,6 +60,7 @@ struct config {
     bool kni;
     bool daemon;
     bool synflood;
+    bool jumbo;
     bool http;          /* payload size >= HTTP_DATA_MIN_SIZE */
     uint8_t tos;
     uint8_t tx_burst;

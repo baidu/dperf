@@ -26,10 +26,8 @@
 
 #include "mbuf.h"
 
-#define MBUF_DATA_MAX_SIZE  2048
-
 struct mbuf_data {
-    uint8_t data[MBUF_DATA_MAX_SIZE];
+    uint8_t data[MBUF_DATA_SIZE];
     bool ipv6;
     bool vxlan;
     uint16_t l2_len;
