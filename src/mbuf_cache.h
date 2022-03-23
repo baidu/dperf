@@ -26,7 +26,7 @@
 
 #include "mbuf.h"
 
-#define MBUF_DATA_MAX_SIZE  1500
+#define MBUF_DATA_MAX_SIZE  2048
 
 struct mbuf_data {
     uint8_t data[MBUF_DATA_MAX_SIZE];

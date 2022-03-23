@@ -24,26 +24,31 @@
 
 #include "version.h"
 
-#define HTTP_RSP_FORMAT         \
-"HTTP/1.1 200 OK\r\n"           \
-"Server: dperf/"VERSION"\r\n"   \
-"Content-Type: text/plain\r\n"  \
-"Content-Length: %d\r\n"        \
-"Connection: keep-alive\r\n"    \
-"\r\n"                          \
-"%s"
+/*
+ * Don't Change HTTP1.1 Request/Response Format.
+ * Keep the minimum request and response packet sizes the same.
+ * Mimimal HTTP/1.1 Packet Size is 128 Bytes.
+ * */
 
-#define HTTP_REQ_FORMAT             \
-"GET /%s HTTP/1.1\r\n"              \
-"User-Agent: dperf/"VERSION"\r\n"   \
-"Host: localhost\r\n"               \
-"Accept: */*\r\n"                   \
-"\r\n"
+#define HTTP_REQ_FORMAT         \
+    "GET /%s HTTP/1.1\r\n"      \
+    "User-Agent: dperf\r\n"     \
+    "Host: dperf\r\n"           \
+    "Accept: */*\r\n"           \
+    "P: aa\r\n"                 \
+    "\r\n"
+
+#define HTTP_RSP_FORMAT         \
+    "HTTP/1.1 200 OK\n"         \
+    "Serv:dperf\n"              \
+    "Content-Length:%4d\n"      \
+    "Connection:keep-alive\n"   \
+    "\n"                        \
+    "%s"
 
 static char http_rsp[HTTP_BUF_SIZE];
 static char http_req[HTTP_BUF_SIZE];
 static const char *http_rsp_body_default = "hello dperf!\r\n";
-static const char *http_req_path_default = "";
 
 const char *http_get_request(void)
 {
@@ -55,51 +60,51 @@ const char *http_get_response(void)
     return http_rsp;
 }
 
-static int http_set_payload_buf(char *dest, const char *data, bool server)
+static void http_set_payload_client(char *dest, int payload_size)
 {
-    if (server) {
-        return sprintf(dest, HTTP_RSP_FORMAT, (int)strlen(data), data);
+    int pad = 0;
+    char buf[HTTP_BUF_SIZE] = {0};
+
+    if (payload_size <= 0) {
+        sprintf(dest, HTTP_REQ_FORMAT, buf);
+    } else if (payload_size < HTTP_DATA_MIN_SIZE) {
+        memset(dest, 'a', payload_size);
+        dest[payload_size] = 0;
     } else {
-        return sprintf(dest, HTTP_REQ_FORMAT, data);
+        pad = payload_size - HTTP_DATA_MIN_SIZE;
+        if (pad > 0) {
+            memset(buf, 'a', pad);
+        }
+        sprintf(dest, HTTP_REQ_FORMAT, buf);
     }
 }
 
-static void http_set_payload_common(char *dest, const char *default_data, int payload_size, bool server)
+static void http_set_payload_server(char *dest, int payload_size)
 {
     int pad = 0;
-    int total = 0;
-    int min_size = 0;
     char buf[HTTP_BUF_SIZE] = {0};
+    const char *data = NULL;
 
-    if (payload_size == 0) {
-        http_set_payload_buf(dest, default_data, server);
-        return;
-    }
-
-    if (server) {
-        min_size = strlen(HTTP_RSP_FORMAT);
+    if (payload_size <= 0) {
+        data = http_rsp_body_default;
+        sprintf(dest, HTTP_RSP_FORMAT, (int)strlen(data), data);
+    } else if (payload_size < HTTP_DATA_MIN_SIZE) {
+        memset(dest, 'a', payload_size);
+        dest[payload_size] = 0;
     } else {
-        min_size = strlen(HTTP_REQ_FORMAT);
-    }
-
-    if (payload_size <= min_size) {
-        pad = 1;
-    } else {
-        pad = payload_size - min_size + 2;
-    }
-
-    for (; pad >= 1; pad--) {
-        memset(buf, 'a', pad);
-        buf[pad] = 0;
-        total = http_set_payload_buf(dest, buf, server);
-        if (total <= PAYLOAD_SIZE_MAX) {
-            break;
+        pad = payload_size - HTTP_DATA_MIN_SIZE;
+        if (pad > 0) {
+            memset(buf, 'a', pad);
+            if (pad > 1) {
+                buf[pad - 1] = '\n';
+            }
         }
+        sprintf(dest, HTTP_RSP_FORMAT, (int)strlen(buf), buf);
     }
 }
 
 void http_set_payload(int payload_size)
 {
-    http_set_payload_common(http_rsp, http_rsp_body_default, payload_size, true);
-    http_set_payload_common(http_req, http_req_path_default, payload_size, false);
+    http_set_payload_server(http_rsp, payload_size);
+    http_set_payload_client(http_req, payload_size);
 }

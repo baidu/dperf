@@ -31,7 +31,8 @@
 #define CACHE_ALIGN_SIZE    64
 #define MSS_MAX             1460
 #define NETWORK_PORT_NUM    65536
-#define PAYLOAD_SIZE_MAX    1400
+
+#define PACKET_SIZE_MAX     1514
 #define DEFAULT_CPS         1000
 #define DEFAULT_INTERVAL    1       /* 1s */
 #define DEFAULT_DURATION    60
@@ -54,6 +55,7 @@ struct config {
     bool kni;
     bool daemon;
     bool synflood;
+    bool http;          /* payload size >= HTTP_DATA_MIN_SIZE */
     uint8_t tos;
     uint8_t tx_burst;
     uint8_t protocol;   /* TCP/UDP */
@@ -64,6 +66,7 @@ struct config {
     int keepalive_request_num;
 
     int payload_size;
+    int packet_size;
     int mss;
 
     int slow_start;

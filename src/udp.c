@@ -45,6 +45,7 @@ void udp_set_payload(int page_size)
     if (page_size > 1) {
         g_udp_data[page_size - 1] = '\n';
     }
+    g_udp_data[page_size] = 0;
 }
 
 static inline struct rte_mbuf *udp_new_packet(struct work_space *ws, struct socket *sk)

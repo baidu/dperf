@@ -219,14 +219,22 @@ Set the port ranges that the server listens to, and the client sends packets to 
 Note: dperf will allocate all sockets at startup. Please do not set a large port range.
 
 ## payload_size
-- syntax: payload_size Number(1-1400)
-- default: payload_size 1
+- syntax: payload_size Number(>=1)
+- default: -
 - required: no
 - mode: client, server
 
-Set the size of the request or response in bytes.
-If 'Number' is less than the minimum value of dperf, the minimum value is used.
-You can use 1 to represent the minimum value.
+Set the size of the request and response, in bytes.
+For tcp protocol, if payload_size is less than 70, dperf will be forced to 70, which is the minimum HTTP packet length.
+If you want to set smaller data packets, use packet_size. 
+
+## packet_size
+- syntax: pakcet_size Number(0-1514)
+- default: -
+- required: no
+- mode: client, server
+
+Sets the data packet size, including the Ethernet header, excluding the 4-byte FCS. Use packet_size to set the minimum and maximum packets. 
 
 ## mss
 - syntax: mss Number
