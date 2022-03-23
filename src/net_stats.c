@@ -93,6 +93,23 @@ err:
     return -1;
 }
 
+static int net_stats_print_tcp(struct net_stats *stats, char *buf, int buf_len)
+{
+    char *p = buf;
+    int len = buf_len;
+    char tcp_req[STATS_BUF_LEN];
+    char tcp_rsp[STATS_BUF_LEN];
+
+    net_stats_format_print(stats->tcp_req, tcp_req, STATS_BUF_LEN);
+    net_stats_format_print(stats->tcp_rsp, tcp_rsp, STATS_BUF_LEN);
+
+    SNPRINTF(p, len, "tcpReq  %-18s tcpRsp   %-18s\n", tcp_req, tcp_rsp);
+    return p - buf;
+
+err:
+    return -1;
+}
+
 static int net_stats_print_http(struct net_stats *stats, char *buf, int buf_len)
 {
     char *p = buf;
@@ -279,7 +296,11 @@ static int net_stats_print(struct net_stats *stats, char *buf, int buf_len)
     buf_skip(p, len, ret);
 
     if (g_config.protocol == IPPROTO_TCP) {
-        ret = net_stats_print_http(stats, p, len);
+        if (g_config.http) {
+            ret = net_stats_print_http(stats, p, len);
+        } else {
+            ret = net_stats_print_tcp(stats, p, len);
+        }
         buf_skip(p, len, ret);
     }
 

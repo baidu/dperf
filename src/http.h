@@ -24,7 +24,8 @@
 
 static inline void http_parse_response(uint8_t *data, uint16_t len)
 {
-    /*HTTP/1.1 200 OK*/
+    net_stats_tcp_rsp();
+    /* HTTP/1.1 200 OK */
     if ((len > 9) && data[9] == '2') {
         net_stats_http_2xx();
     } else {
@@ -34,6 +35,7 @@ static inline void http_parse_response(uint8_t *data, uint16_t len)
 
 static inline void http_parse_request(uint8_t *data, uint16_t len)
 {
+    net_stats_tcp_req();
     /*
      * GET /xxx HTTP/1.1
      * First Char is G
@@ -45,6 +47,7 @@ static inline void http_parse_request(uint8_t *data, uint16_t len)
     }
 }
 
+#define HTTP_DATA_MIN_SIZE  70
 #define HTTP_BUF_SIZE       2048
 void http_set_payload(int payload_size);
 const char *http_get_request(void);

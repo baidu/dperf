@@ -216,13 +216,22 @@ dperf使用IP地址(包含IPv4、IPv6)的最后两个字节标识一个客户端
 注意：dperf在启动时会把所有的socket分配好，所以不要配置太大的端口范围。
 
 ## payload_size
-- syntax: payload_size Number(1-1400)
-- default: payload_size 1
+- syntax: payload_size Number(>=1)
+- default: -
 - required: no
 - mode: client, server
 
 设置请求与响应的大小，单位是字节。
-如果'Number'小于dperf所支持的最小值，dperf会使用最小值。所以可以用'1'表示最小值。
+对于tcp协议，如果payload_size小于70，dperf会强制为70，这是最小的HTTP报文长度。
+如果要设置更小的数据报文，请使用packet_size。
+
+## packet_size
+- syntax: pakcet_size Number(0-1514)
+- default: -
+- required: no
+- mode: client, server
+
+设置数据报文大小，包括以太网头部，不包括4字节FCS。使用packet_size可以设置最小包，最大包。
 
 ## mss
 - syntax: mss Number

@@ -52,6 +52,7 @@ static int config_parse_client(int argc, char *argv[], void *data);
 static int config_parse_server(int argc, char *argv[], void *data);
 static int config_parse_listen(int argc, char *argv[], void *data);
 static int config_parse_payload_size(int argc, char *argv[], void *data);
+static int config_parse_packet_size(int argc, char *argv[], void *data);
 static int config_parse_mss(int argc, char *argv[], void *data);
 static int config_parse_synflood(int argc, char *argv[], void *data);
 static int config_parse_protocol(int argc, char *argv[], void *data);
@@ -83,7 +84,8 @@ static struct config_keyword g_config_keywords[] = {
     {"client", config_parse_client, "IPAddress Number"},
     {"server", config_parse_server, "IPAddress Number"},
     {"listen", config_parse_listen, "Port Number, default 80 1" },
-    {"payload_size", config_parse_payload_size, "Number, 1-1400"},
+    {"payload_size", config_parse_payload_size, "Number"},
+    {"packet_size", config_parse_packet_size, "Number"},
     {"mss", config_parse_mss, "Number, default 1460"},
     {"protocol", config_parse_protocol, "tcp/udp, default tcp"},
     {"tx_burst", config_parse_tx_burst, "Number[1-1024]"},
@@ -724,11 +726,29 @@ static int config_parse_payload_size(int argc, char *argv[], void *data)
     }
 
     payload_size = config_parse_number(argv[1], true, true);
-    if ((payload_size < 0) || (payload_size > PAYLOAD_SIZE_MAX)) {
+    if (payload_size <= 0) {
         return -1;
     }
 
     cfg->payload_size = payload_size;
+    return 0;
+}
+
+static int config_parse_packet_size(int argc, char *argv[], void *data)
+{
+    int packet_size = 0;
+    struct config *cfg = data;
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    packet_size = config_parse_number(argv[1], true, true);
+    if (packet_size < 0) {
+        return -1;
+    }
+
+    cfg->packet_size = packet_size;
     return 0;
 }
 
@@ -1015,11 +1035,6 @@ static int config_check_vxlan(struct config *cfg)
         i++;
     }
 
-    if ((cfg->payload_size + VXLAN_HEADERS_SIZE) > PAYLOAD_SIZE_MAX) {
-        printf("Bad payload_size %d\n", cfg->payload_size);
-        return -1;
-    }
-
     cfg->vxlan = true;
     return 0;
 }
@@ -1271,6 +1286,78 @@ static int config_check_target(struct config *cfg)
     return 0;
 }
 
+static int config_packet_headers_size(struct config *cfg)
+{
+    int size = 0;
+
+    if (cfg->vxlan) {
+        size += VXLAN_HEADERS_SIZE;
+    }
+
+    size += sizeof(struct eth_hdr);
+
+    if (cfg->ipv6) {
+        size += sizeof(struct ip6_hdr);
+    } else {
+        size += sizeof(struct iphdr);
+    }
+
+    if (cfg->protocol == IPPROTO_TCP) {
+        size += sizeof(struct tcphdr);
+    } else {
+        size += sizeof(struct udphdr);
+    }
+
+    return size;
+}
+
+static int config_check_size(struct config *cfg)
+{
+    int payload_size = 0;
+    int packet_size_max = PACKET_SIZE_MAX;
+    int headers_size = 0;
+
+    if ((cfg->packet_size != 0) && (cfg->payload_size != 0)) {
+        printf("Error: both payload_size and packet_size are set\n");
+        return -1;
+    }
+
+    headers_size = config_packet_headers_size(cfg);
+
+    if (cfg->packet_size) {
+        if (cfg->packet_size <= headers_size) {
+            printf("Error: small packet_size %d\n", cfg->packet_size);
+            return -1;
+        }
+
+        if (cfg->packet_size > packet_size_max) {
+            printf("Error: big packet_size %d\n", cfg->packet_size);
+            return -1;
+        }
+        payload_size = cfg->packet_size - headers_size;
+    } else if (cfg->payload_size) {
+        if ((cfg->payload_size + headers_size) > packet_size_max) {
+            printf("Error: big payload_size %d\n", cfg->payload_size);
+            return -1;
+        }
+
+        if ((cfg->protocol == IPPROTO_TCP) && (cfg->payload_size < HTTP_DATA_MIN_SIZE)) {
+            payload_size = HTTP_DATA_MIN_SIZE;
+        } else {
+            payload_size = cfg->payload_size;
+        }
+    }
+
+    if ((cfg->protocol == IPPROTO_TCP) && ((payload_size == 0) || (payload_size >= HTTP_DATA_MIN_SIZE))) {
+        cfg->http = true;
+    }
+
+    http_set_payload(payload_size);
+    udp_set_payload(payload_size);
+
+    return 0;
+}
+
 int config_parse(int argc, char **argv, struct config *cfg)
 {
     int conf = 0;
@@ -1384,8 +1471,10 @@ int config_parse(int argc, char **argv, struct config *cfg)
         return -1;
     }
 
-    http_set_payload(cfg->payload_size);
-    udp_set_payload(cfg->payload_size);
+    if (config_check_size(cfg) < 0) {
+        return -1;
+    }
+
     if (config_check_port(cfg) != 0) {
         return -1;
     }

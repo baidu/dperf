@@ -173,8 +173,10 @@ static struct rte_mbuf *tcp_reply(struct work_space *ws, struct socket *sk, uint
 
     if (tcp_flags & TH_PUSH) {
         if (g_config.server == 0) {
+            net_stats_tcp_req();
             net_stats_http_get();
         } else {
+            net_stats_tcp_rsp();
             net_stats_http_2xx();
         }
     }
