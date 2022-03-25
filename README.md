@@ -65,11 +65,11 @@ ierrors 0                  oerrors  0                  imissed  0
 ```
 
 ## Getting Started
-### set hugepages
+### Set hugepages
     #edit '/boot/grub2/grub.cfg' like this, and reboot the OS
     linux16 /vmlinuz-... nopku transparent_hugepage=never default_hugepagesz=1G hugepagesz=1G hugepages=8
 
-### build DPDK
+### Build DPDK
     #edit 'config/common_base' to enable PMDs
     #Mellanox CX4/CX5 requires 'CONFIG_RTE_LIBRTE_MLX5_PMD=y'
     #HNS3 requires 'CONFIG_RTE_LIBRTE_HNS3_PMD=y'
@@ -80,11 +80,11 @@ ierrors 0                  oerrors  0                  imissed  0
     cd /root/dpdk/dpdk-stable-19.11.10
     make install T=$TARGET -j16
     
-### build dperf
+### Build dperf
     cd dperf
     make -j8 RTE_SDK=/root/dpdk/dpdk-stable-19.11.10 RTE_TARGET=$TARGET
 
-### bind interface
+### Bind interface
     #Mellanox NIC skip this step!
     #Suppose your PCI number is 0000:1b:00.0
 
@@ -92,11 +92,11 @@ ierrors 0                  oerrors  0                  imissed  0
     modprobe uio_pci_generic
     /root/dpdk/dpdk-stable-19.11.10/usertools/dpdk-devbind.py -b uio_pci_generic 0000:1b:00.0
     
-### start dperf server
+### Start dperf server
     #dperf server bind at 6.6.241.27:80,  gateway is 6.6.241.1
     ./build/dperf -c test/http/server-cps.conf
     
-### send request from a client
+### Send request from a client
     #the client IP must be in the range of 'client' in the configuration file
     ping 6.6.241.27
     curl http://6.6.241.27/

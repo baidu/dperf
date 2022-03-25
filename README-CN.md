@@ -66,7 +66,7 @@ ierrors 0                  oerrors  0                  imissed  0
 
 ## 开始使用
 ### 设置大页
-    #edit '/boot/grub2/grub.cfg' like this, and reboot the OS
+    #参考如下参数编辑 '/boot/grub2/grub.cfg'，然后重启OS
     linux16 /vmlinuz-... nopku transparent_hugepage=never default_hugepagesz=1G hugepagesz=1G hugepages=8
 
 ### 编译DPDK
@@ -76,7 +76,6 @@ ierrors 0                  oerrors  0                  imissed  0
     #VMXNET3 requires 'CONFIG_RTE_LIBRTE_VMXNET3_PMD=y'
 
     TARGET=x86_64-native-linuxapp-gcc #or arm64-armv8a-linuxapp-gcc
-
     cd /root/dpdk/dpdk-stable-19.11.10
     make install T=$TARGET -j16
     
