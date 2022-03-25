@@ -65,35 +65,39 @@ ierrors 0                  oerrors  0                  imissed  0
 ```
 
 ## 开始使用
-    #set hugepages
-    #edit '/boot/grub2/grub.cfg' like this, and reboot the OS
-    #linux16 /vmlinuz-... nopku transparent_hugepage=never default_hugepagesz=1G hugepagesz=1G hugepages=8
-    
-    #download & build dpdk
-    #download and unpack dpdk
-    TARGET=x86_64-native-linuxapp-gcc
-    #TARGET=arm64-armv8a-linuxapp-gcc
+### 设置大页
+    #参考如下参数编辑 '/boot/grub2/grub.cfg'，然后重启OS
+    linux16 /vmlinuz-... nopku transparent_hugepage=never default_hugepagesz=1G hugepagesz=1G hugepages=8
+
+### 编译DPDK
+    #编辑'config/common_base'打开PMD开关
+    #Mellanox CX4/CX5 requires 'CONFIG_RTE_LIBRTE_MLX5_PMD=y'
+    #HNS3 requires 'CONFIG_RTE_LIBRTE_HNS3_PMD=y'
+    #VMXNET3 requires 'CONFIG_RTE_LIBRTE_VMXNET3_PMD=y'
+
+    TARGET=x86_64-native-linuxapp-gcc #or arm64-armv8a-linuxapp-gcc
     cd /root/dpdk/dpdk-stable-19.11.10
     make install T=$TARGET -j16
     
-    #build dperf
+### 编译dperf
     cd dperf
     make -j8 RTE_SDK=/root/dpdk/dpdk-stable-19.11.10 RTE_TARGET=$TARGET
-    
-    #bind NIC
+
+### 绑定网卡 
+    #Mellanox网卡跳过此步
+    #假设PCI号是0000:1b:00.0
+
     modprobe uio
     modprobe uio_pci_generic
-    
-    #如果使用的是Mellanox网卡，请跳过这一步!！
-    #Suppose your PCI number is 0000:1b:00.0
     /root/dpdk/dpdk-stable-19.11.10/usertools/dpdk-devbind.py -b uio_pci_generic 0000:1b:00.0
     
-    #验证已经安装成功
-    #开启 dperf server 端
-    #dperf server bind at 6.6.241.27:80,  gateway is 6.6.241.1
+### 启动dperf server
+    #dperf server监听6.6.241.27:80, 网关是6.6.241.1
     ./build/dperf -c test/http/server-cps.conf
     
-    #向dperf server端发送测试请求，例子中server端地址为6.6.241.27
+### 从客户端发送请求
+    #客户端IP必须要在配置文件的'client'范围内
+    ping 6.6.241.27
     curl http://6.6.241.27/
 
 ## 运行测试
