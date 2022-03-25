@@ -20,6 +20,9 @@
 #include "mbuf.h"
 #include "work_space.h"
 #include "kni.h"
+#include "bond.h"
+
+static void icmp6_send(struct work_space *ws, struct rte_mbuf *m);
 
 struct icmp6_nd_opt {
     uint8_t  type;
@@ -75,9 +78,7 @@ static void icmp6_ns_process(struct work_space *ws, struct rte_mbuf *m)
 
     icmp6h->icmp6_cksum = 0;
     icmp6h->icmp6_cksum = RTE_IPV6_UDPTCP_CKSUM(ip6h, icmp6h);
-
-    work_space_tx_send(ws, m);
-    net_stats_icmp_tx();
+    icmp6_send(ws, m);
 }
 
 static void icmp6_na_process(struct work_space *ws, struct rte_mbuf *m)
@@ -124,8 +125,7 @@ static void icmp6_echo_process(struct work_space *ws, struct rte_mbuf *m)
     icmp6h->icmp6_cksum = 0;
     icmp6h->icmp6_cksum = RTE_IPV6_UDPTCP_CKSUM(ip6h, icmp6h);
 
-    net_stats_icmp_tx();
-    work_space_tx_send(ws, m);
+    icmp6_send(ws, m);
 }
 
 void icmp6_process(struct work_space *ws, struct rte_mbuf *m)
@@ -243,6 +243,15 @@ void icmp6_ns_request(struct work_space *ws)
     icmp6_ns_eth_hdr_push(ws->port, m);
     icmp6_ns_ip6_hdr_push(ws->port, m);
     icmp6_ns_hdr_push(ws->port, m);
+    icmp6_send(ws, m);
+}
+
+static void icmp6_send(struct work_space *ws, struct rte_mbuf *m)
+{
+    if (icmp6_is_neigh(m) && port_is_bond4(ws->port)) {
+        bond_broadcast(ws, m);
+    }
+
     net_stats_icmp_tx();
     work_space_tx_send(ws, m);
 }

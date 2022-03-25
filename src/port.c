@@ -230,13 +230,17 @@ static int port_start(struct netif_port *port)
     ret = rte_eth_dev_start(port_id);
     if (ret == 0) {
         RTE_ETH_MACADDR_GET(port_id, &port->local_mac);
+
+        if (port->bond) {
+            if (bond_wait(port) < 0) {
+                return -1;
+            }
+        }
+
         rte_eth_allmulticast_enable(port_id);
         rte_eth_promiscuous_enable(port_id);
         rte_eth_stats_reset(port_id);
 
-        if (port->bond) {
-            return bond_wait(port);
-        }
         return 0;
     } else {
         printf("port start error: %s\n", rte_strerror(rte_errno));

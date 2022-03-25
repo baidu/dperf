@@ -27,6 +27,7 @@
 #include "port.h"
 #include "work_space.h"
 #include "kni.h"
+#include "bond.h"
 
 static struct eth_addr g_mac_zero = {.bytes = {0, 0, 0, 0, 0, 0}};
 static struct eth_addr g_mac_full = {.bytes = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
@@ -43,6 +44,16 @@ static inline void arp_set_arphdr(struct arphdr *arp, uint16_t op, uint32_t sip,
     arp->ar_tip = dip;
     eth_addr_copy(&arp->ar_sha, sa);
     eth_addr_copy(&arp->ar_tha, da);
+}
+
+void arp_send(struct work_space *ws, struct rte_mbuf *m)
+{
+    if (port_is_bond4(ws->port)) {
+        bond_broadcast(ws, m);
+    }
+
+    work_space_tx_send(ws, m);
+    net_stats_arp_tx();
 }
 
 static void arp_set_request(struct rte_mbuf *m, struct eth_addr *smac, uint32_t dip, uint32_t sip)
@@ -68,8 +79,7 @@ static void arp_request_gw2(struct work_space *ws, uint32_t local_ip)
     }
 
     arp_set_request(m, &port->local_mac, port->gateway_ip.ip, local_ip);
-    work_space_tx_send(ws, m);
-    net_stats_arp_tx();
+    arp_send(ws, m);
 }
 
 void arp_request_gw(struct work_space *ws)
@@ -111,7 +121,7 @@ static void arp_reply(struct work_space *ws, struct rte_mbuf *m)
     eth_addr_copy(&dmac, &eth->s_addr);
     eth_hdr_set(eth, ETHER_TYPE_ARP, &dmac, smac);
     arp_set_arphdr(arph, ARP_REPLY, sip, dip, smac, &dmac);
-    work_space_tx_send(ws, m);
+    arp_send(ws, m);
 }
 
 static void arp_process_reply(struct work_space *ws, struct rte_mbuf *m)
@@ -147,7 +157,6 @@ static void arp_process_request(struct work_space *ws, struct rte_mbuf *m)
     }
 
     arp_reply(ws, m);
-    net_stats_arp_tx();
 }
 
 void arp_process(struct work_space *ws, struct rte_mbuf *m)

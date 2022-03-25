@@ -90,4 +90,9 @@ void port_clear(uint16_t port_id, uint16_t queue_id);
 int port_config(struct netif_port *port);
 struct rte_mempool *port_get_mbuf_pool(struct netif_port *p, int queue_id);
 
+static inline bool port_is_bond4(struct netif_port *port)
+{
+    return (port->bond && (port->bond_mode == 4));
+}
+
 #endif

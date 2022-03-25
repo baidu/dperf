@@ -43,5 +43,6 @@ struct arphdr {
 struct work_space;
 void arp_request_gw(struct work_space *ws);
 void arp_process(struct work_space *ws, struct rte_mbuf *m);
+void arp_send(struct work_space *ws, struct rte_mbuf *m);
 
 #endif
