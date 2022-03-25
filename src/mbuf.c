@@ -23,6 +23,7 @@
 
 #include "port.h"
 #include "work_space.h"
+#include "icmp6.h"
 
 #define NB_MBUF             (8192 * 8)
 
@@ -112,4 +113,36 @@ void mbuf_log(struct rte_mbuf *m, const char *tag)
     } else {
         fprintf(log, "muf: %s -> %s type %x\n", smac, dmac, ntohs(eh->type));
     }
+}
+
+void mbuf_copy(struct rte_mbuf *dst, struct rte_mbuf *src)
+{
+    uint8_t *data = NULL;
+    uint8_t *data2 = NULL;
+    uint32_t len = 0;
+
+    data = (uint8_t *)mbuf_eth_hdr(src);
+    len = rte_pktmbuf_data_len(src);
+    data2 = mbuf_push_data(dst, len);
+    memcpy(data2, data, len);
+}
+
+bool mbuf_is_neigh(struct rte_mbuf *m)
+{
+    uint8_t proto = 0;
+    struct eth_hdr *eth = NULL;
+    struct ip6_hdr *ip6h = NULL;
+
+    eth = mbuf_eth_hdr(m);
+    if (eth->type == htons(ETHER_TYPE_ARP)) {
+        return true;
+    } else if (eth->type == htons(ETHER_TYPE_IPv6)) {
+        ip6h = mbuf_ip6_hdr(m);
+        proto = ip6h->ip6_nxt;
+        if (proto == IPPROTO_ICMPV6) {
+            return icmp6_is_neigh(m);
+        }
+    }
+
+    return false;
 }

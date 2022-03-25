@@ -19,12 +19,16 @@
 #include "bond.h"
 
 #include <unistd.h>
+#include <stdbool.h>
 #include <rte_common.h>
 #include <rte_eal.h>
 #include <rte_ether.h>
 #include <rte_ethdev.h>
 
 #include "port.h"
+#include "mbuf.h"
+#include "net_stats.h"
+#include "work_space.h"
 
 int bond_create(struct netif_port *port)
 {
@@ -53,12 +57,6 @@ int bond_config_slaves(struct netif_port *port)
         slave_id = port->port_id_list[i];
         port_slave.id = slave_id;
         port_config(&port_slave);
-
-	    if (rte_eth_dev_start(slave_id) < 0) {
-            printf("startslave %d error\n", slave_id);
-            return -1;
-        }
-
         if (rte_eth_bond_slave_add(port->id, slave_id) == -1) {
             printf("add slave %d error\n", slave_id);
             return -1;
@@ -86,4 +84,27 @@ int bond_wait(struct netif_port *port)
     }
 
     return -1;
+}
+
+void bond_broadcast(struct work_space *ws, struct rte_mbuf *m)
+{
+    int i = 0;
+    uint16_t port_id = 0;
+    struct rte_mbuf *m2 = NULL;
+    struct netif_port *port = NULL;
+
+    port = ws->port;
+    for (i = 0; i < port->pci_num; i++) {
+        port_id = port->port_id_list[i];
+        m2 = work_space_alloc_mbuf(ws);
+        if (m2 == NULL) {
+            break;
+        }
+
+        mbuf_copy(m2, m);
+        net_stats_tx(m2);
+        if (rte_eth_tx_burst(port_id, ws->queue_id, &m2, 1) != 1) {
+            mbuf_free(m2);
+        }
+    }
 }

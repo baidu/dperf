@@ -63,7 +63,7 @@ int neigh_check_gateway(struct work_space *ws)
     int i = 0;
     int j = 0;
 
-    for (i = 0; i < DELAY_SEC * 1000; i++) {
+    for (i = 0; i < DELAY_SEC; i++) {
         neigh_resolve_gateway_mac_address(ws);
         for (j = 0; j < 1000; j++) {
             if (ws->vxlan) {
@@ -73,12 +73,13 @@ int neigh_check_gateway(struct work_space *ws)
             } else {
                 server_recv_mbuf(ws, ipv4_input, tcp_drop, udp_drop);
             }
-        }
 
-        /* sleep 1ms */
-        usleep(1000);
-        if (neigh_gateway_is_enable(ws)) {
-            return 0;
+            work_space_tx_flush(ws);
+            if (neigh_gateway_is_enable(ws)) {
+                return 0;
+            }
+            /* sleep 1ms */
+            usleep(1000);
         }
     }
 

@@ -19,11 +19,27 @@
 #ifndef __ICMP6_H_
 #define __ICMP6_H_
 
+#include <stdbool.h>
 #include <rte_mbuf.h>
 #include <netinet/icmp6.h>
+#include "mbuf.h"
 
 struct work_space;
 void icmp6_process(struct work_space *ws, struct rte_mbuf *m);
 void icmp6_ns_request(struct work_space *ws);
+
+static inline bool icmp6_is_neigh(struct rte_mbuf *m)
+{
+    uint8_t type = 0;
+    struct icmp6_hdr *icmp6h = NULL;
+
+    icmp6h = mbuf_icmp6_hdr(m);
+    type = icmp6h->icmp6_type;
+    if ((type == ND_NEIGHBOR_SOLICIT) || (type == ND_NEIGHBOR_ADVERT)) {
+        return true;
+    }
+
+    return false;
+}
 
 #endif

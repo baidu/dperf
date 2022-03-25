@@ -30,6 +30,7 @@
 #include "port.h"
 #include "mbuf.h"
 #include "work_space.h"
+#include "bond.h"
 
 static int kni_set_mtu(uint16_t port_id, struct rte_kni_conf *conf)
 {
@@ -226,6 +227,16 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
     mbuf_free2(m);
 }
 
+static void kni_send_mbuf(struct work_space *ws, struct rte_mbuf *m)
+{
+    if (port_is_bond4(ws->port) && mbuf_is_neigh(m)) {
+        bond_broadcast(ws, m);
+    }
+
+    work_space_tx_send(ws, m);
+    net_stats_kni_tx();
+}
+
 void kni_send(struct work_space *ws)
 {
     int i = 0;
@@ -239,7 +250,6 @@ void kni_send(struct work_space *ws)
     rte_kni_handle_request(kni);
     num = rte_kni_rx_burst(kni, mbufs, NB_RXD);
     for (i = 0; i < num; i++) {
-        work_space_tx_send(ws, mbufs[i]);
-        net_stats_kni_tx();
+        kni_send_mbuf(ws, mbufs[i]);
     }
 }
