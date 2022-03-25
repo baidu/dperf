@@ -30,7 +30,7 @@ uint8_t g_dev_tx_offload_tcpudp_cksum;
 
 static struct rte_eth_conf g_port_conf = {
     .rxmode = {
-        .mq_mode = ETH_MQ_RX_RSS,
+        .mq_mode = ETH_MQ_RX_NONE,
         .max_rx_pkt_len = ETHER_MAX_LEN,
         .split_hdr_size = 0,
 #if RTE_VERSION < RTE_VERSION_NUM(18, 11, 0, 0)
