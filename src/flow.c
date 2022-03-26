@@ -225,6 +225,10 @@ int flow_init(struct config *cfg)
     struct netif_port *port = NULL;
     bool ipv6 = cfg->af == AF_INET6;
 
+    if (cfg->flood) {
+        return 0;
+    }
+
     config_for_each_port(cfg, port) {
         if (port->queue_num == 1) {
             continue;
@@ -247,11 +251,15 @@ void flow_flush(struct config *cfg)
 {
     struct netif_port *port = NULL;
 
-    if (g_config.cpu_num <= 1) {
+    if ((g_config.cpu_num <= 1) || (cfg->flood)) {
         return;
     }
 
     config_for_each_port(cfg, port) {
+        if (port->queue_num == 1) {
+            continue;
+        }
+
         rte_flow_flush(port->id, NULL);
     }
 }

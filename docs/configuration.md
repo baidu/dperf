@@ -142,13 +142,14 @@ Example:
 - cc 2k
 - cc 100
 
-## synflood
-- syntax: synflood
+## flood
+- syntax: flood
 - default: -
 - required: no
 - mode: client
 
-If this flag is enabled, the dperf client will only send SYN packets and will not establish connections.
+Support TCP/UDP protocol, no need for network card to support FDIR.
+If flood is enabled, the dperf client only sends the first packet of the connection; for the TCP protocol, dperf sends a SYN packet. 
 
 ## keepalive_request_interval
 - syntax: keepalive_request_interval Time

@@ -117,7 +117,7 @@ ierrors 0                  oerrors  0                  imissed  0
 ## 限制
  - dperf 要求HTTP消息在一个数据包中，所以不适合7层负载均衡的测试。
  - dperf 要求独占使用网络接口。
- - dperf 使用FDIR 功能。对于不具备此功能的网络接口，dperf 只能以“单线程”模式运行。
+ - dperf 使用FDIR 功能。对于不具备此功能的网络接口，dperf 只能以“单线程”或"flood"模式运行。
  - dperf 没有路由功能。建议配合三层交换机搭建测试环境。
 
 ## 贡献
