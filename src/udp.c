@@ -164,10 +164,12 @@ out:
 
 static int udp_client_launch(struct work_space *ws)
 {
+    bool flood = false;
     uint64_t i = 0;
     struct socket *sk = NULL;
     uint64_t num = 0;
 
+    flood = g_config.flood;
     num = work_space_client_launch_num(ws);
     for (i = 0; i < num; i++) {
         sk = socket_client_open(&ws->socket_table);
@@ -178,10 +180,12 @@ static int udp_client_launch(struct work_space *ws)
         udp_send(ws, sk);
         if (sk->keepalive) {
             socket_start_keepalive_timer(sk, work_space_ticks(ws));
+        } else if (flood) {
+            socket_close(sk);
         }
     }
 
-    return 0;
+    return num;
 }
 
 static inline int udp_client_socket_timer_process(struct work_space *ws)

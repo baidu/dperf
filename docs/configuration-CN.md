@@ -141,13 +141,14 @@ Example:
 - cc 2k
 - cc 100
 
-## synflood
-- syntax: synflood
+## flood
+- syntax: flood
 - default: -
 - required: no
 - mode: client
 
-如果开启synflood，dperf client只发SYN包，不建连接。
+支持TCP/UDP协议，不需要网卡支持FDIR。
+如果开启flood，dperf client仅发连接的第一个报文包；对于TCP协议, dperf发送SYN报文。
 
 ## keepalive_request_interval
 - syntax: keepalive_request_interval Time

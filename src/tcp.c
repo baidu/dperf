@@ -682,6 +682,15 @@ static inline void tcp_client_process(struct work_space *ws, struct rte_mbuf *m)
 static inline void tcp_do_keepalive(struct work_space *ws, struct socket *sk)
 {
     if ((sk->snd_nxt != sk->snd_una) || (sk->state != SK_ESTABLISHED) || (sk->keepalive == 0)) {
+        if (g_config.flood) {
+            if (work_space_in_duration(ws)) {
+                tcp_reply(ws, sk, TH_SYN);
+                sk->snd_una = sk->snd_nxt;
+                socket_start_keepalive_timer(sk, work_space_ticks(ws));
+            } else {
+                socket_close(sk);
+            }
+        }
         return;
     }
 
@@ -703,12 +712,12 @@ static inline void tcp_do_keepalive(struct work_space *ws, struct socket *sk)
 
 static inline int tcp_client_launch(struct work_space *ws)
 {
-    int synflood = 0;
+    bool flood = false;
     uint64_t i = 0;
     uint64_t num = 0;
     struct socket *sk = NULL;
 
-    synflood = ws->cfg->synflood;
+    flood = g_config.flood;
     num = work_space_client_launch_num(ws);
     for (i = 0; i < num; i++) {
         sk = socket_client_open(&ws->socket_table);
@@ -717,12 +726,17 @@ static inline int tcp_client_launch(struct work_space *ws)
         }
 
         tcp_reply(ws, sk, TH_SYN);
-        if (synflood) {
-            socket_close(sk);
+        if (flood) {
+            if (sk->keepalive) {
+                sk->snd_una = sk->snd_nxt;
+                socket_start_keepalive_timer(sk, work_space_ticks(ws));
+            } else {
+                socket_close(sk);
+            }
         }
     }
 
-    return 0;
+    return num;
 }
 
 static int tcp_client_socket_timer_process(struct work_space *ws)
@@ -826,7 +840,7 @@ void tcp_drop(__rte_unused struct work_space *ws, struct rte_mbuf *m)
         if (ws->kni) {
             return kni_recv(ws, m);
         }
-        net_stats_udp_drop();
+        net_stats_tcp_drop();
         mbuf_free(m);
     }
 }

@@ -59,7 +59,7 @@ struct config {
     bool vxlan;
     bool kni;
     bool daemon;
-    bool synflood;
+    bool flood;
     bool jumbo;
     bool http;          /* payload size >= HTTP_DATA_MIN_SIZE */
     uint8_t tos;

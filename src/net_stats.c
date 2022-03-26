@@ -222,19 +222,20 @@ static int net_stats_print_retransmit(struct net_stats *stats, char *buf, int bu
     char udp_drop[STATS_BUF_LEN];
     int len = buf_len;
 
+    net_stats_format_print(stats->tcp_drop, tcp_drop, STATS_BUF_LEN);
+    net_stats_format_print(stats->udp_drop, udp_drop, STATS_BUF_LEN);
     if (g_config.protocol == IPPROTO_TCP) {
         net_stats_format_print(stats->syn_rt, syn_rt, STATS_BUF_LEN);
         net_stats_format_print(stats->fin_rt, fin_rt, STATS_BUF_LEN);
         net_stats_format_print(stats->ack_rt, ack_rt, STATS_BUF_LEN);
         net_stats_format_print(stats->push_rt, push_rt, STATS_BUF_LEN);
-        net_stats_format_print(stats->tcp_drop, tcp_drop, STATS_BUF_LEN);
 
-        SNPRINTF(p, len, "synRt   %-18s finRt    %-18s ackRt    %-18s pushRt  %-18s tcpDrop %-18s\n",
-            syn_rt, fin_rt, ack_rt, push_rt, tcp_drop);
+        SNPRINTF(p, len, "synRt   %-18s finRt    %-18s ackRt    %-18s pushRt  %-18s\n",
+            syn_rt, fin_rt, ack_rt, push_rt);
+        SNPRINTF(p, len, "tcpDrop %-18s udpDrop  %-18s\n", tcp_drop, udp_drop);
     } else {
-        net_stats_format_print(stats->udp_drop, udp_drop, STATS_BUF_LEN);
         net_stats_format_print(stats->udp_rto, udp_rto, STATS_BUF_LEN);
-        SNPRINTF(p, len, "udpRt   %-18s udpDrop  %-18s\n", udp_rto, udp_drop);
+        SNPRINTF(p, len, "udpRt   %-18s udpDrop  %-18s tcpDrop  %-18s\n", udp_rto, udp_drop, tcp_drop);
     }
     return p - buf;
 

@@ -54,7 +54,7 @@ static int config_parse_listen(int argc, char *argv[], void *data);
 static int config_parse_payload_size(int argc, char *argv[], void *data);
 static int config_parse_packet_size(int argc, char *argv[], void *data);
 static int config_parse_mss(int argc, char *argv[], void *data);
-static int config_parse_synflood(int argc, char *argv[], void *data);
+static int config_parse_flood(int argc, char *argv[], void *data);
 static int config_parse_protocol(int argc, char *argv[], void *data);
 static int config_parse_tx_burst(int argc, char *argv[], void *data);
 static int config_parse_slow_start(int argc, char *argv[], void *data);
@@ -77,7 +77,7 @@ static struct config_keyword g_config_keywords[] = {
     {"duration", config_parse_duration, "Time, eg 1.5d, 2h, 3.5m, 100s, 100"},
     {"cps", config_parse_cps, "Number, eg 1m, 1.5m, 2k, 100"},
     {"cc", config_parse_cc, "Number, eg 100m, 1.5m, 2k, 100"},
-    {"synflood", config_parse_synflood, ""},
+    {"flood", config_parse_flood, ""},
     {"keepalive_request_interval", config_parse_keepalive_request_interval,
         "Time, eg 1ms, 1s, 60s, default " DEFAULT_STR(DEFAULT_INTERVAL) "s"},
     {"keepalive_request_num", config_parse_keepalive_request_num, "Number[0-" DEFAULT_STR(KEEPALIVE_REQ_NUM) "]"},
@@ -600,7 +600,7 @@ static int config_parse_cc(int argc, char *argv[], void *data)
     return 0;
 }
 
-static int config_parse_synflood(int argc, __rte_unused char *argv[], void *data)
+static int config_parse_flood(int argc, __rte_unused char *argv[], void *data)
 {
     struct config *cfg = data;
 
@@ -608,7 +608,7 @@ static int config_parse_synflood(int argc, __rte_unused char *argv[], void *data
         return -1;
     }
 
-    cfg->synflood = 1;
+    cfg->flood = true;
     return 0;
 }
 
@@ -1446,11 +1446,6 @@ int config_parse(int argc, char **argv, struct config *cfg)
             return -1;
         }
 
-        if ((cfg->cc > 0) && (cfg->synflood == true)) {
-            printf("'cc' conflicts with 'synflood'\n");
-            return -1;
-        }
-
         if (cfg->cc) {
             cfg->keepalive = 1;
             if (cfg->keepalive_request_interval == 0) {
@@ -1467,7 +1462,7 @@ int config_parse(int argc, char **argv, struct config *cfg)
     } else {
         cfg->cc = 0;
         cfg->cps = 0;
-        cfg->synflood = 0;
+        cfg->flood = false;
     }
 
     if (cfg->launch_num == 0) {
