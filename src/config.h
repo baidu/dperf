@@ -40,6 +40,7 @@
 #define ND_TTL              255
 #define DEFAULT_LAUNCH      4
 #define DELAY_SEC           4
+#define WAIT_DEFAULT        3
 #define SLOW_START_DEFAULT  30
 #define SLOW_START_MIN      10
 #define SLOW_START_MAX      600
@@ -75,6 +76,7 @@ struct config {
     int packet_size;
     int mss;
 
+    int wait;
     int slow_start;
     uint32_t launch_num;
     int duration;
