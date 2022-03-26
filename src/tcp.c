@@ -484,9 +484,10 @@ static inline uint8_t tcp_process_fin(struct socket *sk, uint8_t rx_flags, uint8
         case SK_FIN_WAIT_1:
             if (rx_flags & TH_FIN) {
                 flags = TH_ACK;
-                /* todo TIME WAIT */
+                /* enter TIME WAIT */
                 socket_close(sk);
             } else {
+                /* wait FIN */
                 sk->state = SK_FIN_WAIT_2;
             }
             break;
@@ -494,8 +495,10 @@ static inline uint8_t tcp_process_fin(struct socket *sk, uint8_t rx_flags, uint8
             socket_close(sk);
             break;
         case SK_FIN_WAIT_2:
+            /* FIN is here */
             if (rx_flags & TH_FIN) {
-                /* todo TIME WAIT */
+                flags = TH_ACK;
+                /* enter TIME WAIT */
                 socket_close(sk);
             }
         case SK_TIME_WAIT:

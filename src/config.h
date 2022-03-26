@@ -29,7 +29,7 @@
 
 #define RTE_ARG_LEN         64
 #define CACHE_ALIGN_SIZE    64
-#define MSS_MAX             1460
+#define TCP_WIN             (1460 * 10)
 #define NETWORK_PORT_NUM    65536
 
 #define PACKET_SIZE_MAX     1514
@@ -50,6 +50,11 @@
 #define JUMBO_PKT_SIZE_MAX  (JUMBO_FRAME_MAX_LEN - ETHER_CRC_LEN)
 #define JUMBO_MBUF_SIZE     (1024 * 11)
 #define MBUF_DATA_SIZE      (1024 * 10)
+
+#define MSS_IPV4            (PACKET_SIZE_MAX - 14 - 20 - 20)
+#define MSS_IPV6            (PACKET_SIZE_MAX - 14 - 40 - 20)
+#define MSS_JUMBO_IPV4      (JUMBO_PKT_SIZE_MAX - 14 - 20 - 20)
+#define MSS_JUMBO_IPV6      (JUMBO_PKT_SIZE_MAX - 14 - 40 - 20)
 
 #define LOG_DIR             "/var/log/dperf"
 
