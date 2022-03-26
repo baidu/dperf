@@ -268,6 +268,14 @@ TCP或者UDP协议。不论是TCP还是UDP协议，dperf客户端都是发送HTT
 使用DPDK API发送报文时，单次最大发送报文数。
 较小的值，可以让报文发送的更加平顺，可以有效避免接收方丢包，但是增加了dperf的CPU消耗。
 
+## wait
+- syntax: wait Seconds
+- default: wait 3
+- required: no
+- mode: client
+
+客户端在启动后的等待时间，之后进入慢启动阶段。
+
 ## slow_start
 - syntax: slow_start Seconds(10-600)
 - default: slow_start 30

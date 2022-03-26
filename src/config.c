@@ -58,6 +58,7 @@ static int config_parse_flood(int argc, char *argv[], void *data);
 static int config_parse_protocol(int argc, char *argv[], void *data);
 static int config_parse_tx_burst(int argc, char *argv[], void *data);
 static int config_parse_slow_start(int argc, char *argv[], void *data);
+static int config_parse_wait(int argc, char *argv[], void *data);
 static int config_parse_vxlan(int argc, char *argv[], void *data);
 static int config_parse_kni(int argc, char *argv[], void *data);
 static int config_parse_tos(int argc, char *argv[], void *data);
@@ -93,6 +94,7 @@ static struct config_keyword g_config_keywords[] = {
     {"slow_start", config_parse_slow_start,
         "Number[" DEFAULT_STR(SLOW_START_MIN) "-" DEFAULT_STR(SLOW_START_MAX) "],"
         " default " DEFAULT_STR(SLOW_START_DEFAULT)},
+    {"wait", config_parse_wait, "Number, default " DEFAULT_STR(WAIT_DEFAULT)},
     {"vxlan", config_parse_vxlan, "vni inner-smac inner-dmac vtep-local num vtep-remote num"},
     {"kni", config_parse_kni, "[ifName], default " KNI_NAME_DEFAULT},
     {"tos", config_parse_tos, "Number[0x00-0xff], default 0, eg 0x01 or 1"},
@@ -718,6 +720,24 @@ static int config_parse_slow_start(int argc, char *argv[], void *data)
     return 0;
 }
 
+static int config_parse_wait(int argc, char *argv[], void *data)
+{
+    int val = 0;
+    struct config *cfg = data;
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    val = config_parse_number(argv[1], false, false);
+    if (val <= 0) {
+        return -1;
+    }
+    cfg->wait = val;
+
+    return 0;
+}
+
 static int config_parse_payload_size(int argc, char *argv[], void *data)
 {
     int payload_size = 0;
@@ -1255,12 +1275,28 @@ static int config_check_server_addr(const struct config *cfg)
     return 0;
 }
 
+static int config_check_wait(struct config *cfg)
+{
+    if (cfg->server) {
+        if (cfg->wait != 0) {
+            printf("Error: wait in server config\n");
+            return -1;
+        }
+        return 0;
+    }
+
+    if (cfg->wait == 0) {
+        cfg->wait = WAIT_DEFAULT;
+    }
+
+    return 0;
+}
+
 static int config_check_slow_start(struct config *cfg)
 {
-
     if (cfg->server) {
         if (cfg->slow_start != 0) {
-            printf("slow_start in server config\n");
+            printf("Error: slow_start in server config\n");
             return -1;
         }
         return 0;
@@ -1467,6 +1503,10 @@ int config_parse(int argc, char **argv, struct config *cfg)
 
     if (cfg->launch_num == 0) {
         cfg->launch_num = DEFAULT_LAUNCH;
+    }
+
+    if (config_check_wait(cfg) < 0) {
+        return -1;
     }
 
     if (config_check_slow_start(cfg) < 0) {

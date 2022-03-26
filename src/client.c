@@ -73,7 +73,7 @@ int client_init(struct work_space *ws)
         cl->launch_interval = (g_tsc_per_second / (cps / cl->launch_num));
     }
     cl->launch_interval_default = cl->launch_interval;
-    cl->launch_next = rte_rdtsc() + g_tsc_per_second;
+    cl->launch_next = rte_rdtsc() + g_tsc_per_second * cfg->wait;
 
     return 0;
 }

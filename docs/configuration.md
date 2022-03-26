@@ -18,7 +18,7 @@ In daemon mode, dperf statistics are written to the log file ('/var/log/dperf/dp
 
 ## keepalive
 - syntax: keepalive
-- default: - 
+- default: -
 - required: no
 - mode: server
 
@@ -270,6 +270,14 @@ TCP or UDP protocol. Regardless of the TCP or UDP protocol, the dperf client sen
 
 Use the DPDK API to send packets, the maximum number of packets sent at a time.
 A smaller value can make the packets sending smoother and avoid packet loss at the receiving side, but it increases the CPU consumption of dperf.
+
+## wait
+- syntax: wait Seconds
+- default: wait 3
+- required: no
+- mode: client
+
+The time the client waits after startup before entering the slow-start phase.
 
 ## slow_start
 - syntax: slow_start Seconds(10-600)
