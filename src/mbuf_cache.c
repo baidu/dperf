@@ -187,7 +187,7 @@ static int mbuf_data_push_tcp(struct mbuf_data *mdata)
     uint16_t len = sizeof(struct tcphdr);
 
     memset(&th, 0, len);
-    th.th_win = htons(MSS_MAX);
+    th.th_win = htons(TCP_WIN);
     th.th_off = 5;
 
     mdata->l4_len = len;

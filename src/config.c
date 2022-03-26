@@ -784,7 +784,7 @@ static int config_parse_mss(int argc, char *argv[], void *data)
     }
 
     mss = config_parse_number(argv[1], false, false);
-    if ((mss < 0) || (mss > MSS_MAX)) {
+    if (mss <= 0) {
         return -1;
     }
 
@@ -1413,6 +1413,36 @@ static int config_check_size(struct config *cfg)
     return 0;
 }
 
+static int config_check_mss(struct config *cfg)
+{
+    int mss_max = 0;
+
+    if (cfg->ipv6) {
+        if (cfg->jumbo) {
+            mss_max = MSS_JUMBO_IPV6;
+        } else {
+            mss_max = MSS_IPV6;
+        }
+    } else {
+        if (cfg->jumbo) {
+            mss_max = MSS_JUMBO_IPV4;
+        } else {
+            mss_max = MSS_IPV4;
+        }
+    }
+
+    if (cfg->mss > mss_max) {
+        printf("Error: bad mss %d\n", cfg->mss);
+        return -1;
+    }
+
+    if (cfg->mss == 0) {
+        cfg->mss = mss_max;
+    }
+
+    return 0;
+}
+
 int config_parse(int argc, char **argv, struct config *cfg)
 {
     int conf = 0;
@@ -1467,8 +1497,8 @@ int config_parse(int argc, char **argv, struct config *cfg)
         cfg->duration = DEFAULT_DURATION;
     }
 
-    if (cfg->mss == 0) {
-        cfg->mss = MSS_MAX;
+    if (config_check_mss(cfg) < 0) {
+        return -1;
     }
 
     if ((cfg->listen == 0) || (cfg->listen_num == 0)) {
