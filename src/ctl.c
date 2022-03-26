@@ -69,9 +69,13 @@ static void ctl_slow_start(FILE *fp, int *seconds)
     int slow_start = g_config.slow_start;
 
     step = (g_config.cps / g_config.cpu_num) / slow_start;
+    if (step <= 0) {
+        step = 1;
+    }
+
     for (i = 1; i <= slow_start; i++) {
         cps = step * i;
-        launch_interval = (g_tsc_per_second / (cps / launch_num));
+        launch_interval = (g_tsc_per_second * launch_num) / cps;
         work_space_set_launch_interval(launch_interval);
         sleep(1);
         net_stats_print_speed(fp, (*seconds)++);
