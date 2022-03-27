@@ -48,6 +48,7 @@
 
 #define JUMBO_FRAME_MAX_LEN 0x2600
 #define JUMBO_PKT_SIZE_MAX  (JUMBO_FRAME_MAX_LEN - ETHER_CRC_LEN)
+#define JUMBO_MTU           (JUMBO_PKT_SIZE_MAX - 14)
 #define JUMBO_MBUF_SIZE     (1024 * 11)
 #define MBUF_DATA_SIZE      (1024 * 10)
 

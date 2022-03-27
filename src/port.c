@@ -31,7 +31,11 @@ uint8_t g_dev_tx_offload_tcpudp_cksum;
 static struct rte_eth_conf g_port_conf = {
     .rxmode = {
         .mq_mode = ETH_MQ_RX_NONE,
+#if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)
         .max_rx_pkt_len = ETHER_MAX_LEN,
+#else
+        .mtu = ETHER_MAX_LEN,
+#endif
         .split_hdr_size = 0,
 #if RTE_VERSION < RTE_VERSION_NUM(18, 11, 0, 0)
         .hw_ip_checksum = 1,
@@ -99,8 +103,12 @@ int port_config(struct netif_port *port)
     rte_eth_dev_info_get(port_id, &dev_info);
 
     if (g_config.jumbo) {
+#if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)
         g_port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_JUMBO_FRAME;
         g_port_conf.rxmode.max_rx_pkt_len = JUMBO_FRAME_MAX_LEN;
+#else
+        g_port_conf.rxmode.mtu = JUMBO_MTU;
+#endif
     }
 
     if (dev_info.tx_offload_capa & DEV_TX_OFFLOAD_IPV4_CKSUM) {
