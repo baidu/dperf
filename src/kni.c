@@ -25,6 +25,7 @@
 #include <linux/if.h>
 #include <rte_ethdev.h>
 #include <rte_kni.h>
+#include <rte_bus_pci.h>
 
 #include "config.h"
 #include "port.h"
@@ -32,6 +33,9 @@
 #include "work_space.h"
 #include "bond.h"
 
+static void kni_set_name(struct config *cfg, struct netif_port *port, char *name);
+
+#if RTE_VERSION >= RTE_VERSION_NUM(19,0,0,0)
 static int kni_set_mtu(uint16_t port_id, struct rte_kni_conf *conf)
 {
     int ret = 0;
@@ -45,21 +49,81 @@ static int kni_set_mtu(uint16_t port_id, struct rte_kni_conf *conf)
     conf->min_mtu = dev_info.min_mtu;
     conf->max_mtu = dev_info.max_mtu;
 	rte_eth_dev_get_mtu(port_id, &conf->mtu);
+    return 0;
+}
+#else
+static int kni_set_mtu(__rte_unused uint16_t port_id, __rte_unused struct rte_kni_conf *conf)
+{
+    return 0;
+}
+#endif
 
+#if RTE_VERSION >= RTE_VERSION_NUM(18,0,0,0)
+/* set mac before rte_kni_alloc */
+static int kni_set_mac(struct netif_port *port, struct rte_kni_conf *conf)
+{
+    memcpy(&(conf->mac_addr), &port->local_mac, ETH_ADDR_LEN);
     return 0;
 }
 
-static int kni_set_mac(uint16_t port_id, struct rte_kni_conf *conf)
+static int kni_set_pci(__rte_unused uint16_t port_id, __rte_unused struct rte_kni_conf *conf)
 {
-    int ret = 0;
+    return 0;
+}
 
-    ret = rte_eth_macaddr_get(port_id, (struct rte_ether_addr *)&(conf->mac_addr));
-    if (ret != 0) {
-        return -1;
+static int kni_set_hwaddr(__rte_unused struct config *cfg, __rte_unused struct netif_port *port)
+{
+    return 0;
+}
+#else
+static int kni_set_mac(__rte_unused struct netif_port *port, __rte_unused struct rte_kni_conf *conf)
+{
+    return 0;
+}
+
+static int kni_set_pci(uint16_t port_id, struct rte_kni_conf *conf)
+{
+    struct rte_eth_dev_info dev_info;
+
+    memset(&dev_info, 0, sizeof(dev_info));
+    rte_eth_dev_info_get(port_id, &dev_info);
+
+    if (dev_info.pci_dev) {
+        conf->addr = dev_info.pci_dev->addr;
+        conf->id = dev_info.pci_dev->id;
     }
 
     return 0;
 }
+
+/* DPDK-17 need to set MAC by ioctl after rte_kni_alloc */
+static int kni_set_hwaddr(struct config *cfg, struct netif_port *port)
+{
+    int fd = -1;
+    int ret = -1;
+    struct ifreq ifr;
+
+    fd = socket(PF_INET, SOCK_DGRAM, 0);
+    if (fd < 0) {
+        return -1;
+    }
+
+    memset(&ifr, 0, sizeof(struct ifreq));
+    kni_set_name(cfg, port, ifr.ifr_name);
+
+    memcpy(ifr.ifr_hwaddr.sa_data, &port->local_mac, ETH_ADDR_LEN);
+    ifr.ifr_hwaddr.sa_family = 1;    /* ARPHRD_ETHER */
+
+    if (ioctl(fd, SIOCSIFHWADDR, &ifr) < 0) {
+        printf("Error: kni set hwaddr\n");
+    } else {
+        ret = 0;
+    }
+
+    close(fd);
+    return ret;
+}
+#endif
 
 static void kni_set_name(struct config *cfg, struct netif_port *port, char *name)
 {
@@ -94,11 +158,20 @@ static struct rte_kni *kni_alloc(struct config *cfg, struct netif_port *port)
         return NULL;
     }
 
-    if (kni_set_mac(port_id, &conf) < 0) {
+    if (kni_set_mac(port, &conf) < 0) {
+        return NULL;
+    }
+
+    if (kni_set_pci(port_id, &conf) < 0) {
         return NULL;
     }
 
     kni = rte_kni_alloc(mbuf_pool, &conf, NULL);
+
+    if (kni_set_hwaddr(cfg, port) < 0) {
+        rte_kni_release(kni);
+        return NULL;
+    }
 
     return kni;
 }
