@@ -159,10 +159,10 @@ static inline void work_space_tx_send(struct work_space *ws, struct rte_mbuf *mb
 
 static inline void work_space_tx_send_tcp(struct work_space *ws, struct rte_mbuf *mbuf)
 {
-    uint64_t ol_flags = PKT_TX_TCP_CKSUM;
+    uint64_t ol_flags = RTE_MBUF_F_TX_TCP_CKSUM;
 
     if (ws->vxlan) {
-        ol_flags = PKT_TX_UDP_CKSUM;
+        ol_flags = RTE_MBUF_F_TX_UDP_CKSUM;
     }
 
     csum_offload_ip_tcpudp(mbuf, ol_flags);
@@ -171,7 +171,7 @@ static inline void work_space_tx_send_tcp(struct work_space *ws, struct rte_mbuf
 
 static inline void work_space_tx_send_udp(struct work_space *ws, struct rte_mbuf *mbuf)
 {
-    csum_offload_ip_tcpudp(mbuf, PKT_TX_UDP_CKSUM);
+    csum_offload_ip_tcpudp(mbuf, RTE_MBUF_F_TX_UDP_CKSUM);
     work_space_tx_send(ws, mbuf);
 }
 

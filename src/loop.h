@@ -106,7 +106,7 @@ static inline void ipv4_input(struct work_space *ws, struct rte_mbuf *m,
     eth = mbuf_eth_hdr(m);
     iph = mbuf_ip_hdr(m);
     if (likely(eth->type == htons(ETHER_TYPE_IPv4))) {
-        if (unlikely(m->ol_flags & (PKT_RX_IP_CKSUM_BAD | PKT_RX_L4_CKSUM_BAD))) {
+        if (unlikely(m->ol_flags & (RTE_MBUF_F_RX_IP_CKSUM_BAD | RTE_MBUF_F_RX_L4_CKSUM_BAD))) {
             net_stats_rx_bad();
             mbuf_free(m);
             return;
@@ -155,7 +155,7 @@ static inline void ipv6_input(struct work_space *ws, struct rte_mbuf *m,
         ip6h = mbuf_ip6_hdr(m);
         proto = ip6h->ip6_nxt;
 
-        if (unlikely(m->ol_flags & (PKT_RX_L4_CKSUM_BAD))) {
+        if (unlikely(m->ol_flags & (RTE_MBUF_F_RX_L4_CKSUM_BAD))) {
             net_stats_rx_bad();
             mbuf_free(m);
             return;

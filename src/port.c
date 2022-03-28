@@ -33,8 +33,6 @@ static struct rte_eth_conf g_port_conf = {
         .mq_mode = ETH_MQ_RX_NONE,
 #if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)
         .max_rx_pkt_len = ETHER_MAX_LEN,
-#else
-        .mtu = ETHER_MAX_LEN,
 #endif
         .split_hdr_size = 0,
 #if RTE_VERSION < RTE_VERSION_NUM(18, 11, 0, 0)
