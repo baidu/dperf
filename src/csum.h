@@ -22,6 +22,16 @@
 #include <rte_version.h>
 #include "mbuf.h"
 
+#if RTE_VERSION < RTE_VERSION_NUM(21, 0, 0, 0)
+#define RTE_MBUF_F_RX_L4_CKSUM_BAD  PKT_RX_L4_CKSUM_BAD
+#define RTE_MBUF_F_RX_IP_CKSUM_BAD  PKT_RX_IP_CKSUM_BAD
+#define RTE_MBUF_F_TX_IPV6          PKT_TX_IPV6
+#define RTE_MBUF_F_TX_IP_CKSUM      PKT_TX_IP_CKSUM
+#define RTE_MBUF_F_TX_IPV4          PKT_TX_IPV4
+#define RTE_MBUF_F_TX_TCP_CKSUM     PKT_TX_TCP_CKSUM
+#define RTE_MBUF_F_TX_UDP_CKSUM     PKT_TX_UDP_CKSUM
+#endif
+
 static inline uint16_t csum_update_tcp_seq(uint16_t ocsum, uint32_t seq0, uint32_t seq1)
 {
     uint32_t csum = 0;
@@ -65,7 +75,7 @@ static inline void csum_ipv4(struct rte_mbuf *m, int offload)
     iph = mbuf_ip_hdr(m);
     iph->check = 0;
     if (offload != 0) {
-        m->ol_flags |= PKT_TX_IP_CKSUM;
+        m->ol_flags |= RTE_MBUF_F_TX_IP_CKSUM;
         m->l2_len = sizeof(struct eth_hdr);
         m->l3_len = sizeof(struct iphdr);
     } else {
@@ -102,11 +112,11 @@ static inline void csum_offload_ip_tcpudp(struct rte_mbuf *m, uint64_t ol_flags)
             th->th_sum = 0;
             th->th_sum = RTE_IPV4_UDPTCP_CKSUM(iph, th);
         } else {
-            m->ol_flags = ol_flags | PKT_TX_IPV4;
+            m->ol_flags = ol_flags | RTE_MBUF_F_TX_IPV4;
         }
 
         if (g_dev_tx_offload_ipv4_cksum) {
-            m->ol_flags |= PKT_TX_IP_CKSUM | PKT_TX_IPV4;
+            m->ol_flags |= RTE_MBUF_F_TX_IP_CKSUM | RTE_MBUF_F_TX_IPV4;
         } else {
             iph->check = RTE_IPV4_CKSUM(iph);
         }
@@ -118,7 +128,7 @@ static inline void csum_offload_ip_tcpudp(struct rte_mbuf *m, uint64_t ol_flags)
             th->th_sum = RTE_IPV6_UDPTCP_CKSUM(ip6h, th);
         } else {
             m->l3_len = sizeof(struct ip6_hdr);
-            m->ol_flags = ol_flags | PKT_TX_IPV6;
+            m->ol_flags = ol_flags | RTE_MBUF_F_TX_IPV6;
         }
     }
 }
