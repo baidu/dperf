@@ -52,6 +52,9 @@ struct rte_mempool *mbuf_pool_create(const char *str, uint16_t port_id, uint16_t
     mbuf_pool = rte_pktmbuf_pool_create(name, NB_MBUF,
                 RTE_MEMPOOL_CACHE_MAX_SIZE, 0, mbuf_size, socket_id);
 
+    if (mbuf_pool == NULL) {
+        printf("rte_pkt_pool_create error\n");
+    }
     return mbuf_pool;
 }
 

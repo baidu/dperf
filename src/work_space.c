@@ -178,8 +178,16 @@ struct work_space *work_space_new(struct config *cfg, int id)
     ws->tx_queue.tx_burst = cfg->tx_burst;
     work_space_get_port(ws);
 
-    tcp_init(ws);
-    udp_init(ws);
+    if (tcp_init(ws) < 0) {
+        printf("tcp_init error");
+        goto err;
+    }
+
+    if (udp_init(ws) < 0) {
+        printf("udp_init error\n");
+        goto err;
+    }
+
     lldp_init(ws);
     if (work_space_open_log(ws) < 0) {
         goto err;
