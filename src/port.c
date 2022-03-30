@@ -25,13 +25,14 @@
 #include "config.h"
 #include "bond.h"
 #include "rss.h"
+#include "dpdk.h"
 
 uint8_t g_dev_tx_offload_ipv4_cksum;
 uint8_t g_dev_tx_offload_tcpudp_cksum;
 
 static struct rte_eth_conf g_port_conf = {
     .rxmode = {
-        .mq_mode = ETH_MQ_RX_NONE,
+        .mq_mode = RTE_ETH_MQ_RX_NONE,
 #if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)
         .max_rx_pkt_len = ETHER_MAX_LEN,
 #endif
@@ -49,7 +50,7 @@ static struct rte_eth_conf g_port_conf = {
         },
     },
     .txmode = {
-        .mq_mode = ETH_MQ_TX_NONE,
+        .mq_mode = RTE_ETH_MQ_TX_NONE,
     },
 };
 
@@ -112,17 +113,17 @@ int port_config(struct netif_port *port)
 #endif
     }
 
-    if (dev_info.tx_offload_capa & DEV_TX_OFFLOAD_IPV4_CKSUM) {
-        g_port_conf.txmode.offloads |= DEV_TX_OFFLOAD_IPV4_CKSUM;
+    if (dev_info.tx_offload_capa & RTE_ETH_TX_OFFLOAD_IPV4_CKSUM) {
+        g_port_conf.txmode.offloads |= RTE_ETH_TX_OFFLOAD_IPV4_CKSUM;
         g_dev_tx_offload_ipv4_cksum = 1;
     } else {
         g_dev_tx_offload_ipv4_cksum = 0;
     }
 
-    if ((dev_info.tx_offload_capa & DEV_TX_OFFLOAD_TCP_CKSUM) &&
-        (dev_info.tx_offload_capa & DEV_TX_OFFLOAD_UDP_CKSUM)) {
+    if ((dev_info.tx_offload_capa & RTE_ETH_TX_OFFLOAD_TCP_CKSUM) &&
+        (dev_info.tx_offload_capa & RTE_ETH_TX_OFFLOAD_UDP_CKSUM)) {
         g_dev_tx_offload_tcpudp_cksum = 1;
-        g_port_conf.txmode.offloads |= DEV_TX_OFFLOAD_TCP_CKSUM | DEV_TX_OFFLOAD_UDP_CKSUM;
+        g_port_conf.txmode.offloads |= RTE_ETH_TX_OFFLOAD_TCP_CKSUM | RTE_ETH_TX_OFFLOAD_UDP_CKSUM;
     } else {
         g_dev_tx_offload_tcpudp_cksum = 0;
     }
