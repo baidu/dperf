@@ -118,6 +118,15 @@ void mbuf_log(struct rte_mbuf *m, const char *tag)
     }
 }
 
+void mbuf_print(struct rte_mbuf *m, const char *tag)
+{
+    FILE *log = g_work_space->log;
+
+    g_work_space->log = stdout;
+    mbuf_log(m, tag);
+    g_work_space->log = log;
+}
+
 void mbuf_copy(struct rte_mbuf *dst, struct rte_mbuf *src)
 {
     uint8_t *data = NULL;

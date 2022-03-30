@@ -63,6 +63,7 @@ static int config_parse_vxlan(int argc, char *argv[], void *data);
 static int config_parse_kni(int argc, char *argv[], void *data);
 static int config_parse_tos(int argc, char *argv[], void *data);
 static int config_parse_jumbo(int argc, char *argv[], void *data);
+static int config_parse_rss(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -99,6 +100,7 @@ static struct config_keyword g_config_keywords[] = {
     {"kni", config_parse_kni, "[ifName], default " KNI_NAME_DEFAULT},
     {"tos", config_parse_tos, "Number[0x00-0xff], default 0, eg 0x01 or 1"},
     {"jumbo", config_parse_jumbo, ""},
+    {"rss", config_parse_rss, ""},
     {NULL, NULL, NULL}
 };
 
@@ -215,6 +217,7 @@ static int config_parse_mode(int argc, char *argv[], void *data)
 static int config_parse_cpu(int argc, char *argv[], void *data)
 {
     int i = 0;
+    int j = 0;
     int cpu = 0;
     int cpu_num = 0;
     int cpu_min = 0;
@@ -251,6 +254,16 @@ static int config_parse_cpu(int argc, char *argv[], void *data)
             cpu_num++;
         }
     }
+
+    /* unique */
+    for (i = 0; i < cpu_num; i++) {
+        for (j = i + 1; j < cpu_num; j++) {
+            if (cfg->cpu[i] == cfg->cpu[j]) {
+                return -1;
+            }
+        }
+    }
+
     cfg->cpu_num = cpu_num;
 
     return 0;
@@ -950,6 +963,22 @@ static int config_parse_jumbo(int argc, __rte_unused char *argv[], void *data)
     return 0;
 }
 
+static int config_parse_rss(int argc, __rte_unused char *argv[], void *data)
+{
+    struct config *cfg = data;
+
+    if (argc > 1) {
+        return -1;
+    }
+
+    if (cfg->rss == true) {
+        printf("Error: duplicate rss\n");
+        return -1;
+    }
+    cfg->rss = true;
+    return 0;
+}
+
 static void config_manual(void)
 {
     config_keyword_help(g_config_keywords);
@@ -1443,6 +1472,25 @@ static int config_check_mss(struct config *cfg)
     return 0;
 }
 
+static int config_check_rss(struct config *cfg)
+{
+    if (cfg->rss == false) {
+        return 0;
+    }
+
+    if ((cfg->cpu_num == cfg->port_num) || (cfg->flood)) {
+        printf("Warnning: rss is disabled");
+        cfg->rss = false;
+    }
+
+    if (cfg->vxlan) {
+        printf("Error: rss is not supported for vxlan.\n");
+        return -1;
+    }
+
+    return 0;
+}
+
 int config_parse(int argc, char **argv, struct config *cfg)
 {
     int conf = 0;
@@ -1584,6 +1632,10 @@ int config_parse(int argc, char **argv, struct config *cfg)
     }
 
     if (config_check_target(cfg) < 0) {
+        return -1;
+    }
+
+    if (config_check_rss(cfg) < 0) {
         return -1;
     }
 

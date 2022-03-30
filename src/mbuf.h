@@ -63,6 +63,7 @@ static inline void mbuf_prefetch(struct rte_mbuf *m)
     rte_prefetch0(mbuf_eth_hdr(m));
 }
 
+void mbuf_print(struct rte_mbuf *m, const char *tag);
 void mbuf_log(struct rte_mbuf *m, const char *tag);
 
 #ifdef DPERF_DEBUG
