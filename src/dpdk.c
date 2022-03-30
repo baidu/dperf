@@ -31,6 +31,7 @@
 #include "flow.h"
 #include "tick.h"
 #include "kni.h"
+#include "rss.h"
 
 static void dpdk_set_lcores(struct config *cfg, char *lcores)
 {
@@ -137,9 +138,13 @@ int dpdk_init(struct config *cfg, char *argv0)
         return -1;
     }
 
-    if (flow_init(cfg) < 0) {
-        printf("flow init fail\n");
-        return -1;
+    rss_init();
+    /* One-way traffic does not require RSS and FDIR */
+    if ((!cfg->rss) && (!cfg->flood)) {
+        if (flow_init(cfg) < 0) {
+            printf("flow init fail\n");
+            return -1;
+        }
     }
 
     tick_init();

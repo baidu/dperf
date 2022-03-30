@@ -102,6 +102,9 @@ struct socket_table {
     uint16_t port_num;
     uint16_t port_min;
     uint16_t port_max;
+
+    bool  rss;
+    struct socket_table *socket_table_hash[256]; /* server rss hash */
                      /*[client-ip][client-port][server-port]*/
     struct socket_port_table *ht[NETWORK_PORT_NUM];
     struct socket_pool socket_pool;
@@ -125,15 +128,44 @@ static inline void socket_node_del(struct socket_node *sn)
     }
 }
 
+static inline struct socket *socekt_table_get_socket_rss(struct socket_table *st)
+{
+    struct socket *sk = NULL;
+    struct socket_pool *sp = &st->socket_pool;
+
+    while (1) {
+        sk = &(sp->base[sp->next]);
+        if (sk->laddr != 0) {
+            sp->next++;
+            if (sp->next >= sp->num) {
+                sp->next = 0;
+            }
+            break;
+        } else {
+            sp->next += NETWORK_PORT_NUM * st->port_num - st->port_num;
+            if (sp->next >= sp->num) {
+                sp->next = 0;
+            }
+            continue;
+        }
+    }
+
+    return sk;
+}
+
 static inline struct socket *socekt_table_get_socket(struct socket_table *st)
 {
     struct socket *sk = NULL;
     struct socket_pool *sp = &st->socket_pool;
 
-    sk = &(sp->base[sp->next]);
-    sp->next++;
-    if (sp->next >= sp->num) {
-        sp->next = 0;
+    if (st->rss == 0) {
+        sk = &(sp->base[sp->next]);
+        sp->next++;
+        if (sp->next >= sp->num) {
+            sp->next = 0;
+        }
+    } else {
+        sk = socekt_table_get_socket_rss(st);
     }
     return sk;
 }
@@ -182,11 +214,21 @@ static inline struct socket *socket_client_lookup(const struct socket_table *st,
 static inline struct socket *socket_server_lookup(const struct socket_table *st, const struct iphdr *iph,
     const struct tcphdr *th)
 {
+    uint32_t idx = 0;
     uint32_t saddr = 0;
     uint32_t daddr = 0;
     struct socket *sk = NULL;
 
     ip_hdr_get_addr_low32(iph, saddr, daddr);
+
+    if (unlikely(st->rss)) {
+        idx = ntohl(daddr) & 0xff;
+        st = st->socket_table_hash[idx];
+        if (unlikely(st == NULL)) {
+            return NULL;
+        }
+    }
+
     sk = socket_common_lookup(st, saddr, daddr, th->th_sport, th->th_dport);
     if (sk && (sk->laddr == daddr) && (sk->faddr == saddr)) {
         return sk;
@@ -245,7 +287,7 @@ static inline struct socket *socket_client_open(struct socket_table *st)
 }
 
 void socket_log(struct socket *sk, const char *tag);
-void socket_table_init(struct work_space *ws);
+int socket_table_init(struct work_space *ws);
 #ifdef DPERF_DEBUG
 #define SOCKET_LOG(sk, tag) socket_log(sk, tag)
 #else

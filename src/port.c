@@ -24,6 +24,7 @@
 #include "mbuf.h"
 #include "config.h"
 #include "bond.h"
+#include "rss.h"
 
 uint8_t g_dev_tx_offload_ipv4_cksum;
 uint8_t g_dev_tx_offload_tcpudp_cksum;
@@ -50,11 +51,6 @@ static struct rte_eth_conf g_port_conf = {
     .txmode = {
         .mq_mode = ETH_MQ_TX_NONE,
     },
-/*
-    .fdir_conf = {
-        .mode = RTE_FDIR_MODE_NONE,
-    },
-*/
 };
 
 static int port_init_tx(int port_id, int txq)
@@ -99,6 +95,13 @@ int port_config(struct netif_port *port)
     queue_num = port->queue_num;
     memset(&dev_info, 0, sizeof(dev_info));
     rte_eth_dev_info_get(port_id, &dev_info);
+
+    if (g_config.rss) {
+        if (rss_config_port(&g_port_conf, &dev_info) < 0) {
+            printf("Error: rss config port error\n");
+            return -1;
+        }
+    }
 
     if (g_config.jumbo) {
 #if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)

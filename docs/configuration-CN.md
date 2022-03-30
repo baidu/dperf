@@ -313,3 +313,12 @@ kni接口的IP地址与路由需要手动配置，建议为kni接口分配独立
 
 设置IPv4头部的tos或者IPv6头部的traffic class，可以用16进制或者10进制。
 注意：tos对kni接口发出的报文不生效。
+
+## rss
+- syntax: rss
+- default: -
+- required: no
+- mode: client, server
+
+使用网卡L3 RSS分流。没有FDIR特性的网卡需要开启多队列/多线程时需要开启此开关。
+注意：'vxlan'暂时还不能与'rss'同时使用。

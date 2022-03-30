@@ -317,3 +317,12 @@ If multiple CPUs are used, the kni interface IP can use the first traffic IP of 
 
 Set the tos of the IPv4 header or the traffic class of the IPv6 header, which can be in hexadecimal or decimal.
 Note: tos does not take effect on the packets sent by the kni interface.
+
+## rss
+- syntax: rss
+- default: -
+- required: no
+- mode: client, server
+
+Use the network interface L3 RSS distribution. When a network card without FDIR wants to use multi-queue/multi-threading, rss needs to be enabled.
+Note: 'vxlan' cannot be used simultaneously with 'rss' yet. 

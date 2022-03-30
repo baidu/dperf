@@ -25,6 +25,7 @@
 #include "udp.h"
 #include "net_stats.h"
 #include "csum.h"
+#include "rss.h"
 #include <rte_malloc.h>
 
 const char* g_sk_states[] = {
@@ -142,7 +143,38 @@ static void socket_port_table_init_ip_group(struct work_space *ws, struct socket
     }
 }
 
-void socket_table_init(struct work_space *ws)
+static int socket_table_init_client_rss(struct work_space *ws)
+{
+    int ret = -1;
+    unsigned int i = 0;
+    unsigned int j = 0;
+    unsigned int step = 0;
+    struct socket *sk = NULL;
+    struct socket_table *st = NULL;
+    struct socket_pool *sp = NULL;
+
+    st = &ws->socket_table;
+    sp = &st->socket_pool;
+    step = (NETWORK_PORT_NUM - 1) * st->port_num;
+
+    while (i < sp->num) {
+        sk = &(sp->base[i]);
+        if (!rss_check_socket(ws, sk)) {
+            for (j = 0; j < step; j++) {
+                sk = &(sp->base[i + j]);
+                sk->laddr = 0;
+                sk->faddr = 0;
+            }
+        } else {
+            ret = 0;
+        }
+        i += step;
+    }
+
+    return ret;
+}
+
+int socket_table_init(struct work_space *ws)
 {
     struct config *cfg = ws->cfg;
     struct netif_port *port = ws->port;
@@ -157,7 +189,12 @@ void socket_table_init(struct work_space *ws)
         socket_port_table_init_ip_group(ws, st, &cfg->client_ip_group);
     } else {
         socket_port_table_init_ip_range(ws, st, &(port->client_ip_range));
+        if (cfg->rss && (socket_table_init_client_rss(ws) < 0)) {
+            printf("Error: worker %d has no client address, please increase the number of client address\n", ws->id);
+            return -1;
+        }
     }
 
     st->socket_pool.next = 0;
+    return 0;
 }

@@ -138,12 +138,14 @@ static int flow_create(uint8_t port_id, struct rte_flow_item *pattern, struct rt
     attr.ingress = 1;
 
     ret = rte_flow_validate(port_id, &attr, pattern, action, &err);
-    if (ret == 0) {
-        flow = rte_flow_create(port_id, &attr, pattern, action, &err);
+    if (ret < 0) {
+        printf("Error: Interface dose not support FDIR. Please use 'rss'!\n");
+        return -1;
     }
 
+    flow = rte_flow_create(port_id, &attr, pattern, action, &err);
     if (flow == NULL) {
-        printf("Flow init error\n");
+        printf("Error: Flow create error\n");
         return -1;
     }
 

@@ -36,6 +36,8 @@ __thread struct work_space *g_work_space;
 static struct work_space *g_work_space_all[THREAD_NUM_MAX];
 static rte_atomic32_t g_wait_count;
 
+static void work_space_init_rss(struct work_space *ws);
+
 void work_space_wait_start(void)
 {
     int i = 0;
@@ -195,7 +197,9 @@ struct work_space *work_space_new(struct config *cfg, int id)
 
     work_space_init_time(ws);
     cpuload_init(&ws->load);
-    socket_table_init(ws);
+    if (socket_table_init(ws) < 0) {
+        goto err;
+    }
     net_stats_init(ws);
 
     if (cfg->server) {
@@ -204,6 +208,8 @@ struct work_space *work_space_new(struct config *cfg, int id)
         client_init(ws);
     }
     work_space_wait_all(ws);
+    work_space_init_rss(ws);
+
     return ws;
 
 err:
@@ -345,5 +351,32 @@ void work_space_set_launch_interval(uint64_t launch_interval)
         }
 
         ws->client_launch.launch_interval = interval;
+    }
+}
+
+static void work_space_init_rss(struct work_space *ws)
+{
+    int i = 0;
+    int idx = 0;
+    struct work_space *ws2 = NULL;
+    struct socket_table *st = NULL;
+    struct socket_table *st2 = NULL;
+
+    if (!ws->cfg->rss) {
+        return;
+    }
+
+    st = &ws->socket_table;
+    st->rss = true;
+
+    for (i = 0; i < THREAD_NUM_MAX; i++) {
+        ws2 = g_work_space_all[i];
+        if ((ws2 == NULL) || (ws2->port != ws->port)) {
+            continue;
+        }
+
+        st2 = &ws2->socket_table;
+        idx = ntohl(st2->server_ip) & 0xff;
+        st->socket_table_hash[idx] = st2;
     }
 }
