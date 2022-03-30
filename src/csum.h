@@ -19,18 +19,8 @@
 #ifndef __CUMS_H
 #define __CUMS_H
 
-#include <rte_version.h>
 #include "mbuf.h"
-
-#if RTE_VERSION < RTE_VERSION_NUM(21, 0, 0, 0)
-#define RTE_MBUF_F_RX_L4_CKSUM_BAD  PKT_RX_L4_CKSUM_BAD
-#define RTE_MBUF_F_RX_IP_CKSUM_BAD  PKT_RX_IP_CKSUM_BAD
-#define RTE_MBUF_F_TX_IPV6          PKT_TX_IPV6
-#define RTE_MBUF_F_TX_IP_CKSUM      PKT_TX_IP_CKSUM
-#define RTE_MBUF_F_TX_IPV4          PKT_TX_IPV4
-#define RTE_MBUF_F_TX_TCP_CKSUM     PKT_TX_TCP_CKSUM
-#define RTE_MBUF_F_TX_UDP_CKSUM     PKT_TX_UDP_CKSUM
-#endif
+#include "dpdk.h"
 
 static inline uint16_t csum_update_tcp_seq(uint16_t ocsum, uint32_t seq0, uint32_t seq1)
 {
@@ -57,16 +47,6 @@ static inline uint16_t csum_update(uint16_t ocsum, uint16_t oval, uint16_t nval)
 
     return ~csum;
 }
-
-#if RTE_VERSION < RTE_VERSION_NUM(19, 0, 0, 0)
-#define RTE_IPV4_CKSUM(iph) rte_ipv4_cksum((struct ipv4_hdr*)iph)
-#define RTE_IPV4_UDPTCP_CKSUM(iph, th) rte_ipv4_udptcp_cksum((const struct ipv4_hdr *)iph, th)
-#define RTE_IPV6_UDPTCP_CKSUM(iph, th) rte_ipv6_udptcp_cksum((const struct ipv6_hdr *)iph, (const void *)th)
-#else
-#define RTE_IPV4_CKSUM(iph) rte_ipv4_cksum((const struct rte_ipv4_hdr *)iph)
-#define RTE_IPV4_UDPTCP_CKSUM(iph, th) rte_ipv4_udptcp_cksum((const struct rte_ipv4_hdr *)iph, th)
-#define RTE_IPV6_UDPTCP_CKSUM(iph, th) rte_ipv6_udptcp_cksum((const struct rte_ipv6_hdr *)iph, (const void *)th)
-#endif
 
 static inline void csum_ipv4(struct rte_mbuf *m, int offload)
 {

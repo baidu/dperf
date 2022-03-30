@@ -19,8 +19,57 @@
 #ifndef __DPDK_H
 #define __DPDK_H
 
-#include "config.h"
+#include <rte_version.h>
 
+#if RTE_VERSION < RTE_VERSION_NUM(21, 0, 0, 0)
+#define RTE_ETH_MQ_RX_NONE              ETH_MQ_RX_NONE
+#define RTE_ETH_MQ_TX_NONE              ETH_MQ_TX_NONE
+
+#define RTE_ETH_TX_OFFLOAD_IPV4_CKSUM   DEV_TX_OFFLOAD_IPV4_CKSUM
+#define RTE_ETH_TX_OFFLOAD_TCP_CKSUM    DEV_TX_OFFLOAD_TCP_CKSUM
+#define RTE_ETH_TX_OFFLOAD_UDP_CKSUM    DEV_TX_OFFLOAD_UDP_CKSUM
+
+#define RTE_ETH_RSS_IPV4                ETH_RSS_IPV4
+#define RTE_ETH_RSS_FRAG_IPV4           ETH_RSS_FRAG_IPV4
+#define RTE_ETH_RSS_IPV6                ETH_RSS_IPV6
+#define RTE_ETH_RSS_FRAG_IPV6           ETH_RSS_FRAG_IPV6
+
+#define RTE_ETH_MQ_RX_RSS               ETH_MQ_RX_RSS
+#endif
+
+#if RTE_VERSION < RTE_VERSION_NUM(21, 0, 0, 0)
+#define RTE_MBUF_F_RX_L4_CKSUM_BAD  PKT_RX_L4_CKSUM_BAD
+#define RTE_MBUF_F_RX_IP_CKSUM_BAD  PKT_RX_IP_CKSUM_BAD
+#define RTE_MBUF_F_TX_IPV6          PKT_TX_IPV6
+#define RTE_MBUF_F_TX_IP_CKSUM      PKT_TX_IP_CKSUM
+#define RTE_MBUF_F_TX_IPV4          PKT_TX_IPV4
+#define RTE_MBUF_F_TX_TCP_CKSUM     PKT_TX_TCP_CKSUM
+#define RTE_MBUF_F_TX_UDP_CKSUM     PKT_TX_UDP_CKSUM
+#endif
+
+#if RTE_VERSION >= RTE_VERSION_NUM(19, 0, 0, 0)
+#include <net/ethernet.h>
+
+#define ETHER_TYPE_IPv4 ETHERTYPE_IP
+#define ETHER_TYPE_IPv6 ETHERTYPE_IPV6
+#define ETHER_TYPE_ARP  ETHERTYPE_ARP
+
+#define RTE_ETH_MACADDR_GET(port_id, mac_addr) rte_eth_macaddr_get(port_id, (struct rte_ether_addr *)mac_addr)
+#else
+#define RTE_ETH_MACADDR_GET(port_id, mac_addr) rte_eth_macaddr_get(port_id, (struct ether_addr *)mac_addr)
+#endif
+
+#if RTE_VERSION < RTE_VERSION_NUM(19, 0, 0, 0)
+#define RTE_IPV4_CKSUM(iph) rte_ipv4_cksum((struct ipv4_hdr*)iph)
+#define RTE_IPV4_UDPTCP_CKSUM(iph, th) rte_ipv4_udptcp_cksum((const struct ipv4_hdr *)iph, th)
+#define RTE_IPV6_UDPTCP_CKSUM(iph, th) rte_ipv6_udptcp_cksum((const struct ipv6_hdr *)iph, (const void *)th)
+#else
+#define RTE_IPV4_CKSUM(iph) rte_ipv4_cksum((const struct rte_ipv4_hdr *)iph)
+#define RTE_IPV4_UDPTCP_CKSUM(iph, th) rte_ipv4_udptcp_cksum((const struct rte_ipv4_hdr *)iph, th)
+#define RTE_IPV6_UDPTCP_CKSUM(iph, th) rte_ipv6_udptcp_cksum((const struct rte_ipv6_hdr *)iph, (const void *)th)
+#endif
+
+struct config;
 int dpdk_init(struct config *cfg, char *argv0);
 void dpdk_run(int (*lcore_main)(void*), void* data);
 void dpdk_close(struct config *cfg);

@@ -21,8 +21,8 @@
 
 #include <arpa/inet.h>
 #include <sys/types.h>
-#include <rte_version.h>
 #include <rte_ether.h>
+#include "dpdk.h"
 
 #define ETH_ADDR_LEN        6
 #define ETH_ADDR_STR_LEN    17
@@ -42,18 +42,6 @@ static inline int eth_addr_is_zero(const struct eth_addr *ea)
     return ((ea)->bytes[0] == 0) && ((ea)->bytes[1] == 0) && ((ea)->bytes[2] == 0) &&
             ((ea)->bytes[3] == 0) && ((ea)->bytes[4] == 0) && ((ea)->bytes[5] == 0);
 }
-
-#if RTE_VERSION >= RTE_VERSION_NUM(19, 0, 0, 0)
-#include <net/ethernet.h>
-
-#define ETHER_TYPE_IPv4 ETHERTYPE_IP
-#define ETHER_TYPE_IPv6 ETHERTYPE_IPV6
-#define ETHER_TYPE_ARP  ETHERTYPE_ARP
-
-#define RTE_ETH_MACADDR_GET(port_id, mac_addr) rte_eth_macaddr_get(port_id, (struct rte_ether_addr *)mac_addr)
-#else
-#define RTE_ETH_MACADDR_GET(port_id, mac_addr) rte_eth_macaddr_get(port_id, (struct ether_addr *)mac_addr)
-#endif
 
 static inline void eth_addr_copy(struct eth_addr *dst, const struct eth_addr *src)
 {

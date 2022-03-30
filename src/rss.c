@@ -41,8 +41,8 @@ static uint64_t rss_get_rss_hf(struct rte_eth_dev_info *dev_info)
     uint64_t ipv6_flags = 0;
 
     offloads = dev_info->flow_type_rss_offloads;
-    ipv4_flags = ETH_RSS_IPV4 |ETH_RSS_FRAG_IPV4;
-    ipv6_flags = ETH_RSS_IPV6 | ETH_RSS_FRAG_IPV6;
+    ipv4_flags = RTE_ETH_RSS_IPV4 | RTE_ETH_RSS_FRAG_IPV4;
+    ipv6_flags = RTE_ETH_RSS_IPV6 | RTE_ETH_RSS_FRAG_IPV6;
 
     if (g_config.ipv6) {
         if ((offloads & ipv6_flags) == 0) {
@@ -67,7 +67,7 @@ int rss_config_port(struct rte_eth_conf *conf, struct rte_eth_dev_info *dev_info
         return -1;
     }
 
-    conf->rxmode.mq_mode = ETH_MQ_RX_RSS;
+    conf->rxmode.mq_mode = RTE_ETH_MQ_RX_RSS;
     rss_conf = &conf->rx_adv_conf.rss_conf;
     rss_conf->rss_key = rss_hash_key_symmetric;
     rss_conf->rss_key_len = RSS_HASH_KEY_LENGTH,
