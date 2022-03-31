@@ -458,6 +458,10 @@ void net_stats_print_speed(FILE *fp, int seconds)
     int len = NET_STATS_BUF_LEN;
     struct net_stats speed;
 
+    if (g_config.quiet) {
+        return;
+    }
+
     SNPRINTF(p, len, "\nseconds %-18lu", (uint64_t)seconds);
     net_stats_get_speed(&speed);
     ret = net_stats_cpusage_print(p, len);

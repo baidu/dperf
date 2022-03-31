@@ -16,6 +16,14 @@
 
 在daemon模式下，dperf的统计数据写入日志文件('/var/log/dperf/dperf-ctl-[server|client].log'), 否则打印到屏幕上。
 
+## quiet
+- syntax: quiet
+- default: -
+- required: no
+- mode: client, server
+
+关闭每秒输出统计数据。
+
 ## keepalive
 - syntax: keepalive
 - default: -
