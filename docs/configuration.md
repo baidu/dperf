@@ -16,6 +16,14 @@ Set the running mode of dperf. dperf can be run as a client or a server.
 
 In daemon mode, dperf statistics are written to the log file ('/var/log/dperf/dperf-ctl-[server|client].log'), otherwise output to stdout.
 
+## quiet
+- syntax: quiet
+- default: -
+- required: no
+- mode: client, server
+
+Turn off output statistics per second.
+
 ## keepalive
 - syntax: keepalive
 - default: -

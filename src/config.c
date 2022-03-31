@@ -64,6 +64,7 @@ static int config_parse_kni(int argc, char *argv[], void *data);
 static int config_parse_tos(int argc, char *argv[], void *data);
 static int config_parse_jumbo(int argc, char *argv[], void *data);
 static int config_parse_rss(int argc, char *argv[], void *data);
+static int config_parse_quiet(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -101,6 +102,7 @@ static struct config_keyword g_config_keywords[] = {
     {"tos", config_parse_tos, "Number[0x00-0xff], default 0, eg 0x01 or 1"},
     {"jumbo", config_parse_jumbo, ""},
     {"rss", config_parse_rss, ""},
+    {"quiet", config_parse_quiet, ""},
     {NULL, NULL, NULL}
 };
 
@@ -976,6 +978,22 @@ static int config_parse_rss(int argc, __rte_unused char *argv[], void *data)
         return -1;
     }
     cfg->rss = true;
+    return 0;
+}
+
+static int config_parse_quiet(int argc, __rte_unused char *argv[], void *data)
+{
+     struct config *cfg = data;
+
+    if (argc > 1) {
+        return -1;
+    }
+
+    if (cfg->quiet == true) {
+        printf("Error: duplicate quiet\n");
+        return -1;
+    }
+    cfg->quiet = true;
     return 0;
 }
 

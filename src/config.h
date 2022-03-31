@@ -69,6 +69,7 @@ struct config {
     bool flood;
     bool jumbo;
     bool rss;
+    bool quiet;
     bool http;          /* payload size >= HTTP_DATA_MIN_SIZE */
     uint8_t tos;
     uint8_t tx_burst;
