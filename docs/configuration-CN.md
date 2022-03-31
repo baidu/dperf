@@ -154,9 +154,10 @@ Example:
 - syntax: keepalive_request_interval Time
 - default: keepalive_request_interval 1s
 - required: no
-- mode: client
+- mode: client, server
 
 设置同一请求内两个请求之间的时间间隔。只有在设置'cc'后才生效。
+如果在该时间内没有收到请求，服务器会关闭连接。
 
 Example:
 - keepalive_request_interval 1ms

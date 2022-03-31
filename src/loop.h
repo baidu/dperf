@@ -24,6 +24,7 @@
 #include "icmp6.h"
 #include "lldp.h"
 #include "kni.h"
+#include "socket_timer.h"
 
 /* optimal value, don't change */
 #define MBUF_PREFETCH_NUM 4
@@ -199,6 +200,7 @@ static inline int slow_timer_run(struct work_space *ws)
         }
         seconds = tsc_time_go(&tt->second, tt->tsc);
         if (unlikely(seconds > 0)) {
+            socket_timeout_timer_expire(ws);
             net_stats_timer_handler(ws);
             if (ws->exit) {
                 return -1;
@@ -293,7 +295,7 @@ static inline void server_loop(struct work_space *ws, l3_input_t l3_input,
         CPULOAD_ADD_TSC(&ws->load, tt->tsc, work);
         if (ticks > 0) {
             work = 1;
-            if (slow_timer_run(ws) < 0) {
+            if (unlikely(slow_timer_run(ws) < 0)) {
                 break;
             }
             socket_timer_process(ws);
@@ -322,7 +324,7 @@ static inline void client_loop(struct work_space *ws, l3_input_t l3_input,
         ticks = tsc_time_go(&tt->tick, tt->tsc);
         if (ticks > 0) {
             work = 1;
-            if (slow_timer_run(ws) < 0) {
+            if (unlikely(slow_timer_run(ws) < 0)) {
                 break;
             }
             socket_timer_process(ws);
