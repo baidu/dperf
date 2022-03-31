@@ -186,8 +186,12 @@ static struct rte_mbuf *tcp_reply(struct work_space *ws, struct socket *sk, uint
         work_space_tx_send_tcp(ws, m);
     }
 
-    if ((sk->state != SK_CLOSED) && (tcp_flags & (TH_PUSH | TH_SYN | TH_FIN))) {
-        socket_start_retransmit_timer(sk, work_space_ticks(ws));
+    if (sk->state != SK_CLOSED) {
+        if (tcp_flags & (TH_PUSH | TH_SYN | TH_FIN)) {
+            socket_start_retransmit_timer(sk, work_space_ticks(ws));
+        } else if (ws->server) {
+            socket_start_timeout_timer(sk, work_space_ticks(ws));
+        }
     }
 
     return m;
@@ -546,6 +550,8 @@ static inline void tcp_server_process_data(struct work_space *ws, struct socket 
 
     if (tx_flags != 0) {
         tcp_reply(ws, sk, tx_flags);
+    } else if (sk->state != SK_CLOSED) {
+        socket_start_timeout_timer(sk, work_space_ticks(ws));
     }
 
 out:

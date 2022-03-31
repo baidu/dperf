@@ -155,9 +155,10 @@ If flood is enabled, the dperf client only sends the first packet of the connect
 - syntax: keepalive_request_interval Time
 - default: keepalive_request_interval 1s
 - required: no
-- mode: client
+- mode: client, server
 
 Set the interval between two requests in the a connection. It only takes effect after setting 'cc'.
+If no request is received within this time, the server closes the connection. 
 
 Example:
 - keepalive_request_interval 1ms

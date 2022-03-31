@@ -24,6 +24,7 @@
 
 extern __thread struct socket_timer g_retransmit_timer;
 extern __thread struct socket_timer g_keepalive_timer;
+extern __thread struct socket_timer g_timeout_timer;
 
 typedef void(*socket_timer_handler_t)(struct work_space *, struct socket *);
 
@@ -83,6 +84,17 @@ static inline void socket_add_timer(struct socket_queue *head, struct socket *sk
     socket_queue_push(head, sk);
 }
 
+static inline void socket_start_timeout_timer(struct socket *sk, uint64_t now_ticks)
+{
+    struct socket_queue *queue = &g_timeout_timer.queue;
+    socket_add_timer(queue, sk, now_ticks);
+}
+
+static inline void socket_stop_timeout_timer(struct socket *sk)
+{
+    socket_queue_del(sk);
+}
+
 static inline void socket_start_keepalive_timer(struct socket *sk, uint64_t now_ticks)
 {
     struct socket_queue *queue = &g_keepalive_timer.queue;
@@ -96,7 +108,7 @@ static inline void socket_start_retransmit_timer(__rte_unused struct socket *sk,
 {
     struct socket_queue *queue = &g_retransmit_timer.queue;
 
-    if ((sk->snd_nxt != sk->snd_una) && ((sk->timer_ticks + TICKS_PER_SEC) <= now_ticks)) {
+    if (sk->snd_nxt != sk->snd_una) {
         socket_add_timer(queue, sk, now_ticks);
     }
 }
@@ -127,5 +139,6 @@ static inline void socket_timer_run(struct work_space *ws, struct socket_timer *
 }
 
 void socket_timer_init(void);
+void socket_timeout_timer_expire(struct work_space *ws);
 
 #endif

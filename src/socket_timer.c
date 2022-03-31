@@ -19,10 +19,28 @@
 #include "socket_timer.h"
 
 __thread struct socket_timer g_retransmit_timer;
-__thread struct socket_timer g_keepalive_timer;
+__thread struct socket_timer g_keepalive_timer; /* client only */
+__thread struct socket_timer g_timeout_timer;
 
 void socket_timer_init(void)
 {
     socket_queue_init(&g_retransmit_timer.queue);
     socket_queue_init(&g_keepalive_timer.queue);
+    socket_queue_init(&g_timeout_timer.queue);
+}
+
+static inline void socket_timeout_handler(__rte_unused struct work_space *ws, struct socket *sk)
+{
+    net_stats_socket_error();
+    socket_close(sk);
+}
+
+void socket_timeout_timer_expire(struct work_space *ws)
+{
+    uint64_t timeout_ticks = 0;
+    struct socket_timer *timer = NULL;
+
+    timer = &g_timeout_timer;
+    timeout_ticks = (RETRANSMIT_TIMEOUT * RETRANSMIT_NUM_MAX) + g_config.keepalive_request_interval;
+    socket_timer_run(ws, timer, timeout_ticks, socket_timeout_handler);
 }
