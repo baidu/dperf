@@ -40,8 +40,7 @@ extern __thread struct work_space *g_work_space;
 #define g_current_ticks (g_work_space->time.tick.count)
 #define g_current_seconds (g_work_space->time.second.count)
 
-#define work_space_ticks(ws) (ws->time.tick.count)
-#define work_space_seconds(ws) (ws->time.second.count)
+#define work_space_tsc(ws) (ws->time.tsc)
 
 struct tx_queue {
     uint16_t head;

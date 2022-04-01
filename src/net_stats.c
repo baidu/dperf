@@ -72,6 +72,24 @@ static void net_stats_format_print(uint64_t val, char *buf, int len)
 } while (0)
 
 #define STATS_BUF_LEN 64
+static void net_stats_print_rtt(struct net_stats *stats, char rtt_str[], int len)
+{
+    uint64_t rtt_tsc = stats->rtt_tsc;
+    uint64_t rtt_num = stats->rtt_num;
+    uint64_t tsc_per_us = TSC_PER_SEC / (1000 * 1000);
+    uint64_t rtt_us = 0;
+    uint64_t rtt_us_minor = 0;
+    char rtt[STATS_BUF_LEN];
+
+    if (rtt_num > 0) {
+        rtt_us = rtt_tsc / (rtt_num * tsc_per_us);
+        rtt_us_minor = ((rtt_tsc % (rtt_num * tsc_per_us)) * 10) / (rtt_num * tsc_per_us);
+    }
+
+    net_stats_format_print(rtt_us, rtt, STATS_BUF_LEN);
+    snprintf(rtt_str, len, "%s.%lu", rtt, rtt_us_minor);
+}
+
 static int net_stats_print_socket(struct net_stats *stats, char *buf, int buf_len)
 {
     char *p = buf;
@@ -79,6 +97,7 @@ static int net_stats_print_socket(struct net_stats *stats, char *buf, int buf_le
     char close[STATS_BUF_LEN];
     char error[STATS_BUF_LEN];
     char curr[STATS_BUF_LEN];
+    char rtt[STATS_BUF_LEN];
     int len = buf_len;
 
     net_stats_format_print(stats->socket_open, open, STATS_BUF_LEN);
@@ -86,7 +105,12 @@ static int net_stats_print_socket(struct net_stats *stats, char *buf, int buf_le
     net_stats_format_print(stats->socket_error, error, STATS_BUF_LEN);
     net_stats_format_print(stats->socket_current, curr, STATS_BUF_LEN);
 
-    SNPRINTF(p, len, "skOpen  %-18s skClose  %-18s skCon    %-18s skErr   %-18s\n", open, close, curr, error);
+    if ((g_config.server) || (g_config.keepalive)) {
+        SNPRINTF(p, len, "skOpen  %-18s skClose  %-18s skCon    %-18s skErr   %-18s\n", open, close, curr, error);
+    } else {
+        net_stats_print_rtt(stats, rtt, STATS_BUF_LEN);
+        SNPRINTF(p, len, "skOpen  %-18s skClose  %-18s skCon    %-18s skErr   %-18s rtt(us) %-10s\n", open, close, curr, error, rtt);
+    }
     return p - buf;
 
 err:
@@ -364,11 +388,9 @@ static void net_stats_clear(struct net_stats *s)
 
 static void net_stats_clear_mutable(struct net_stats *s)
 {
-    int i = 0;
-
-    for (i = NET_STATS_INC_ELEMENTS_NUM; i < NET_STATS_ELEMENTS_NUM; i++) {
-        NET_STATS(s, i) = 0;
-    }
+    /* don't clear rtt */
+    s->cpusage = 0;
+    s->socket_current = 0;
 }
 
 static void net_stats_sum(struct net_stats *result)

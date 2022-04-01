@@ -74,6 +74,10 @@ struct net_stats {
 
     /* mutable  */
     uint64_t mutable_start[0];
+
+    uint64_t rtt_tsc;
+    uint64_t rtt_num;
+
     uint64_t cpusage;
     uint64_t socket_current;
 };
@@ -126,4 +130,9 @@ extern __thread struct net_stats g_net_stats;
                                         g_net_stats.pkt_tx++;                           \
                                         g_net_stats.byte_tx += rte_pktmbuf_data_len(m); \
                                     } while (0)
+#define net_stats_rtt(ws, sk)       do {                                                            \
+                                        g_net_stats.rtt_num++;                                      \
+                                        g_net_stats.rtt_tsc += work_space_tsc(ws) - sk->timer_tsc;  \
+                                    } while (0)
+
 #endif

@@ -188,9 +188,9 @@ static struct rte_mbuf *tcp_reply(struct work_space *ws, struct socket *sk, uint
 
     if (sk->state != SK_CLOSED) {
         if (tcp_flags & (TH_PUSH | TH_SYN | TH_FIN)) {
-            socket_start_retransmit_timer(sk, work_space_ticks(ws));
+            socket_start_retransmit_timer(sk, work_space_tsc(ws));
         } else if (ws->server) {
-            socket_start_timeout_timer(sk, work_space_ticks(ws));
+            socket_start_timeout_timer(sk, work_space_tsc(ws));
         }
     }
 
@@ -356,7 +356,7 @@ static inline void tcp_server_process_syn(struct work_space *ws, struct socket *
         SOCKET_LOG_ENABLE(sk);
         MBUF_LOG(m, "syn-ack-lost");
         SOCKET_LOG(sk, "syn-ack-lost");
-        if ((sk->timer_ticks + TICKS_PER_SEC) < work_space_ticks(ws)) {
+        if ((sk->timer_tsc + TSC_PER_SEC) < work_space_tsc(ws)) {
             tcp_reply(ws, sk, TH_SYN | TH_ACK);
             net_stats_syn_rt();
         }
@@ -384,6 +384,8 @@ static inline void tcp_client_process_syn_ack(struct work_space *ws, struct sock
             net_stats_tcp_drop();
             goto out;
         }
+
+        net_stats_rtt(ws, sk);
         sk->rcv_nxt = seq + 1;
         sk->snd_nxt = ack;
         sk->state = SK_ESTABLISHED;
@@ -434,7 +436,7 @@ static inline bool tcp_check_sequence(struct work_space *ws, struct socket *sk, 
     /* my data packet lost */
     if (tcp_seq_le(ack, sk->snd_una)) {
         /* fast retransmit : If the last transmission time is more than 1 second */
-        if ((sk->timer_ticks + TICKS_PER_SEC) < work_space_ticks(ws)) {
+        if ((sk->timer_tsc + TSC_PER_SEC) < work_space_tsc(ws)) {
             tcp_do_retransmit(ws, sk);
         }
     } else if (ack == sk->snd_una) {
@@ -551,7 +553,7 @@ static inline void tcp_server_process_data(struct work_space *ws, struct socket 
     if (tx_flags != 0) {
         tcp_reply(ws, sk, tx_flags);
     } else if (sk->state != SK_CLOSED) {
-        socket_start_timeout_timer(sk, work_space_ticks(ws));
+        socket_start_timeout_timer(sk, work_space_tsc(ws));
     }
 
 out:
@@ -582,7 +584,7 @@ static inline void tcp_client_process_data(struct work_space *ws, struct socket 
             if (sk->keepalive == 0) {
                 tx_flags |= TH_FIN;
             } else {
-                socket_start_keepalive_timer(sk, work_space_ticks(ws));
+                socket_start_keepalive_timer(sk, work_space_tsc(ws));
             }
         }
     }
@@ -695,7 +697,7 @@ static inline void tcp_do_keepalive(struct work_space *ws, struct socket *sk)
             if (work_space_in_duration(ws)) {
                 tcp_reply(ws, sk, TH_SYN);
                 sk->snd_una = sk->snd_nxt;
-                socket_start_keepalive_timer(sk, work_space_ticks(ws));
+                socket_start_keepalive_timer(sk, work_space_tsc(ws));
             } else {
                 socket_close(sk);
             }
@@ -738,7 +740,7 @@ static inline int tcp_client_launch(struct work_space *ws)
         if (flood) {
             if (sk->keepalive) {
                 sk->snd_una = sk->snd_nxt;
-                socket_start_keepalive_timer(sk, work_space_ticks(ws));
+                socket_start_keepalive_timer(sk, work_space_tsc(ws));
             } else {
                 socket_close(sk);
             }

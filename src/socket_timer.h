@@ -77,17 +77,17 @@ static inline void socket_del_timer(struct socket *sk)
     socket_queue_del(sk);
 }
 
-static inline void socket_add_timer(struct socket_queue *head, struct socket *sk, uint64_t now_ticks)
+static inline void socket_add_timer(struct socket_queue *head, struct socket *sk, uint64_t now_tsc)
 {
-    sk->timer_ticks = now_ticks;
+    sk->timer_tsc = now_tsc;
     socket_queue_del(sk);
     socket_queue_push(head, sk);
 }
 
-static inline void socket_start_timeout_timer(struct socket *sk, uint64_t now_ticks)
+static inline void socket_start_timeout_timer(struct socket *sk, uint64_t now_tsc)
 {
     struct socket_queue *queue = &g_timeout_timer.queue;
-    socket_add_timer(queue, sk, now_ticks);
+    socket_add_timer(queue, sk, now_tsc);
 }
 
 static inline void socket_stop_timeout_timer(struct socket *sk)
@@ -95,21 +95,21 @@ static inline void socket_stop_timeout_timer(struct socket *sk)
     socket_queue_del(sk);
 }
 
-static inline void socket_start_keepalive_timer(struct socket *sk, uint64_t now_ticks)
+static inline void socket_start_keepalive_timer(struct socket *sk, uint64_t now_tsc)
 {
     struct socket_queue *queue = &g_keepalive_timer.queue;
 
     if (sk->keepalive && (sk->snd_nxt == sk->snd_una)) {
-        socket_add_timer(queue, sk, now_ticks);
+        socket_add_timer(queue, sk, now_tsc);
     }
 }
 
-static inline void socket_start_retransmit_timer(__rte_unused struct socket *sk, uint64_t now_ticks)
+static inline void socket_start_retransmit_timer(__rte_unused struct socket *sk, uint64_t now_tsc)
 {
     struct socket_queue *queue = &g_retransmit_timer.queue;
 
     if (sk->snd_nxt != sk->snd_una) {
-        socket_add_timer(queue, sk, now_ticks);
+        socket_add_timer(queue, sk, now_tsc);
     }
 }
 
@@ -121,15 +121,15 @@ static inline void socket_stop_retransmit_timer(__rte_unused struct socket *sk)
     }
 }
 
-static inline void socket_timer_run(struct work_space *ws, struct socket_timer *st, uint32_t timeout,
+static inline void socket_timer_run(struct work_space *ws, struct socket_timer *st, uint64_t timeout,
     socket_timer_handler_t handler)
 {
     struct socket *sk = NULL;
     struct socket_queue *sq = &(st->queue);
-    uint64_t now_ticks = work_space_ticks(ws);
+    uint64_t now_tsc = work_space_tsc(ws);
 
     while ((sk = socket_queue_first(sq)) != NULL) {
-        if (sk->timer_ticks + (timeout) <= now_ticks) {
+        if (sk->timer_tsc + (timeout) <= now_tsc) {
             socket_del_timer(sk);
             handler(ws, sk);
         } else {

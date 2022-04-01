@@ -646,7 +646,7 @@ static int config_parse_keepalive_request_interval(int argc, char *argv[], void 
     }
 
     if (strcmp(p, "ms") == 0) {
-        rate = TICKS_PER_SEC / 1000;
+        rate = 1;
     } else if (strcmp(p, "s") == 0) {
         rate = TICKS_PER_SEC;
     } else {
@@ -1581,7 +1581,7 @@ int config_parse(int argc, char **argv, struct config *cfg)
         if (cfg->cc) {
             cfg->keepalive = 1;
             if (cfg->keepalive_request_interval == 0) {
-                cfg->keepalive_request_interval = DEFAULT_INTERVAL * TICKS_PER_SEC;
+                cfg->keepalive_request_interval = DEFAULT_INTERVAL * TSC_PER_SEC;
             }
 
             if (cfg->cps == 0) {
@@ -1695,4 +1695,9 @@ uint32_t config_get_total_socket_num(struct config *cfg, int id)
     }
 
     return num;
+}
+
+void config_set_tsc(struct config *cfg, uint64_t hz)
+{
+    cfg->keepalive_request_interval *= (hz / 1000);
 }

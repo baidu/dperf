@@ -93,6 +93,9 @@ The number of sockets currently open, that is, the number of concurrent connecti
 The number of concurrent connections with errors per second, and the reason for the error:
 -Retransmit more than 3 times
 
+### rtt(us)
+The average rtt of the first packet, the unit is us.
+
 ### httpGet
 -The number of HTTP GET requests sent by the client per second
 -The number of HTTP GET requests received by the server per second
