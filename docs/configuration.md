@@ -335,3 +335,11 @@ Note: tos does not take effect on the packets sent by the kni interface.
 
 Use the network interface L3 RSS distribution. When a network card without FDIR wants to use multi-queue/multi-threading, rss needs to be enabled.
 Note: 'vxlan' cannot be used simultaneously with 'rss' yet. 
+
+## tcp_rst
+- syntax: tcp_rst Number[0-1]
+- default: 1
+- required: no
+- mode: client, server
+
+Set whether dperf replies rst to SYN packets requesting unopened TCP ports. 

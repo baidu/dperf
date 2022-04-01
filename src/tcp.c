@@ -618,7 +618,12 @@ static inline void tcp_server_process(struct work_space *ws, struct rte_mbuf *m)
             return kni_recv(ws, m);
         }
         MBUF_LOG(m, "drop-no-socket");
-        tcp_reply_rst(ws, m);
+        if (g_config.tcp_rst) {
+            tcp_reply_rst(ws, m);
+        } else {
+            net_stats_tcp_drop();
+            mbuf_free2(m);
+        }
         return;
     }
 
@@ -660,7 +665,12 @@ static inline void tcp_client_process(struct work_space *ws, struct rte_mbuf *m)
             return kni_recv(ws, m);
         }
         MBUF_LOG(m, "drop-no-socket");
-        tcp_reply_rst(ws, m);
+        if (g_config.tcp_rst) {
+            tcp_reply_rst(ws, m);
+        } else {
+            net_stats_tcp_drop();
+            mbuf_free2(m);
+        }
         return;
     }
 
