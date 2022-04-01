@@ -65,11 +65,14 @@ static int config_parse_tos(int argc, char *argv[], void *data);
 static int config_parse_jumbo(int argc, char *argv[], void *data);
 static int config_parse_rss(int argc, char *argv[], void *data);
 static int config_parse_quiet(int argc, char *argv[], void *data);
+static int config_parse_tcp_rst(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
 
-struct config g_config;
+struct config g_config = {
+    .tcp_rst = true,
+};
 static struct config_keyword g_config_keywords[] = {
     {"daemon", config_parse_daemon, ""},
     {"keepalive", config_parse_keepalive, ""},
@@ -103,6 +106,7 @@ static struct config_keyword g_config_keywords[] = {
     {"jumbo", config_parse_jumbo, ""},
     {"rss", config_parse_rss, ""},
     {"quiet", config_parse_quiet, ""},
+    {"tcp_rst", config_parse_tcp_rst, "Number[0-1], default 1"},
     {NULL, NULL, NULL}
 };
 
@@ -983,7 +987,7 @@ static int config_parse_rss(int argc, __rte_unused char *argv[], void *data)
 
 static int config_parse_quiet(int argc, __rte_unused char *argv[], void *data)
 {
-     struct config *cfg = data;
+    struct config *cfg = data;
 
     if (argc > 1) {
         return -1;
@@ -994,6 +998,25 @@ static int config_parse_quiet(int argc, __rte_unused char *argv[], void *data)
         return -1;
     }
     cfg->quiet = true;
+    return 0;
+}
+
+static int config_parse_tcp_rst(int argc, char *argv[], void *data)
+{
+    int val = 0;
+    struct config *cfg = data;
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    val = atoi(argv[1]);
+    if ((val == 0) || (val == 1)) {
+        cfg->tcp_rst = val;
+    } else {
+        return -1;
+    }
+
     return 0;
 }
 
@@ -1521,7 +1544,6 @@ int config_parse(int argc, char **argv, struct config *cfg)
         return -1;
     }
 
-    memset(cfg, 0, sizeof(struct config));
     while ((opt = getopt_long_only(argc, argv, optstr, g_options, NULL)) != -1) {
         switch (opt) {
             case 'c':

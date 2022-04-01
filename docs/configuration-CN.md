@@ -331,3 +331,11 @@ kni接口的IP地址与路由需要手动配置，建议为kni接口分配独立
 
 使用网卡L3 RSS分流。没有FDIR特性的网卡需要开启多队列/多线程时需要开启此开关。
 注意：'vxlan'暂时还不能与'rss'同时使用。
+
+## tcp_rst
+- syntax: tcp_rst Number[0-1]
+- default: 1
+- required: no
+- mode: client, server
+
+设置dperf对请求未打开的TCP端口的SYN报文是否回复rst。
