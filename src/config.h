@@ -77,7 +77,7 @@ struct config {
 
     char kni_ifname[RTE_KNI_NAMESIZE];
     int af;
-    int keepalive_request_interval;
+    uint64_t keepalive_request_interval;
     int keepalive_request_num;
 
     int payload_size;
@@ -120,6 +120,7 @@ extern struct config g_config;
 int config_parse(int argc, char **argv, struct config *cfg);
 uint32_t config_get_total_socket_num(struct config *cfg, int id);
 struct netif_port *config_port_get(struct config *cfg, int thread_id, int *p_queue_id);
+void config_set_tsc(struct config *cfg, uint64_t hz);
 
 #endif
 

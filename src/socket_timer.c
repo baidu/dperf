@@ -37,10 +37,10 @@ static inline void socket_timeout_handler(__rte_unused struct work_space *ws, st
 
 void socket_timeout_timer_expire(struct work_space *ws)
 {
-    uint64_t timeout_ticks = 0;
+    uint64_t timeout_tsc = 0;
     struct socket_timer *timer = NULL;
 
     timer = &g_timeout_timer;
-    timeout_ticks = (RETRANSMIT_TIMEOUT * RETRANSMIT_NUM_MAX) + g_config.keepalive_request_interval;
-    socket_timer_run(ws, timer, timeout_ticks, socket_timeout_handler);
+    timeout_tsc = (RETRANSMIT_TIMEOUT * RETRANSMIT_NUM_MAX) + g_config.keepalive_request_interval;
+    socket_timer_run(ws, timer, timeout_tsc, socket_timeout_handler);
 }

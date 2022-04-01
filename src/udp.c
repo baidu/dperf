@@ -108,7 +108,7 @@ static void udp_socket_keepalive_timer_handler(struct work_space *ws, struct soc
     if (ws->server == 0) {
         if (work_space_in_duration(ws)) {
             udp_send(ws, sk);
-            socket_start_keepalive_timer(sk, work_space_ticks(ws));
+            socket_start_keepalive_timer(sk, work_space_tsc(ws));
         }
     }
 }
@@ -128,6 +128,7 @@ static void udp_client_process(struct work_space *ws, struct rte_mbuf *m)
     }
 
     if (sk->keepalive == 0) {
+        net_stats_rtt(ws, sk);
         socket_close(sk);
     }
 
@@ -177,9 +178,11 @@ static int udp_client_launch(struct work_space *ws)
             continue;
         }
 
+        /* fot rtt calculationn */
+        sk->timer_tsc = work_space_tsc(ws);
         udp_send(ws, sk);
         if (sk->keepalive) {
-            socket_start_keepalive_timer(sk, work_space_ticks(ws));
+            socket_start_keepalive_timer(sk, work_space_tsc(ws));
         } else if (flood) {
             socket_close(sk);
         }
