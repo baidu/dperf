@@ -44,6 +44,7 @@ static inline uint32_t ip_range_get(const struct ip_range *ip_range, uint8_t idx
 {
     uint32_t ip = ip_range->start.ip;
 
+    idx = idx % ip_range->num;
     ip = ntohl(ip);
     ip += idx;
     return htonl(ip);

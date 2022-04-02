@@ -1099,8 +1099,20 @@ static int config_set_port_ip_range(struct config *cfg)
         port->client_ip_range = cfg->client_ip_group.ip_range[i];
         port->server_ip_range = cfg->server_ip_group.ip_range[i];
         if (port->queue_num != port->server_ip_range.num) {
-            printf("queue num not equal server ip num\n");
-            return -1;
+            if (cfg->vxlan) {
+                printf("Error: 'vxlan' requires cpu num to be equal to server ip num\n");
+                return -1;
+            }
+
+            if (port->queue_num < port->server_ip_range.num) {
+                printf("Error: cpu num less than server ip num at 'client' mode\n");
+                return -1;
+            }
+
+            if (!cfg->rss) {
+                printf("Error: 'rss' is required if cpu num is not equal to server ip num\n");
+                return -1;
+            }
         }
         i++;
     }

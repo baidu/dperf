@@ -211,10 +211,12 @@ dperf使用IP地址(包含IPv4、IPv6)的最后两个字节标识一个客户端
 ## server
 - syntax: server IPAddress Number
 - default: -
-- required: yes 
+- required: yes
 - mode: client, server
 
-设置dperf server的监听地址范围。'port'的数量必须要与'server'的数量一致，并且每个worker线程分配一个唯一的监听IP。
+设置dperf server的监听地址范围。'port'的数量必须要与'server'的数量一致。
+默认要求server IP地址数目与CPU数目相等，即每个worker线程分配一个。
+当开启'rss'后，允许server IP地址数目少于CPU数量。
 
 ## listen
 - syntax: listen Port Number
