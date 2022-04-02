@@ -217,7 +217,9 @@ Indicates that the server only accepts connections from these clients, and does 
 - required: yes 
 - mode: client, server
 
-Set the listening IP range of the server. The number of 'port' must be the same as the number of 'server', and each worker thread needs an independent listening IP.
+Set the listening IP range of the server. The number of 'port' must be the same as the number of 'server'.
+By default, the number of server IP addresses is required to be equal to the number of CPUs, that is, one for each worker thread.
+When 'rss' is enabled, the number of server IP addresses is allowed to be less than the number of CPUs.
 
 ## listen
 - syntax: listen Port Number
