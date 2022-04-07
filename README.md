@@ -48,6 +48,8 @@ dperf is a DPDK based 100Gbps network performance and load testing software.
 |6|35.92|54|
 |8|37.12|22|
 
+Note: this test is under one 25Gbps Mellanox CX4
+
 ### Client & Server Configuration
 Above performance is obtained with below configurations:
 
