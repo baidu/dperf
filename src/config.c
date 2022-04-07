@@ -45,8 +45,6 @@ static int config_parse_port(int argc, char *argv[], void *data);
 static int config_parse_duration(int argc, char *argv[], void *data);
 static int config_parse_cps(int argc, char *argv[], void *data);
 static int config_parse_cc(int argc, char *argv[], void *data);
-static int config_parse_keepalive_request_interval(int argc, char *argv[], void *data);
-static int config_parse_keepalive_request_num(int argc, char *argv[], void *data);
 static int config_parse_launch_num(int argc, char *argv[], void *data);
 static int config_parse_client(int argc, char *argv[], void *data);
 static int config_parse_server(int argc, char *argv[], void *data);
@@ -75,7 +73,8 @@ struct config g_config = {
 };
 static struct config_keyword g_config_keywords[] = {
     {"daemon", config_parse_daemon, ""},
-    {"keepalive", config_parse_keepalive, ""},
+    {"keepalive", config_parse_keepalive, "Interval(Timeout) [Number[0-" DEFAULT_STR(KEEPALIVE_REQ_NUM) "]], "
+                "eg 1ms"},
     {"mode", config_parse_mode, "client/server"},
     {"cpu", config_parse_cpu, "n0 n1 n2-n3..., eg 0-4 7 8 9 10"},
     {"socket_mem", config_parse_socket_mem, "n0,n1,n2..."},
@@ -84,9 +83,6 @@ static struct config_keyword g_config_keywords[] = {
     {"cps", config_parse_cps, "Number, eg 1m, 1.5m, 2k, 100"},
     {"cc", config_parse_cc, "Number, eg 100m, 1.5m, 2k, 100"},
     {"flood", config_parse_flood, ""},
-    {"keepalive_request_interval", config_parse_keepalive_request_interval,
-        "Time, eg 1ms, 1s, 60s, default " DEFAULT_STR(DEFAULT_INTERVAL) "s"},
-    {"keepalive_request_num", config_parse_keepalive_request_num, "Number[0-" DEFAULT_STR(KEEPALIVE_REQ_NUM) "]"},
     {"launch_num", config_parse_launch_num, "Number, default " DEFAULT_STR(DEFAULT_LAUNCH)},
     {"client", config_parse_client, "IPAddress Number"},
     {"server", config_parse_server, "IPAddress Number"},
@@ -192,11 +188,77 @@ static int config_parse_daemon(__rte_unused int argc, __rte_unused char *argv[],
     return 0;
 }
 
-static int config_parse_keepalive(__rte_unused int argc, __rte_unused char *argv[], void *data)
+static int config_parse_keepalive_request_interval(struct config *cfg, char *str)
+{
+    char *p = NULL;
+    int val = 0;
+    int rate = 0;
+
+    p = config_str_find_nondigit(str, false);
+    if (p == NULL) {
+        return -1;
+    }
+
+    if (strcmp(p, "ms") == 0) {
+        rate = 1;
+    } else if (strcmp(p, "s") == 0) {
+        rate = TICKS_PER_SEC;
+    } else {
+        return -1;
+    }
+
+    val = atoi(str);
+    if (val <= 0) {
+        return -1;
+    }
+
+    cfg->keepalive_request_interval = val * rate;
+    return 0;
+}
+
+static int config_parse_keepalive_request_num(struct config *cfg, char *str)
+{
+    int val = 0;
+
+    val = config_parse_number(str, true, true);
+    if (val < 0) {
+        return -1;
+    }
+
+    if (val > KEEPALIVE_REQ_NUM) {
+        return -1;
+    }
+
+    cfg->keepalive_request_num = val;
+    return 0;
+}
+
+static int config_parse_keepalive(int argc, char *argv[], void *data)
 {
     struct config *cfg = data;
 
-    cfg->keepalive = 1;
+    if (argc > 3) {
+        return -1;
+    }
+
+    if (cfg->keepalive) {
+        printf("duplicate \'keepalive\'\n");
+        return -1;
+    }
+
+    if (argc > 2) {
+        if (config_parse_keepalive_request_interval(cfg, argv[1]) < 0) {
+            return -1;
+        }
+    }
+
+    if (argc == 3) {
+        if (config_parse_keepalive_request_num(cfg, argv[2]) < 0) {
+            return -1;
+        }
+    }
+
+    cfg->keepalive = true;
     return 0;
 }
 
@@ -630,61 +692,6 @@ static int config_parse_flood(int argc, __rte_unused char *argv[], void *data)
     }
 
     cfg->flood = true;
-    return 0;
-}
-
-static int config_parse_keepalive_request_interval(int argc, char *argv[], void *data)
-{
-    char *p = NULL;
-    int val = 0;
-    int rate = 0;
-    struct config *cfg = data;
-
-    if (argc != 2) {
-        return -1;
-    }
-
-    p = config_str_find_nondigit(argv[1], false);
-    if (p == NULL) {
-        return -1;
-    }
-
-    if (strcmp(p, "ms") == 0) {
-        rate = 1;
-    } else if (strcmp(p, "s") == 0) {
-        rate = TICKS_PER_SEC;
-    } else {
-        return -1;
-    }
-
-    val = atoi(argv[1]);
-    if (val <= 0) {
-        return -1;
-    }
-
-    cfg->keepalive_request_interval = val * rate;
-    return 0;
-}
-
-static int config_parse_keepalive_request_num(int argc, char *argv[], void *data)
-{
-    int val = 0;
-    struct config *cfg = data;
-
-    if (argc != 2) {
-        return -1;
-    }
-
-    val = config_parse_number(argv[1], true, true);
-    if (val < 0) {
-        return -1;
-    }
-
-    if (val > KEEPALIVE_REQ_NUM) {
-        return -1;
-    }
-
-    cfg->keepalive_request_num = val;
     return 0;
 }
 
@@ -1399,6 +1406,21 @@ static int config_check_target(struct config *cfg)
     uint64_t cps = 0;
     uint64_t cps_cc = 0;
 
+    if (cfg->server) {
+        cfg->cc = 0;
+        cfg->cps = 0;
+        cfg->flood = false;
+    } else {
+        if ((cfg->cps == 0) && (cfg->cc == 0)) {
+            printf("Error: no targets\n");
+            return -1;
+        }
+
+        if (cfg->cps == 0) {
+            cfg->cps = DEFAULT_CPS;
+        }
+    }
+
     cps = cfg->cps / cfg->cpu_num;
     cps_cc = cps * RETRANSMIT_TIMEOUT_SEC;
     cc = cfg->cc / cfg->cpu_num;
@@ -1532,13 +1554,27 @@ static int config_check_rss(struct config *cfg)
     }
 
     if ((cfg->cpu_num == cfg->port_num) || (cfg->flood)) {
-        printf("Warnning: rss is disabled");
+        printf("Warnning: rss is disabled\n");
         cfg->rss = false;
     }
 
     if (cfg->vxlan) {
         printf("Error: rss is not supported for vxlan.\n");
         return -1;
+    }
+
+    return 0;
+}
+
+static int config_check_keepalive(struct config *cfg)
+{
+    if (cfg->server == 0) {
+        if (cfg->cc && (cfg->keepalive == false)) {
+            printf("Error: no 'keepalive'\n");
+            return -1;
+        }
+    } else {
+        cfg->keepalive_request_num = 0;
     }
 
     return 0;
@@ -1606,29 +1642,8 @@ int config_parse(int argc, char **argv, struct config *cfg)
         cfg->listen_num = 1;
     }
 
-    if (cfg->server == 0) {
-        if ((cfg->cps == 0) && (cfg->cc == 0)) {
-            printf("no targets set\n");
-            return -1;
-        }
-
-        if (cfg->cc) {
-            cfg->keepalive = 1;
-            if (cfg->keepalive_request_interval == 0) {
-                cfg->keepalive_request_interval = DEFAULT_INTERVAL * TSC_PER_SEC;
-            }
-
-            if (cfg->cps == 0) {
-                cfg->cps = DEFAULT_CPS;
-            }
-        } else {
-            cfg->keepalive = 0;
-            cfg->keepalive_request_interval = 0;
-        }
-    } else {
-        cfg->cc = 0;
-        cfg->cps = 0;
-        cfg->flood = false;
+    if (config_check_keepalive(cfg) < 0) {
+        return -1;
     }
 
     if (cfg->launch_num == 0) {

@@ -25,18 +25,28 @@
 关闭每秒输出统计数据。
 
 ## keepalive
-- syntax: keepalive
+- syntax: keepalive interval(timeout) [num]
 - default: -
 - required: no
-- mode: server
+- mode: client, server
 
 'keepalive'表示允许一条连接发送多个请求、响应。
 
-dperf作为服务器运行时(server模式)，需要明确开启'keepalive'。
-在开启'keepalive'后，dperf server不会主动关闭连接，它会等客户端的FIN或者RST。
-当'keepalve'没有开启，dperf server通过在响应报文中置上FIN, 以最快的速度关闭连接。（想一下，调用POSIX socket API的程序能做到这一点吗？）
+对于dperf server：
+- 当'keepalve'没有开启，dperf server通过在响应报文中置上FIN, 以最快的速度关闭连接。（想一下，调用POSIX socket API的程序能做到这一点吗？）
+- 在开启'keepalive'后，dperf server它会等客户端的FIN/RST或者一段时间之后才会关闭连接。
+- dperf server的连接空闲超时为重传超时（约8秒）加上'timeout'。
+- dperf server上不需要配置'num'。
 
-dperf client不需要显示设置'keepalive'。当配置了'cc'后，'keepalive'会自动打开。
+对于dperf client:
+- dperf client每隔'interval'时间发送一个请求。
+- dperf client在发送完'num'个请求后关闭连接。
+
+'keepalive'使用场景：
+- 并发测试：设置较大的并发连接数（cc 10m），较大的interval，如60s。
+- 带宽测试：设置较大的packet_size（如 1500），较小的interval（如1ms）。
+- 单向PPS测试：设置flood，较小packet_size（如64），较小的并发连接数cc（如3000），较小的interval（如1ms）。
+- 双向PPS测试：设置较小packet_size（如64），较小的并发连接数cc（如3000），较小的interval（如1ms）。
 
 ## cpu
 - syntax: cpu n0 n1 n2-n3...
@@ -157,29 +167,6 @@ Example:
 
 支持TCP/UDP协议，不需要网卡支持FDIR。
 如果开启flood，dperf client仅发连接的第一个报文包；对于TCP协议, dperf发送SYN报文。
-
-## keepalive_request_interval
-- syntax: keepalive_request_interval Time
-- default: keepalive_request_interval 1s
-- required: no
-- mode: client, server
-
-设置同一请求内两个请求之间的时间间隔。只有在设置'cc'后才生效。
-如果在该时间内没有收到请求，服务器会关闭连接。
-
-Example:
-- keepalive_request_interval 1ms
-- keepalive_request_interval 1s
-- keepalive_request_interval 60s
-
-## keepalive_request_num Number(0-32767)
-- syntax: keepalive_request_num Number
-- default: 0
-- required: no
-- mode: client
-
-在一个长连接内，发送多少个请求后再关闭连接。只有在设置'cc'后才生效。
-0表示无限。
 
 ## launch_num
 - syntax: launch_num Number

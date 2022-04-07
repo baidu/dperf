@@ -25,18 +25,29 @@ In daemon mode, dperf statistics are written to the log file ('/var/log/dperf/dp
 Turn off output statistics per second.
 
 ## keepalive
-- syntax: keepalive
+- syntax: keepalive interval(timeout) [num]
 - default: -
 - required: no
-- mode: server
+- mode: client, server
 
 Keepalive means that multiple requests and responses can be sent in one connection.
-'keepalive' needs to be explicitly enabled on the dperf server.
-After 'keepalive' is enabled, the dperf server will not actively close the connection, it will wait for the client's FIN or RST.
-When 'keepalive' is not enabled, the dperf server closes the connection at the fastest speed in the world by directly setting the FIN Flag at the response packet.
 
-There is no need to enable 'keepalive' for the dperf client. When the dperf client finds 'cc' in the configuration file, 'keepalive' will be enable automatically.
- 
+For dperf server:
+- When 'keepalve' is not enabled, the dperf server closes the connection at the fastest speed by setting FIN in the response message. (Think about it, can a program calling the POSIX socket API do this?)
+- After enabling 'keepalive', the dperf server will wait for the client FIN/RST or a period of time before closing the connection.
+- The connection idle timeout of the dperf server is the retransmission timeout (about 8 seconds) plus 'timeout'.
+- 'num' does not need to be configured on the dperf server.
+
+For dperf client:
+- dperf client sends a request every 'interval' time.
+- The dperf client closed the connection after sending 'num' requests.
+
+'keepalive' usage scenarios:
+- CC test: set a larger number of concurrent connections (cc 10m), a larger interval, such as 60s.
+- tps test: set a larger packet_size (such as 1500) and a smaller interval (such as 1ms).
+- TX PPS test: set flood, smaller packet_size (eg 64), smaller number of concurrent connections cc (eg 3000), smaller interval (eg 1ms).
+- TX and RX PPS test: set a smaller packet_size (such as 64), a smaller number of concurrent connections cc (such as 3000), and a smaller interval (such as 1ms).
+
 ## cpu
 - syntax: cpu n0 n1 n2-n3...
 - default: -
@@ -158,29 +169,6 @@ Example:
 
 Support TCP/UDP protocol, no need for network card to support FDIR.
 If flood is enabled, the dperf client only sends the first packet of the connection; for the TCP protocol, dperf sends a SYN packet. 
-
-## keepalive_request_interval
-- syntax: keepalive_request_interval Time
-- default: keepalive_request_interval 1s
-- required: no
-- mode: client, server
-
-Set the interval between two requests in the a connection. It only takes effect after setting 'cc'.
-If no request is received within this time, the server closes the connection. 
-
-Example:
-- keepalive_request_interval 1ms
-- keepalive_request_interval 1s
-- keepalive_request_interval 60s
-
-## keepalive_request_num Number(0-32767)
-- syntax: keepalive_request_num Number
-- default: 0
-- required: no
-- mode: client
-
-How many requests are sent in the a connection before closing the connection. It only takes effect after setting 'cc'.
-0 means unlimited.
 
 ## launch_num
 - syntax: launch_num Number
