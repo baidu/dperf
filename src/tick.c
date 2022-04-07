@@ -45,6 +45,6 @@ void tick_time_init(struct tick_time *tt)
 
     memset(tt, 0, sizeof(struct tick_time));
     tsc_time_init(&tt->tick, now, g_tsc_per_tick);
-    tsc_time_init(&tt->ms100, now, g_tsc_per_tick * 50);
+    tsc_time_init(&tt->ms100, now,  g_tsc_per_second / 10);
     tsc_time_init(&tt->second, now, g_tsc_per_second);
 }

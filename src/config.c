@@ -202,7 +202,7 @@ static int config_parse_keepalive_request_interval(struct config *cfg, char *str
     if (strcmp(p, "ms") == 0) {
         rate = 1;
     } else if (strcmp(p, "s") == 0) {
-        rate = TICKS_PER_SEC;
+        rate = 1000; /* ms */
     } else {
         return -1;
     }
