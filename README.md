@@ -5,7 +5,6 @@ English | [中文](README-CN.md)
 dperf is a DPDK based 100Gbps network performance and load testing software.
 
 ## Advantage
-
 - High performance：
   - Based on DPDK, dperf can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of concurrent connections. 
 - Detailed statistics：
@@ -127,14 +126,12 @@ Below example will start a HTTP CPS stress test.
  - [statistics](docs/statistics.md)
 
 ## Limitation
-
  - dperf requires that the HTTP message is in one packet, which is not suitable for the test of layer 7 load balancer;
  - dperf requires exclusive use of the network interfaces.
  - dperf does not have routing capability. It is recommended to build a test environment with a switch.
 
 ## Related Articles
-
-- [How to set up dperf [English]](https://metonymical.hatenablog.com/entry/2022/02/11/234927) | [[日本語]](https://metonymical.hatenablog.com/entry/2022/02/11/234548)
+- [How to set up dperf](https://metonymical.hatenablog.com/entry/2022/02/11/234927)
 
 ## Contributing
 

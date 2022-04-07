@@ -5,7 +5,6 @@
 dperf 是一个100Gbps的网络性能与压力测试软件。
 
 ## 优点
-
 - 性能强大：
   - 基于 DPDK，使用一台普通 x86 服务器就可以产生巨大的流量：千万级的 HTTP 每秒新建连接数，数百Gbps的带宽，几十亿的并发连接数
 - 统计信息详细：
@@ -126,17 +125,14 @@ ierrors 0                  oerrors  0                  imissed  0
  - [统计说明](docs/statistics-CN.md)
 
 ## 限制
-
  - dperf 要求HTTP消息在一个数据包中，所以不适合7层负载均衡的测试。
  - dperf 要求独占使用网络接口。
  - dperf 没有路由功能。建议配合三层交换机搭建测试环境。
 
 ## 相关文章
-
-- [How to set up dperf [英语]](https://metonymical.hatenablog.com/entry/2022/02/11/234927) | [[日本語]](https://metonymical.hatenablog.com/entry/2022/02/11/234548)
+- [How to set up dperf](https://metonymical.hatenablog.com/entry/2022/02/11/234927)
 
 ## 贡献
-
 dperf 欢迎大家贡献。详情请参阅[贡献指南](CONTRIBUTING.md)。
 
 ## 作者 
