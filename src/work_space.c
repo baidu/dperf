@@ -133,7 +133,7 @@ static void work_space_init_time(struct work_space *ws)
     uint64_t us = 0;
 
     cpu_num = ws->cfg->cpu_num;
-    us = (1000ul * 1000ul * 1000ul) / (TICKS_PER_SEC * cpu_num);
+    us = (1000ul * 1000ul * 1000ul) / (1000ul * cpu_num);
 
     work_space_wait_all(ws);
     usleep(ws->id * us);

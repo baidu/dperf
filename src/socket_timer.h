@@ -97,10 +97,17 @@ static inline void socket_stop_timeout_timer(struct socket *sk)
 
 static inline void socket_start_keepalive_timer(struct socket *sk, uint64_t now_tsc)
 {
+    uint64_t expire = 0;
+    uint64_t interval = 0;
     struct socket_queue *queue = &g_keepalive_timer.queue;
 
     if (sk->keepalive && (sk->snd_nxt == sk->snd_una)) {
-        socket_add_timer(queue, sk, now_tsc);
+        interval = g_config.keepalive_request_interval;
+        expire = sk->timer_tsc + interval;
+        if (unlikely(expire + interval < now_tsc)) {
+            expire = now_tsc;
+        }
+        socket_add_timer(queue, sk, expire);
     }
 }
 
