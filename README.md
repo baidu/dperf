@@ -5,7 +5,6 @@ English | [中文](README-CN.md)
 dperf is a DPDK based 100Gbps network performance and load testing software.
 
 ## Advantage
-
 - High performance：
   - Based on DPDK, dperf can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of concurrent connections. 
 - Detailed statistics：
@@ -85,12 +84,12 @@ ierrors 0                  oerrors  0                  imissed  0
     #Mellanox CX4/CX5 requires 'CONFIG_RTE_LIBRTE_MLX5_PMD=y'
     #HNS3 requires 'CONFIG_RTE_LIBRTE_HNS3_PMD=y'
     #VMXNET3 requires 'CONFIG_RTE_LIBRTE_VMXNET3_PMD=y'
-
+    
     TARGET=x86_64-native-linuxapp-gcc #or arm64-armv8a-linuxapp-gcc
-
+    
     cd /root/dpdk/dpdk-stable-19.11.10
     make install T=$TARGET -j16
-    
+
 ### Build dperf
     cd dperf
     make -j8 RTE_SDK=/root/dpdk/dpdk-stable-19.11.10 RTE_TARGET=$TARGET
@@ -98,15 +97,15 @@ ierrors 0                  oerrors  0                  imissed  0
 ### Bind interface
     #Mellanox NIC skip this step!
     #Suppose your PCI number is 0000:1b:00.0
-
+    
     modprobe uio
     modprobe uio_pci_generic
     /root/dpdk/dpdk-stable-19.11.10/usertools/dpdk-devbind.py -b uio_pci_generic 0000:1b:00.0
-    
+
 ### Start dperf server
     #dperf server bind at 6.6.241.27:80,  gateway is 6.6.241.1
     ./build/dperf -c test/http/server-cps.conf
-    
+
 ### Send request from a client
     #the client IP must be in the range of 'client' in the configuration file
     ping 6.6.241.27
@@ -131,7 +130,11 @@ Below example will start a HTTP CPS stress test.
  - dperf requires exclusive use of the network interfaces.
  - dperf does not have routing capability. It is recommended to build a test environment with a switch.
 
+## Related Articles
+- [How to set up dperf](https://metonymical.hatenablog.com/entry/2022/02/11/234927)
+
 ## Contributing
+
 dperf welcomes your contribution. See the [CONTRIBUTING](CONTRIBUTING.md) file for details.
 
 ## Authors
