@@ -237,7 +237,7 @@ static int config_parse_keepalive(int argc, char *argv[], void *data)
 {
     struct config *cfg = data;
 
-    if (argc > 3) {
+    if ((argc > 3) || (argc < 2)) {
         return -1;
     }
 
@@ -246,10 +246,8 @@ static int config_parse_keepalive(int argc, char *argv[], void *data)
         return -1;
     }
 
-    if (argc > 2) {
-        if (config_parse_keepalive_request_interval(cfg, argv[1]) < 0) {
-            return -1;
-        }
+    if (config_parse_keepalive_request_interval(cfg, argv[1]) < 0) {
+        return -1;
     }
 
     if (argc == 3) {
