@@ -166,9 +166,9 @@ void arp_process(struct work_space *ws, struct rte_mbuf *m)
     net_stats_arp_rx();
     arph = mbuf_arphdr(m);
 
-    if (arph->ar_op == ntohs(ARP_REQUEST)) {
+    if (arph->ar_op == htons(ARP_REQUEST)) {
         arp_process_request(ws, m);
-    } else if (arph->ar_op == ntohs(ARP_REPLY)) {
+    } else if (arph->ar_op == htons(ARP_REPLY)) {
         arp_process_reply(ws, m);
     } else {
         mbuf_free(m);
