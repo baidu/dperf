@@ -64,6 +64,7 @@ struct work_space {
     uint8_t ipv6:1;
     uint8_t server:1;
     uint8_t kni:1;
+    uint8_t change_dip:1;
     uint8_t port_id;
     uint8_t queue_id;
 
@@ -93,6 +94,7 @@ struct work_space {
 
     struct tx_queue tx_queue;
     struct rte_mbuf *mbuf_rx[NB_RXD];
+    struct ip_list  dip_list;
     struct socket_table socket_table;
 };
 

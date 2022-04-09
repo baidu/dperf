@@ -27,6 +27,7 @@
 #include "config_keyword.h"
 #include "http.h"
 #include "ip_range.h"
+#include "ip_list.h"
 #include "mbuf.h"
 #include "port.h"
 #include "socket.h"
@@ -48,6 +49,7 @@ static int config_parse_cc(int argc, char *argv[], void *data);
 static int config_parse_launch_num(int argc, char *argv[], void *data);
 static int config_parse_client(int argc, char *argv[], void *data);
 static int config_parse_server(int argc, char *argv[], void *data);
+static int config_parse_change_dip(int argc, char *argv[], void *data);
 static int config_parse_listen(int argc, char *argv[], void *data);
 static int config_parse_payload_size(int argc, char *argv[], void *data);
 static int config_parse_packet_size(int argc, char *argv[], void *data);
@@ -86,6 +88,7 @@ static struct config_keyword g_config_keywords[] = {
     {"launch_num", config_parse_launch_num, "Number, default " DEFAULT_STR(DEFAULT_LAUNCH)},
     {"client", config_parse_client, "IPAddress Number"},
     {"server", config_parse_server, "IPAddress Number"},
+    {"change_dip", config_parse_change_dip, "IPAddress Step Number\n"},
     {"listen", config_parse_listen, "Port Number, default 80 1" },
     {"payload_size", config_parse_payload_size, "Number"},
     {"packet_size", config_parse_packet_size, "Number"},
@@ -607,6 +610,42 @@ static int config_parse_server(int argc, char *argv[], void *data)
     struct ip_group *ip_group = &cfg->server_ip_group;
 
     return config_parse_ip_group(cfg, argc, argv, ip_group);
+}
+
+static int config_parse_change_dip(int argc, char *argv[], void *data)
+{
+    int i = 0;
+    int af = 0;
+    int num = 0;
+    int step = 0;
+    ipaddr_t ip;
+    struct config *cfg = data;
+
+    if (argc != 4) {
+        return -1;
+    }
+
+    if ((af = config_parse_ip(argv[1], &ip)) < 0) {
+        return -1;
+    }
+
+    if ((step = atoi(argv[2])) <= 0) {
+        return 0;
+    }
+
+    if ((num = atoi(argv[3])) < 0) {
+        return 0;
+    }
+
+    for (i = 0; i < num; i++) {
+        if (ip_list_add(&cfg->dip_list, af, &ip) < 0) {
+            return -1;
+        }
+
+        ipaddr_inc(&ip, step);
+    }
+
+    return 0;
 }
 
 static int config_parse_duration(int argc, char *argv[], void *data)
@@ -1578,6 +1617,39 @@ static int config_check_keepalive(struct config *cfg)
     return 0;
 }
 
+static int config_check_change_dip(struct config *cfg)
+{
+    struct ip_list *ip_list = NULL;
+
+    ip_list = &cfg->dip_list;
+    if (cfg->server) {
+        printf("Error: \'change_dip\' only support client mode\n");
+        return -1;
+    }
+
+    if (!cfg->flood) {
+        printf("Error: \'change_dip\' only support flood mode\n");
+        return -1;
+    }
+
+    if (cfg->vxlan) {
+        printf("Error: \'change_dip\' not support vxlan\n");
+        return -1;
+    }
+
+    if ((ip_list->af == AF_INET6) != cfg->ipv6) {
+        printf("Error: bad ip address family of \'change_dip\'\n");
+        return -1;
+    }
+
+    if (ip_list->num < cfg->cpu_num) {
+        printf("Error: number of \'change_dip\' is less than cpu number\n");
+        return -1;
+    }
+
+    return 0;
+}
+
 int config_parse(int argc, char **argv, struct config *cfg)
 {
     int conf = 0;
@@ -1685,6 +1757,10 @@ int config_parse(int argc, char **argv, struct config *cfg)
     }
 
     if (config_set_port_ip_range(cfg) != 0) {
+        return -1;
+    }
+
+    if (config_check_change_dip(cfg) < 0) {
         return -1;
     }
 
