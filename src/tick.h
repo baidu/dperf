@@ -20,6 +20,7 @@
 #define __TICK_H
 
 #include <stdint.h>
+#include <sys/time.h>
 #include <rte_cycles.h>
 
 /* 1 tick = 0.1 ms */
@@ -61,5 +62,7 @@ static inline void tick_time_update(struct tick_time *tt)
 
 void tick_init(void);
 void tick_time_init(struct tick_time *tt);
+void tick_wait_init(struct timeval *last_tv);
+uint64_t tick_wait_one_second(struct timeval *last_tv);
 
 #endif

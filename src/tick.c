@@ -18,16 +18,70 @@
 
 #include "tick.h"
 
+#include <unistd.h>
+#include <sys/time.h>
 #include <string.h>
 #include <rte_cycles.h>
 
 static uint64_t g_tsc_per_tick = 0;
 uint64_t g_tsc_per_second = 0;
 
+void tick_wait_init(struct timeval *last_tv)
+{
+    gettimeofday(last_tv, NULL);
+}
+
+uint64_t tick_wait_one_second(struct timeval *last_tv)
+{
+    uint64_t us = 0;
+    uint64_t us_wait = 0;
+    uint64_t sec = 1000 * 1000;
+    struct timeval tv;
+
+    while(1) {
+        gettimeofday(&tv, NULL);
+        us = (tv.tv_sec - last_tv->tv_sec) * 1000 *1000 + tv.tv_usec - last_tv->tv_usec;
+        if (us >= sec) {
+            *last_tv = tv;
+            break;
+        }
+        us_wait = sec - us;
+        if (us_wait > 1000) {
+            usleep(500);
+        } else if (us_wait > 100) {
+            usleep(50);
+        }
+    }
+
+    return us;
+}
+
+static uint64_t tick_get_hz(void)
+{
+    int i = 0;
+    uint64_t last_tsc = 0;
+    uint64_t tsc = 0;
+    struct timeval last_tv;
+    uint64_t total = 0;
+    int num = 4;
+
+    tick_wait_init(&last_tv);
+    last_tsc = rte_rdtsc();
+    for (i = 0; i < num; i++) {
+        tick_wait_one_second(&last_tv);
+        tsc = rte_rdtsc();
+        total += tsc - last_tsc;
+        last_tsc = tsc;
+    }
+
+    return total / num;
+}
+
 void tick_init(void)
 {
-    uint64_t hz = rte_get_tsc_hz();
+    uint64_t hz = 0;
 
+    hz = tick_get_hz();
     g_tsc_per_second = hz;
     g_tsc_per_tick = hz / TICKS_PER_SEC;
 }

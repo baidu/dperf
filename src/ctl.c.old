@@ -59,15 +59,40 @@ static void ctl_log_close(FILE *fp)
     }
 }
 
-static struct timeval g_last_tv;
+static uint64_t g_last_tsc;
 static void ctl_wait_init(void)
 {
-    tick_wait_init(&g_last_tv);
+    g_last_tsc = rte_rdtsc();
 }
 
 static void ctl_wait_1s(void)
 {
-    tick_wait_one_second(&g_last_tv);
+    uint64_t tsc = 0;
+    uint64_t tsc_passed = 0;
+    uint64_t tsc_wait = 0;
+    uint64_t tsc_per_ms = TSC_PER_SEC / 1000;
+    uint64_t tsc_per_us = TSC_PER_SEC / (1000 * 1000);
+
+    while (1) {
+        tsc = rte_rdtsc();
+        tsc_passed = tsc - g_last_tsc;
+        if (tsc_passed >= TSC_PER_SEC) {
+            g_last_tsc = tsc;
+            break;
+        } else {
+            tsc_wait = TSC_PER_SEC - tsc_passed;
+            if (tsc_wait > tsc_per_ms) {
+                /* sleep 0.5 ms */
+                usleep(500);
+            } else if (tsc_wait > (tsc_per_us * 100)) {
+                usleep(50);
+            }
+            /*
+             * don't sleep any more
+             * let's loop
+             * */
+        }
+    }
 }
 
 static void ctl_slow_start(FILE *fp, int *seconds)

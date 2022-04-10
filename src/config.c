@@ -1622,6 +1622,9 @@ static int config_check_change_dip(struct config *cfg)
     struct ip_list *ip_list = NULL;
 
     ip_list = &cfg->dip_list;
+    if (ip_list->num == 0) {
+        return 0;
+    }
     if (cfg->server) {
         printf("Error: \'change_dip\' only support client mode\n");
         return -1;

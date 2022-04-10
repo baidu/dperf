@@ -167,12 +167,14 @@ static inline void work_space_tx_send_tcp(struct work_space *ws, struct rte_mbuf
     }
 
     csum_offload_ip_tcpudp(mbuf, ol_flags);
+    net_stats_tcp_tx();
     work_space_tx_send(ws, mbuf);
 }
 
 static inline void work_space_tx_send_udp(struct work_space *ws, struct rte_mbuf *mbuf)
 {
     csum_offload_ip_tcpudp(mbuf, RTE_MBUF_F_TX_UDP_CKSUM);
+    net_stats_udp_tx();
     work_space_tx_send(ws, mbuf);
 }
 

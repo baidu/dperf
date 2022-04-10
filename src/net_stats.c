@@ -171,7 +171,7 @@ static int net_stats_print_pkt(struct net_stats *stats, char *buf, int buf_len)
     net_stats_format_print(((uint64_t)stats->byte_tx) * 8, bits_tx, STATS_BUF_LEN);
     net_stats_format_print(stats->tx_drop, tx_drop, STATS_BUF_LEN);
 
-    SNPRINTF(p, len, "pktRx   %-18s pktTx    %-18s bitsRx   %-18s bitsTx  %-18s dropTx  %-10s\n",
+    SNPRINTF(p, len, "pktRx   %-18s pktTx    %-18s bitsRx   %-18s bitsTx  %-18s dropTx  %-18s\n",
                     pkt_rx, pkt_tx, bits_rx, bits_tx, tx_drop);
     return p - buf;
 
@@ -207,13 +207,18 @@ err:
     return -1;
 }
 
-static int net_stats_print_other_protocols(struct net_stats *stats, char *buf, int buf_len)
+static int net_stats_print_proto_rx_tx(struct net_stats *stats, char *buf, int buf_len)
 {
     char *p = buf;
     char arp_rx[STATS_BUF_LEN];
     char arp_tx[STATS_BUF_LEN];
     char icmp_rx[STATS_BUF_LEN];
     char icmp_tx[STATS_BUF_LEN];
+    char tcp_rx[STATS_BUF_LEN];
+    char tcp_tx[STATS_BUF_LEN];
+    char udp_rx[STATS_BUF_LEN];
+    char udp_tx[STATS_BUF_LEN];
+    char tos_rx[STATS_BUF_LEN];
     char other_rx[STATS_BUF_LEN];
     char rx_bad[STATS_BUF_LEN];
     int len = buf_len;
@@ -222,11 +227,23 @@ static int net_stats_print_other_protocols(struct net_stats *stats, char *buf, i
     net_stats_format_print(stats->arp_tx, arp_tx, STATS_BUF_LEN);
     net_stats_format_print(stats->icmp_rx, icmp_rx, STATS_BUF_LEN);
     net_stats_format_print(stats->icmp_tx, icmp_tx, STATS_BUF_LEN);
+    net_stats_format_print(stats->udp_rx, udp_rx, STATS_BUF_LEN);
+    net_stats_format_print(stats->udp_tx, udp_tx, STATS_BUF_LEN);
+    net_stats_format_print(stats->tcp_rx, tcp_rx, STATS_BUF_LEN);
+    net_stats_format_print(stats->tcp_tx, tcp_tx, STATS_BUF_LEN);
+    net_stats_format_print(stats->tos_rx, tos_rx, STATS_BUF_LEN);
     net_stats_format_print(stats->other_rx, other_rx, STATS_BUF_LEN);
     net_stats_format_print(stats->rx_bad, rx_bad, STATS_BUF_LEN);
 
-    SNPRINTF(p, len, "arpRx   %-18s arpTx    %-18s icmpRx   %-18s icmpTx  %-18s otherRx %-10s badRx %-10s\n",
-                    arp_rx, arp_tx, icmp_rx, icmp_tx, other_rx, rx_bad);
+    SNPRINTF(p, len, "tcpRx   %-18s tcpTx    %-18s udpRx    %-18s udpTx   %-18s\n",
+                    tcp_rx, tcp_tx, udp_rx, udp_tx);
+
+    SNPRINTF(p, len, "arpRx   %-18s arpTx    %-18s icmpRx   %-18s icmpTx  %-18s\n",
+                    arp_rx, arp_tx, icmp_rx, icmp_tx);
+
+    SNPRINTF(p, len, "tosRx   %-18s otherRx  %-18s badRx    %-18s\n",
+                    tos_rx, other_rx, rx_bad);
+
     return p - buf;
 
 err:
@@ -306,7 +323,7 @@ static int net_stats_print(struct net_stats *stats, char *buf, int buf_len)
         buf_skip(p, len, ret);
     }
 
-    ret = net_stats_print_other_protocols(stats, p, len);
+    ret = net_stats_print_proto_rx_tx(stats, p, len);
     buf_skip(p, len, ret);
 
     if (g_config.protocol == IPPROTO_TCP) {
