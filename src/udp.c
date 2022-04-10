@@ -149,6 +149,7 @@ static void udp_socket_keepalive_timer_handler(struct work_space *ws, struct soc
 {
     if (ws->server == 0) {
         if (work_space_in_duration(ws)) {
+            sk->keepalive_request_num++;
             udp_send(ws, sk);
             socket_start_keepalive_timer(sk, work_space_tsc(ws));
         }
@@ -215,13 +216,12 @@ static int udp_client_launch(struct work_space *ws)
     flood = g_config.flood;
     num = work_space_client_launch_num(ws);
     for (i = 0; i < num; i++) {
-        sk = socket_client_open(&ws->socket_table);
+        sk = socket_client_open(&ws->socket_table, work_space_tsc(ws));
         if (unlikely(sk == NULL)) {
             continue;
         }
 
         /* fot rtt calculationn */
-        sk->timer_tsc = work_space_tsc(ws);
         udp_send(ws, sk);
         if (sk->keepalive) {
             socket_start_keepalive_timer(sk, work_space_tsc(ws));

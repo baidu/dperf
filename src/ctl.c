@@ -59,6 +59,42 @@ static void ctl_log_close(FILE *fp)
     }
 }
 
+static uint64_t g_last_tsc;
+static void ctl_wait_init(void)
+{
+    g_last_tsc = rte_rdtsc();
+}
+
+static void ctl_wait_1s(void)
+{
+    uint64_t tsc = 0;
+    uint64_t tsc_passed = 0;
+    uint64_t tsc_wait = 0;
+    uint64_t tsc_per_ms = TSC_PER_SEC / 1000;
+    uint64_t tsc_per_us = TSC_PER_SEC / (1000 * 1000);
+
+    while (1) {
+        tsc = rte_rdtsc();
+        tsc_passed = tsc - g_last_tsc;
+        if (tsc_passed >= TSC_PER_SEC) {
+            g_last_tsc = tsc;
+            break;
+        } else {
+            tsc_wait = TSC_PER_SEC - tsc_passed;
+            if (tsc_wait > tsc_per_ms) {
+                /* sleep 0.5 ms */
+                usleep(500);
+            } else if (tsc_wait > (tsc_per_us * 100)) {
+                usleep(50);
+            }
+            /*
+             * don't sleep any more
+             * let's loop
+             * */
+        }
+    }
+}
+
 static void ctl_slow_start(FILE *fp, int *seconds)
 {
     int i = 0;
@@ -77,7 +113,7 @@ static void ctl_slow_start(FILE *fp, int *seconds)
         cps = step * i;
         launch_interval = (g_tsc_per_second * launch_num) / cps;
         work_space_set_launch_interval(launch_interval);
-        sleep(1);
+        ctl_wait_1s();
         net_stats_print_speed(fp, (*seconds)++);
         if (g_stop) {
             break;
@@ -102,13 +138,14 @@ static void *ctl_thread_main(void *data)
     work_space_wait_start();
     kni_link_up(cfg);
 
+    ctl_wait_init();
     /* slow start */
     if (cfg->server == 0) {
         ctl_slow_start(fp, &seconds);
     }
 
     for (i = 0; i < count; i++) {
-        sleep(1);
+        ctl_wait_1s();
         net_stats_print_speed(fp, seconds++);
         if (g_stop) {
             break;
@@ -117,7 +154,7 @@ static void *ctl_thread_main(void *data)
 
     work_space_stop_all();
     for (i = 0; i < DELAY_SEC; i++) {
-        sleep(1);
+        ctl_wait_1s();
         net_stats_print_speed(fp, seconds++);
     }
 

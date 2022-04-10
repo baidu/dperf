@@ -782,7 +782,7 @@ static inline int tcp_client_launch(struct work_space *ws)
     flood = g_config.flood;
     num = work_space_client_launch_num(ws);
     for (i = 0; i < num; i++) {
-        sk = socket_client_open(&ws->socket_table);
+        sk = socket_client_open(&ws->socket_table, work_space_tsc(ws));
         if (unlikely(sk == NULL)) {
             continue;
         }

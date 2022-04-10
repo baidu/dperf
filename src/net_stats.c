@@ -349,32 +349,14 @@ static void net_stats_add(struct net_stats *result, struct net_stats *s)
     }
 }
 
-__thread uint64_t g_current_ms = 0;
-static uint64_t net_stats_elapse_ms(void)
-{
-    struct timeval tv;
-    uint64_t now_ms, ret;
-
-    gettimeofday(&tv, NULL);
-    now_ms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
-    ret = now_ms - g_current_ms;
-    g_current_ms = now_ms;
-
-    return ret;
-}
-
+/* called every 1 second */
 static void net_stats_del(struct net_stats *result, struct net_stats *s0, struct net_stats *s1)
 {
     int i = 0;
-    uint64_t ms = net_stats_elapse_ms();
 
     for (i = 0; i < NET_STATS_ELEMENTS_NUM; i++) {
         if (NET_STATS(s0, i) > NET_STATS(s1, i)) {
-            if (i < NET_STATS_INC_ELEMENTS_NUM) {
-                NET_STATS(result, i) = ((NET_STATS(s0, i) - NET_STATS(s1, i)) * 1000) / ms;
-            } else {
-                NET_STATS(result, i) = NET_STATS(s0, i) - NET_STATS(s1, i);
-            }
+            NET_STATS(result, i) = NET_STATS(s0, i) - NET_STATS(s1, i);
         } else {
             NET_STATS(result, i) = 0;
         }
