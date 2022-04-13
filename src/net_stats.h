@@ -155,10 +155,10 @@ extern __thread struct net_stats g_net_stats;
                                         g_net_stats.rtt_tsc += work_space_tsc(ws) - sk->timer_tsc;  \
                                     } while (0)
 
-#define net_stats_tos_ipv4_rx(iph)  do {                            \
-                                        if (iph->tos) {             \
-                                            g_net_stats.tos_rx++;   \
-                                        }                           \
+#define net_stats_tos_ipv4_rx(ws, iph)  do {                                            \
+                                        if (ws->tos && (ws->tos == iph->tos)) {         \
+                                            g_net_stats.tos_rx++;                       \
+                                        }                                               \
                                     } while (0)
 
 #define net_stats_tos_ipv6_rx(ip6h) do {                                                \

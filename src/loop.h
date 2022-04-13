@@ -68,7 +68,7 @@ static inline void vxlan_input(struct work_space *ws, struct rte_mbuf *m,
         iph = (struct iphdr *)(((uint8_t *)eth) + sizeof(struct eth_hdr));
         ip6h = (struct ip6_hdr *)iph;
         if ((eth->type == htons(ETHER_TYPE_IPv4)) && (!ws->ipv6)) {
-            net_stats_tos_ipv4_rx(iph);
+            net_stats_tos_ipv4_rx(ws, iph);
             proto = iph->protocol;
         } else if ((eth->type == htons(ETHER_TYPE_IPv6)) && (ws->ipv6)) {
             net_stats_tos_ipv6_rx(ip6h);
@@ -126,7 +126,7 @@ static inline void ipv4_input(struct work_space *ws, struct rte_mbuf *m,
             return;
         }
 
-        net_stats_tos_ipv4_rx(iph);
+        net_stats_tos_ipv4_rx(ws, iph);
         if (likely(proto == IPPROTO_TCP)) {
             net_stats_tcp_rx();
             return tcp_input(ws, m);

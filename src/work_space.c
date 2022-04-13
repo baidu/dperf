@@ -196,6 +196,7 @@ struct work_space *work_space_new(struct config *cfg, int id)
     ws->id = id;
     ws->ipv6 = cfg->af == AF_INET6;
     ws->cfg = cfg;
+    ws->tos = cfg->tos;
     ws->tx_queue.tx_burst = cfg->tx_burst;
     work_space_get_port(ws);
 
