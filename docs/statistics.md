@@ -21,6 +21,21 @@ Bits sent per second.
 ### dropTx
 The number of tables lost per second due to a large number of packets being sent at one time and some packets are not being sent.
 
+### udpRx
+The number of UDP messages received per second.
+
+### udpTx
+The number of UDP messages sent per second.
+
+### tcpRx
+The number of TCP messages received per second.
+
+### tcpTx
+The number of TCP messages received per second.
+
+### tosRx
+The number of IP messages received per second with TOS equal to that in the configuration.
+
 ### arpRx
 The number of arp packets received per second.
 

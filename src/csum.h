@@ -22,14 +22,14 @@
 #include "mbuf.h"
 #include "dpdk.h"
 
-static inline uint16_t csum_update_tcp_seq(uint16_t ocsum, uint32_t seq0, uint32_t seq1)
+static inline uint16_t csum_update_u32(uint16_t ocsum, uint32_t oval, uint32_t nval)
 {
     uint32_t csum = 0;
 
-    csum = (~(seq0 >> 16) & 0xFFFF )
-           + ((~(seq0 & 0xFFFF)) & 0xFFFF)
-           + (~(seq1 >> 16) & 0xFFFF )
-           + ((~(seq1 & 0xFFFF)) & 0xFFFF)
+    csum = (~(oval >> 16) & 0xFFFF )
+           + ((~(oval & 0xFFFF)) & 0xFFFF)
+           + (~(nval >> 16) & 0xFFFF )
+           + ((~(nval & 0xFFFF)) & 0xFFFF)
            + ocsum;
     csum = (csum & 0xFFFF) + (csum >> 16);
     csum = (csum & 0xFFFF) + (csum >> 16);
@@ -37,7 +37,20 @@ static inline uint16_t csum_update_tcp_seq(uint16_t ocsum, uint32_t seq0, uint32
     return csum;
 }
 
-static inline uint16_t csum_update(uint16_t ocsum, uint16_t oval, uint16_t nval)
+static inline uint16_t csum_update_u128(uint16_t ocsum, uint32_t *oval, uint32_t *nval)
+{
+    int i = 0;
+    uint32_t csum = 0;
+
+    csum = ocsum;
+    for (i = 0; i < 4; i++) {
+        csum = csum_update_u32(csum, oval[i], nval[i]);
+    }
+
+    return csum;
+}
+
+static inline uint16_t csum_update_u16(uint16_t ocsum, uint16_t oval, uint16_t nval)
 {
     uint32_t csum = 0;
 

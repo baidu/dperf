@@ -21,6 +21,21 @@
 ### dropTx
 由于一次发送大量报文导致部分报文未发送引起的每秒丢表数。
 
+### udpRx
+每秒收到的UDP报文个数。
+
+### udpTx
+每秒发送的UDP报文个数。
+
+### tcpRx
+每秒收到的TCP报文个数。
+
+### tcpTx
+每秒收到的TCP报文个数。
+
+### tosRx
+每秒收到的IP报文中tos与配置中tos相等的报文个数。
+
 ### arpRx
 每秒收到的arp报文数。
 
@@ -32,7 +47,7 @@
 
 ### icmpTx
 每秒发送的icmp报文数量，包含icmpv6报文。
- 
+
 ### otherRx
 每秒收到的未知类型的报文个数。
 
@@ -55,7 +70,7 @@
 
 ### rstRx
 每秒接收到的TCP RST报文个数。
-         
+
 ### rstTx
 每秒发送的TCP RST报文个数。
 
@@ -100,7 +115,7 @@
 - 客户端每秒发送的HTTP GET请求个数
 - 服务端每秒收到的HTTP GET请求个数
 
-### http2XX                 
+### http2XX
 - 客户端每秒接收的HTTP 2XX响应个数
 - 服务端每秒发送的HTTP 2XX响应个数
 

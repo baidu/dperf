@@ -24,15 +24,27 @@
 
 struct net_stats {
     /* Increasing */
+
+    /* interface */
     uint64_t pkt_rx;
     uint64_t pkt_tx;
     uint64_t byte_rx;
     uint64_t byte_tx;
 
-    uint64_t syn_rt;
-    uint64_t fin_rt;
-    uint64_t ack_rt;
-    uint64_t push_rt;
+    uint64_t tx_drop;
+    uint64_t pkt_lost;
+    uint64_t rx_bad;
+
+    uint64_t tos_rx;
+
+    /* socket */
+    uint64_t socket_open;
+    uint64_t socket_close;
+    uint64_t socket_error;
+
+    /* tcp */
+    uint64_t tcp_rx;
+    uint64_t tcp_tx;
 
     uint64_t syn_rx;
     uint64_t syn_tx;
@@ -40,9 +52,13 @@ struct net_stats {
     uint64_t fin_rx;
     uint64_t fin_tx;
 
-    uint64_t socket_open;
-    uint64_t socket_close;
-    uint64_t socket_error;
+    uint64_t rst_rx;
+    uint64_t rst_tx;
+
+    uint64_t syn_rt;
+    uint64_t fin_rt;
+    uint64_t ack_rt;
+    uint64_t push_rt;
 
     uint64_t http_2xx;
     uint64_t tcp_req;
@@ -50,27 +66,27 @@ struct net_stats {
     uint64_t tcp_rsp;
     uint64_t http_error;
 
-    uint64_t rst_rx;
-    uint64_t rst_tx;
+    uint64_t tcp_drop;
 
+    /* udp */
+    uint64_t udp_rx;
+    uint64_t udp_tx;
+    uint64_t udp_rto;
+    uint64_t udp_drop;
+
+    /* arp */
     uint64_t arp_rx;
     uint64_t arp_tx;
 
+    /* icmp and icmp6 */
     uint64_t icmp_rx;
     uint64_t icmp_tx;
 
+    /* kni */
     uint64_t kni_rx;
     uint64_t kni_tx;
 
     uint64_t other_rx;
-
-    uint64_t udp_rto;
-    uint64_t udp_drop;
-    uint64_t tcp_drop;
-
-    uint64_t tx_drop;
-    uint64_t pkt_lost;
-    uint64_t rx_bad;
 
     /* mutable  */
     uint64_t mutable_start[0];
@@ -120,6 +136,10 @@ extern __thread struct net_stats g_net_stats;
 #define net_stats_icmp_tx()         do {g_net_stats.icmp_tx++;} while (0)
 #define net_stats_kni_rx()          do {g_net_stats.kni_rx++;} while (0)
 #define net_stats_kni_tx()          do {g_net_stats.kni_tx++;} while (0)
+#define net_stats_tcp_rx()          do {g_net_stats.tcp_rx++;} while (0)
+#define net_stats_tcp_tx()          do {g_net_stats.tcp_tx++;} while (0)
+#define net_stats_udp_rx()          do {g_net_stats.udp_rx++;} while (0)
+#define net_stats_udp_tx()          do {g_net_stats.udp_tx++;} while (0)
 #define net_stats_other_rx()        do {g_net_stats.other_rx++;} while (0)
 #define net_stats_rx(m)             do {                                                \
                                         g_net_stats.pkt_rx++;                           \
@@ -133,6 +153,19 @@ extern __thread struct net_stats g_net_stats;
 #define net_stats_rtt(ws, sk)       do {                                                            \
                                         g_net_stats.rtt_num++;                                      \
                                         g_net_stats.rtt_tsc += work_space_tsc(ws) - sk->timer_tsc;  \
+                                    } while (0)
+
+#define net_stats_tos_ipv4_rx(ws, iph)  do {                                            \
+                                        if (ws->tos && (ws->tos == iph->tos)) {         \
+                                            g_net_stats.tos_rx++;                       \
+                                        }                                               \
+                                    } while (0)
+
+#define net_stats_tos_ipv6_rx(ip6h) do {                                                \
+                                        uint32_t mask = htonl(((uint32_t)0xffff) << 20);\
+                                        if (ip6h->ip6_flow & mask) {                    \
+                                            g_net_stats.tos_rx++;                       \
+                                        }                                               \
                                     } while (0)
 
 #endif

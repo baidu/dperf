@@ -5,7 +5,7 @@ SRCS-y := src/main.c src/socket.c src/config.c src/client.c src/mbuf_cache.c src
           src/net_stats.c src/flow.c src/work_space.c src/cpuload.c src/config_keyword.c\
           src/socket_timer.c src/ip.c src/eth.c src/server.c src/dpdk.c src/ctl.c       \
           src/icmp6.c src/neigh.c src/vxlan.c src/csum.c src/kni.c src/bond.c src/lldp.c\
-          src/rss.c
+          src/rss.c src/ip_list.c
 
 #dpdk 17.11, 18.11, 19.11
 ifdef RTE_SDK

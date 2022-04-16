@@ -97,5 +97,6 @@ static inline void ip6h_swap_addr(struct ip6_hdr *ip6h)
 #define IPV6_FMT "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x"
 
 int ipaddr_init(ipaddr_t *ip, const char *str);
+void ipaddr_inc(ipaddr_t *ip, uint32_t n);
 
 #endif

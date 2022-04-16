@@ -47,6 +47,42 @@ static inline void tcp_process_rst(struct socket *sk, struct rte_mbuf *m)
     mbuf_free2(m);
 }
 
+static inline void tcp_change_dipv6(struct work_space *ws, struct ip6_hdr *ip6h, struct tcphdr *th)
+{
+    ipaddr_t addr_old;
+    ipaddr_t addr_new;
+    struct ip_list *ip_list = NULL;
+
+    ip_list = &ws->dip_list;
+    addr_old.in6 = ip6h->ip6_dst;
+    ip_list_get_next_ipv6(ip_list, &addr_new.in6);
+    ip6h->ip6_dst = addr_new.in6;
+    th->th_sum = csum_update_u128(th->th_sum, (uint32_t *)&addr_old, (uint32_t *)&addr_new);
+}
+
+static inline void tcp_change_dipv4(struct work_space *ws, struct iphdr *iph, struct tcphdr *th)
+{
+    uint32_t addr_old = 0;
+    uint32_t addr_new = 0;
+    struct ip_list *ip_list = NULL;
+
+    ip_list = &ws->dip_list;
+    addr_old = iph->daddr;
+    ip_list_get_next_ipv4(ip_list, &addr_new);
+    iph->daddr = addr_new;
+    iph->check = csum_update_u32(iph->check, addr_old, addr_new);
+    th->th_sum = csum_update_u32(th->th_sum, addr_old, addr_new);
+}
+
+static inline void tcp_change_dip(struct work_space *ws, struct iphdr *iph, struct tcphdr *th)
+{
+    if (ws->ipv6) {
+        tcp_change_dipv6(ws, (struct ip6_hdr *)iph, th);
+    } else {
+        tcp_change_dipv4(ws, iph, th);
+    }
+}
+
 static inline struct rte_mbuf *tcp_new_packet(struct work_space *ws, struct socket *sk, uint8_t tcp_flags)
 {
     uint16_t csum_ip = 0;
@@ -94,11 +130,11 @@ static inline struct rte_mbuf *tcp_new_packet(struct work_space *ws, struct sock
             th = (struct tcphdr *)((uint8_t *)ip6h + sizeof(struct ip6_hdr));
         } else {
             th = (struct tcphdr *)((uint8_t *)iph + sizeof(struct iphdr));
-            iph->check = csum_update(csum_ip, 0, htons(ws->ip_id));
+            iph->check = csum_update_u16(csum_ip, 0, htons(ws->ip_id));
         }
 
-        csum_tcp = csum_update_tcp_seq(csum_tcp, htonl(sk->snd_nxt), htonl(sk->rcv_nxt));
-        csum_tcp = csum_update(csum_tcp, 0, htons(tcp_flags));
+        csum_tcp = csum_update_u32(csum_tcp, htonl(sk->snd_nxt), htonl(sk->rcv_nxt));
+        csum_tcp = csum_update_u16(csum_tcp, 0, htons(tcp_flags));
     } else {
         iph = mbuf_ip_hdr(m);
         th = mbuf_tcp_hdr(m);
@@ -130,6 +166,11 @@ static inline struct rte_mbuf *tcp_new_packet(struct work_space *ws, struct sock
         SOCKET_LOG(sk, "tx");
     }
 #endif
+
+    /* only in client mode */
+    if (ws->change_dip) {
+        tcp_change_dip(ws, iph, th);
+    }
 
     return m;
 }
@@ -741,7 +782,7 @@ static inline int tcp_client_launch(struct work_space *ws)
     flood = g_config.flood;
     num = work_space_client_launch_num(ws);
     for (i = 0; i < num; i++) {
-        sk = socket_client_open(&ws->socket_table);
+        sk = socket_client_open(&ws->socket_table, work_space_tsc(ws));
         if (unlikely(sk == NULL)) {
             continue;
         }

@@ -59,6 +59,17 @@ static void ctl_log_close(FILE *fp)
     }
 }
 
+static struct timeval g_last_tv;
+static void ctl_wait_init(void)
+{
+    tick_wait_init(&g_last_tv);
+}
+
+static void ctl_wait_1s(void)
+{
+    tick_wait_one_second(&g_last_tv);
+}
+
 static void ctl_slow_start(FILE *fp, int *seconds)
 {
     int i = 0;
@@ -77,7 +88,7 @@ static void ctl_slow_start(FILE *fp, int *seconds)
         cps = step * i;
         launch_interval = (g_tsc_per_second * launch_num) / cps;
         work_space_set_launch_interval(launch_interval);
-        sleep(1);
+        ctl_wait_1s();
         net_stats_print_speed(fp, (*seconds)++);
         if (g_stop) {
             break;
@@ -102,13 +113,14 @@ static void *ctl_thread_main(void *data)
     work_space_wait_start();
     kni_link_up(cfg);
 
+    ctl_wait_init();
     /* slow start */
     if (cfg->server == 0) {
         ctl_slow_start(fp, &seconds);
     }
 
     for (i = 0; i < count; i++) {
-        sleep(1);
+        ctl_wait_1s();
         net_stats_print_speed(fp, seconds++);
         if (g_stop) {
             break;
@@ -117,7 +129,7 @@ static void *ctl_thread_main(void *data)
 
     work_space_stop_all();
     for (i = 0; i < DELAY_SEC; i++) {
-        sleep(1);
+        ctl_wait_1s();
         net_stats_print_speed(fp, seconds++);
     }
 
