@@ -43,3 +43,11 @@ int ipaddr_init(ipaddr_t *ip, const char *str)
 
     return -1;
 }
+
+void ipaddr_inc(ipaddr_t *ip, uint32_t n)
+{
+    uint32_t addr = 0;
+
+    addr = ntohl(ip->ip) + n;
+    ip->ip = htonl(addr);
+}

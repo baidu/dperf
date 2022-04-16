@@ -263,7 +263,7 @@ static inline void socket_server_open(__rte_unused struct socket_table *st, stru
     sk->rcv_nxt = ntohl(th->th_seq) + 1;
 }
 
-static inline struct socket *socket_client_open(struct socket_table *st)
+static inline struct socket *socket_client_open(struct socket_table *st, uint64_t now_tsc)
 {
     struct socket *sk = NULL;
 
@@ -272,6 +272,7 @@ static inline struct socket *socket_client_open(struct socket_table *st)
 #ifdef DPERF_DEBUG
         sk->log = 0;
 #endif
+        sk->timer_tsc = now_tsc;
         sk->retrans = 0;
         sk->keepalive_request_num = 0;
         sk->keepalive = g_config.keepalive;

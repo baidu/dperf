@@ -333,3 +333,18 @@ Note: 'vxlan' cannot be used simultaneously with 'rss' yet.
 - mode: client, server
 
 Set whether dperf replies rst to SYN packets requesting unopened TCP ports. 
+
+##change_dip
+- syntax: change_dip IPAddress Step Number
+- default: -
+- required: no
+- mode: client
+
+When 'flood' is enabled, 'change_ip' can be used to modify the destination IP of sending packets.
+'change_ip' can be configured with multiple lines and supports up to 65536 IP addresses. These IP addresses are evenly distributed to each thread.
+When dperf sends each TCP/UDP message, it modifies the destination IP of the message; dperf obtains the IP from the address pool by polling.
+'IPAddress' is the starting address, 'Step' is the interval for the next IP, and 'Number' is the total number of IPs.
+
+Example:
+- change_ip 192.168.1.1 64 100
+- change_dip 2001:6:6:241::1 1 20

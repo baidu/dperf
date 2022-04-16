@@ -20,6 +20,7 @@
 #define __CONFIG_H
 
 #include "ip_range.h"
+#include "ip_list.h"
 #include "port.h"
 #include "eth.h"
 
@@ -112,6 +113,7 @@ struct config {
 
     struct ip_group client_ip_group;
     struct ip_group server_ip_group;
+    struct ip_list  dip_list;
 };
 
 #define config_for_each_port(cfg, port) \

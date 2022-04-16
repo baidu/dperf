@@ -142,6 +142,25 @@ static void work_space_init_time(struct work_space *ws)
     tick_time_init(&ws->time);
 }
 
+static int work_space_init_change_dip(struct work_space *ws, struct config *cfg)
+{
+    int ret = 0;
+
+    if (cfg->server) {
+        return 0;
+    }
+
+    if (cfg->dip_list.num > 0) {
+        ret = ip_list_split(&cfg->dip_list, &ws->dip_list, ws->id, cfg->cpu_num);
+        if (ret <= 0) {
+            return -1;
+        }
+        ws->change_dip = 1;
+    }
+
+    return 0;
+}
+
 static struct work_space *work_space_alloc(struct config *cfg, int id)
 {
     size_t size = 0;
@@ -177,8 +196,14 @@ struct work_space *work_space_new(struct config *cfg, int id)
     ws->id = id;
     ws->ipv6 = cfg->af == AF_INET6;
     ws->cfg = cfg;
+    ws->tos = cfg->tos;
     ws->tx_queue.tx_burst = cfg->tx_burst;
     work_space_get_port(ws);
+
+    if (work_space_init_change_dip(ws, cfg) < 0) {
+        printf("Error: work_space_init_change_dip failed\n");
+        goto err;
+    }
 
     if (tcp_init(ws) < 0) {
         printf("tcp_init error");

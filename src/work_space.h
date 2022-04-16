@@ -64,6 +64,8 @@ struct work_space {
     uint8_t ipv6:1;
     uint8_t server:1;
     uint8_t kni:1;
+    uint8_t change_dip:1;
+    uint8_t tos;
     uint8_t port_id;
     uint8_t queue_id;
 
@@ -93,6 +95,7 @@ struct work_space {
 
     struct tx_queue tx_queue;
     struct rte_mbuf *mbuf_rx[NB_RXD];
+    struct ip_list  dip_list;
     struct socket_table socket_table;
 };
 
@@ -165,12 +168,14 @@ static inline void work_space_tx_send_tcp(struct work_space *ws, struct rte_mbuf
     }
 
     csum_offload_ip_tcpudp(mbuf, ol_flags);
+    net_stats_tcp_tx();
     work_space_tx_send(ws, mbuf);
 }
 
 static inline void work_space_tx_send_udp(struct work_space *ws, struct rte_mbuf *mbuf)
 {
     csum_offload_ip_tcpudp(mbuf, RTE_MBUF_F_TX_UDP_CKSUM);
+    net_stats_udp_tx();
     work_space_tx_send(ws, mbuf);
 }
 

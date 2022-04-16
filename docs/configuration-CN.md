@@ -328,3 +328,18 @@ kni接口的IP地址与路由需要手动配置，建议为kni接口分配独立
 - mode: client, server
 
 设置dperf对请求未打开的TCP端口的SYN报文是否回复rst。
+
+## change_dip
+- syntax: change_dip IPAddress Step Number
+- default: -
+- required: no
+- mode: client
+
+当开启'flood'后，可以使用'change_ip'来修改发送报文的目的IP。
+'change_ip'可以配置多行，最多支持65536个IP地址。这些IP地址平均分配到每个线程。
+dperf在发送每个TCP/UDP报文时，修改报文的目的IP; dperf采用轮询方式从地址池中获取IP。
+'IPAddress'是起始地址，'Step'表示下一个IP的间隔，'Number'表示IP总数。
+
+Example:
+- change_ip 192.168.1.1 64 100
+- change_dip 2001:6:6:241::1 1 20

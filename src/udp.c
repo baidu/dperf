@@ -27,6 +27,7 @@
 #include "version.h"
 #include "loop.h"
 #include "socket_timer.h"
+#include "csum.h"
 
 static char g_udp_data[MBUF_DATA_SIZE] = "hello dperf!!\n";
 
@@ -48,6 +49,42 @@ void udp_set_payload(int page_size)
     g_udp_data[page_size] = 0;
 }
 
+static inline void udp_change_dipv6(struct work_space *ws, struct ip6_hdr *ip6h, struct udphdr *uh)
+{
+    ipaddr_t addr_old;
+    ipaddr_t addr_new;
+    struct ip_list *ip_list = NULL;
+
+    ip_list = &ws->dip_list;
+    addr_old.in6 = ip6h->ip6_dst;
+    ip_list_get_next_ipv6(ip_list, &addr_new.in6);
+    ip6h->ip6_dst = addr_new.in6;
+    uh->check = csum_update_u128(uh->check, (uint32_t *)&addr_old, (uint32_t *)&addr_new);
+}
+
+static inline void udp_change_dipv4(struct work_space *ws, struct iphdr *iph, struct udphdr *uh)
+{
+    uint32_t addr_old = 0;
+    uint32_t addr_new = 0;
+    struct ip_list *ip_list = NULL;
+
+    ip_list = &ws->dip_list;
+    addr_old = iph->daddr;
+    ip_list_get_next_ipv4(ip_list, &addr_new);
+    iph->daddr = addr_new;
+    iph->check = csum_update_u32(iph->check, addr_old, addr_new);
+    uh->check = csum_update_u32(uh->check, addr_old, addr_new);
+}
+
+static inline void udp_change_dip(struct work_space *ws, struct iphdr *iph, struct udphdr *uh)
+{
+    if (ws->ipv6) {
+        udp_change_dipv6(ws, (struct ip6_hdr *)iph, uh);
+    } else {
+        udp_change_dipv4(ws, iph, uh);
+    }
+}
+
 static inline struct rte_mbuf *udp_new_packet(struct work_space *ws, struct socket *sk)
 {
     struct rte_mbuf *m = NULL;
@@ -67,7 +104,7 @@ static inline struct rte_mbuf *udp_new_packet(struct work_space *ws, struct sock
             uh = (struct udphdr *)((uint8_t *)ip6h + sizeof(struct ip6_hdr));
         } else {
             uh = (struct udphdr *)((uint8_t *)iph + sizeof(struct iphdr));
-            iph->check = csum_update(sk->csum_ip, 0, htons(ws->ip_id));
+            iph->check = csum_update_u16(sk->csum_ip, 0, htons(ws->ip_id));
         }
     } else {
         iph = mbuf_ip_hdr(m);
@@ -88,6 +125,11 @@ static inline struct rte_mbuf *udp_new_packet(struct work_space *ws, struct sock
     uh->dest = sk->fport;
     uh->check = sk->csum_udp;
 
+    /* only in client mode */
+    if (ws->change_dip) {
+        udp_change_dip(ws, iph, uh);
+    }
+
     return m;
 }
 
@@ -107,6 +149,7 @@ static void udp_socket_keepalive_timer_handler(struct work_space *ws, struct soc
 {
     if (ws->server == 0) {
         if (work_space_in_duration(ws)) {
+            sk->keepalive_request_num++;
             udp_send(ws, sk);
             socket_start_keepalive_timer(sk, work_space_tsc(ws));
         }
@@ -173,13 +216,12 @@ static int udp_client_launch(struct work_space *ws)
     flood = g_config.flood;
     num = work_space_client_launch_num(ws);
     for (i = 0; i < num; i++) {
-        sk = socket_client_open(&ws->socket_table);
+        sk = socket_client_open(&ws->socket_table, work_space_tsc(ws));
         if (unlikely(sk == NULL)) {
             continue;
         }
 
         /* fot rtt calculationn */
-        sk->timer_tsc = work_space_tsc(ws);
         udp_send(ws, sk);
         if (sk->keepalive) {
             socket_start_keepalive_timer(sk, work_space_tsc(ws));
