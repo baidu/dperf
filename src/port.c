@@ -54,19 +54,19 @@ static struct rte_eth_conf g_port_conf = {
     },
 };
 
-static int port_init_tx(int port_id, int txq)
+static int port_init_tx(int port_id, int txq, int nb_txd)
 {
     unsigned int socket = rte_eth_dev_socket_id(port_id);
-    return rte_eth_tx_queue_setup(port_id, txq, NB_TXD, socket, NULL);
+    return rte_eth_tx_queue_setup(port_id, txq, nb_txd, socket, NULL);
 }
 
-static int port_init_rx(struct netif_port *port, int rxq)
+static int port_init_rx(struct netif_port *port, int rxq, int nb_rxd)
 {
     int port_id = port->id;
     struct rte_mempool *mp = port_get_mbuf_pool(port, rxq);
     unsigned int socket = rte_eth_dev_socket_id(port_id);
 
-    return rte_eth_rx_queue_setup(port_id, rxq, NB_RXD, socket, NULL, mp);
+    return rte_eth_rx_queue_setup(port_id, rxq, nb_rxd, socket, NULL, mp);
 }
 
 static int port_init_mbuf_pool(struct netif_port *port)
@@ -88,14 +88,24 @@ static int port_init_mbuf_pool(struct netif_port *port)
 int port_config(struct netif_port *port)
 {
     int i = 0;
-    uint16_t port_id = 0;
+    int nb_txd = NB_TXD;
+    int nb_rxd = NB_RXD;
     int queue_num = 0;
+    uint16_t port_id = 0;
     struct rte_eth_dev_info dev_info;
 
     port_id = port->id;
     queue_num = port->queue_num;
     memset(&dev_info, 0, sizeof(dev_info));
     rte_eth_dev_info_get(port_id, &dev_info);
+
+    if (nb_rxd > dev_info.rx_desc_lim.nb_max) {
+        nb_rxd = dev_info.rx_desc_lim.nb_max;
+    }
+
+    if (nb_txd > dev_info.tx_desc_lim.nb_max) {
+        nb_txd = dev_info.tx_desc_lim.nb_max;
+    }
 
     if (g_config.rss) {
         if (rss_config_port(&g_port_conf, &dev_info) < 0) {
@@ -139,12 +149,12 @@ int port_config(struct netif_port *port)
     }
 
     for (i = 0; i < queue_num; i++) {
-        if (port_init_rx(port, i) < 0) {
+        if (port_init_rx(port, i, nb_rxd) < 0) {
             printf("init rx fail\n");
             return -1;
         }
 
-        if (port_init_tx(port_id, i) < 0) {
+        if (port_init_tx(port_id, i, nb_txd) < 0) {
             printf("init tx fail\n");
             return -1;
         }
