@@ -12,6 +12,9 @@
     cd dperf
     make -j8 RTE_SDK=/root/dpdk/dpdk-stable-19.11.10 RTE_TARGET=$TARGET
 
+### Run dperf
+    ./build/dperf -h
+
 ## Build dperf With DPDK-20
 ### Build DPDK
     #Suppose we use dpdk-20.11.2.
@@ -24,6 +27,10 @@
     export PKG_CONFIG_PATH=/root/dpdk/dpdk-stable-20.11.2/mydpdk/lib64/pkgconfig/
     cd dperf
     make
+
+### Run dperf
+    export LD_LIBRARY_PATH=/root/dpdk/dpdk-stable-20.11.2/mydpdk/lib64/
+    ./build/dperf -h
 
 ## Mellanox Interface Driver
 - CentOS/RHEL 7.5, DPDK-17.11: MLNX_OFED_LINUX-4.3-3.0.2.1-rhel7.5-x86_64.iso
