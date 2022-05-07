@@ -40,7 +40,7 @@ static int lcore_main(__rte_unused void *arg1)
     port_clear(ws->port_id, ws->queue_id);
 
     if (neigh_check_gateway(ws) < 0) {
-        printf("bad gateway\n");
+        printf("Error: bad gateway. dperf cannot find gateway's MAC address. Please check the link.\n");
         exit(-1);
     }
 
