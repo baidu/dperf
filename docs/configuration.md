@@ -146,7 +146,7 @@ Example:
 - cps 100
 
 ## cc
-- syntax: cc Number 
+- syntax: cc Number
 - default: -
 - required: no
 - mode: client
@@ -168,7 +168,7 @@ Example:
 - mode: client
 
 Support TCP/UDP protocol, no need for network card to support FDIR.
-If flood is enabled, the dperf client only sends the first packet of the connection; for the TCP protocol, dperf sends a SYN packet. 
+If flood is enabled, the dperf client only sends the first packet of the connection; for the TCP protocol, dperf sends a SYN packet.
 
 ## launch_num
 - syntax: launch_num Number
@@ -181,28 +181,38 @@ In case of packet loss, try to reduce the number to make the packet sending more
 so as to avoid the packet loss of the receiver's network card caused by the surge of packets.
 
 ## client
-- syntax: client IPAddress Number
+- syntax: client IPAddrStart IPAddrNumber
 - default: -
-- required: yes 
+- required: yes
 - mode: client, server
 
-Set the client's IP address range.
-- 'IPAddress': starting address.
-- 'number': number of addresses, 1-254
+Set client IP range:
+-'ipaddrstart': starting address
+-'ipaddrnumber': total addresses 1-254
 
-dperf uses the last two bytes to uniquely identify an IPv4 or IPv6 address.
-In a 'client' configuration, only the last byte of the address is allowed to be variable.
+Dperf uses the last two bytes of the IP address (including IPv4 and IPv6) to identify a client address.
+In the address range of a 'client', only the last byte is allowed to change.
+In the client mode, the number of 'clients' needs to be consistent with the number of' ports' and correspond one by one.
+Indicates what client address pool this network port uses as the source address of the connection.
+In the server mode, there is no requirement for the number of 'clients', which can be more or less than' port '.
+Indicates which clients the server only receives. The dperf server does not accept connection requests from unknown addresses.
 
-In the client mode, the number of 'client' must be equal to the number of 'port', which has a one-to-one correspondence. 
-Indicates that the 'port' uses the address pool of the 'client' as the source addresses of the connections.
+Example:
 
-In the server mode, the number of 'client' can be greater or less than the number of 'port'.
-Indicates that the server only accepts connections from these clients, and does not accept connections from unspecified clients.
+    The interface address and the client address are in the same network segment
+    port        0000:1b:00.0    6.6.1.2   6.6.1.1
+    client      6.6.1.2         100
+
+    The interface address and the client address are not in the same network segment
+    port        0000:1b:00.0    6.6.10.2   6.6.10.1
+    port        0000:1b:00.1    6.6.20.2   6.6.20.1
+    client      6.6.30.2        100
+    client      6.6.40.2        100
 
 ## server
-- syntax: server IPAddress Number
+- syntax: server IPAddrStart IPAddrNumber
 - default: -
-- required: yes 
+- required: yes
 - mode: client, server
 
 Set the listening IP range of the server. The number of 'port' must be the same as the number of 'server'.
@@ -226,7 +236,7 @@ Note: dperf will allocate all sockets at startup. Please do not set a large port
 
 Set the size of the request and response, in bytes.
 For tcp protocol, if payload_size is less than 70, dperf will be forced to 70, which is the minimum HTTP packet length.
-If you want to set smaller data packets, use packet_size. 
+If you want to set smaller data packets, use packet_size.
 
 ## packet_size
 - syntax: pakcet_size Number(0-1514)
@@ -234,7 +244,7 @@ If you want to set smaller data packets, use packet_size.
 - required: no
 - mode: client, server
 
-Sets the data packet size, including the Ethernet header, excluding the 4-byte FCS. Use packet_size to set the minimum and maximum packets. 
+Sets the data packet size, including the Ethernet header, excluding the 4-byte FCS. Use packet_size to set the minimum and maximum packets.
 
 ## jumbo
 - syntax: jumbo
@@ -243,7 +253,7 @@ Sets the data packet size, including the Ethernet header, excluding the 4-byte F
 - mode: client, server
 
 Enable jumbo frames. After enabling jumbo frames, pakcet_size can be set to 9724.
-Note: packet_size cannot exceed the MTU of the network environment. 
+Note: packet_size cannot exceed the MTU of the network environment.
 
 ## mss
 - syntax: mss Number
@@ -324,7 +334,7 @@ Note: tos does not take effect on the packets sent by the kni interface.
 - mode: client, server
 
 Use the network interface L3 RSS distribution. When a network card without FDIR wants to use multi-queue/multi-threading, rss needs to be enabled.
-Note: 'vxlan' cannot be used simultaneously with 'rss' yet. 
+Note: 'vxlan' cannot be used simultaneously with 'rss' yet.
 
 ## tcp_rst
 - syntax: tcp_rst Number[0-1]
@@ -332,7 +342,7 @@ Note: 'vxlan' cannot be used simultaneously with 'rss' yet.
 - required: no
 - mode: client, server
 
-Set whether dperf replies rst to SYN packets requesting unopened TCP ports. 
+Set whether dperf replies rst to SYN packets requesting unopened TCP ports.
 
 ##change_dip
 - syntax: change_dip IPAddress Step Number
