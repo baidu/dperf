@@ -144,7 +144,7 @@ Example:
 - cps 100
 
 ## cc
-- syntax: cc Number 
+- syntax: cc Number
 - default: -
 - required: no
 - mode: client
@@ -178,25 +178,37 @@ dperf客户端一次发起的新建连接数。
 用较少的'launch_num'可以让报文发送更加平顺, 避免突发报文给接收方的网卡造成丢包。
 
 ## client
-- syntax: client IPAddress Number
+- syntax: client IPAddrStart IPAddrNumber
 - default: -
-- required: yes 
+- required: yes
 - mode: client, server
 
 设置客户端IP范围：
-- 'IPAddress': 起始地址；
-- 'number': 地址总数 1-254
+- 'IPAddrStart': 起始地址
+- 'IPAddrNumber': 地址总数 1-254
 
 dperf使用IP地址(包含IPv4、IPv6)的最后两个字节标识一个客户端地址。
 一个'client'的地址范围里，只允许最后一个字节变动。
-在client模式下，'client'配置的数目要与'port'一致，并且是一一对应的。
-表示这个网口使用什么客户端地址池作为建连的源地址。
+在client模式下，'client'数量需要与'port'的数量一致，并且一一对应。
+表示这个网口使用什么客户端地址池作为建连接的源地址。
 
-在server模式下, 'client'地址范围的数量没有要求，可以比'port'多，也可以比'port'少。
+在server模式下, 'client'数量没有要求，可以比'port'多，也可以比'port'少。
 表示server只接收哪些客户端的连接，dperf server不接受来自未知地址的连接请求。
 
+Example:
+
+    接口地址与Client地址在同一网段
+    port        0000:1b:00.0    6.6.1.2   6.6.1.1
+    client      6.6.1.2         100
+
+    接口地址与Client地址不在同一网段
+    port        0000:1b:00.0    6.6.10.2   6.6.10.1
+    port        0000:1b:00.1    6.6.20.2   6.6.20.1
+    client      6.6.30.2        100
+    client      6.6.40.2        100
+
 ## server
-- syntax: server IPAddress Number
+- syntax: server IPAddrStart IPAddrNumber
 - default: -
 - required: yes
 - mode: client, server
