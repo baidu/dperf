@@ -26,6 +26,7 @@
 #include "version.h"
 #include "socket_timer.h"
 #include "loop.h"
+#include "http_parse.h"
 
 #define tcp_seq_lt(seq0, seq1)    ((int)((seq0) - (seq1)) < 0)
 #define tcp_seq_le(seq0, seq1)    ((int)((seq0) - (seq1)) <= 0)
@@ -480,6 +481,7 @@ static inline bool tcp_check_sequence(struct work_space *ws, struct socket *sk, 
         if ((sk->timer_tsc + TSC_PER_SEC) < work_space_tsc(ws)) {
             tcp_do_retransmit(ws, sk);
         }
+
     } else if (ack == sk->snd_una) {
         /* lost ack */
         if (tcp_seq_le(seq, sk->rcv_nxt)) {
@@ -601,6 +603,56 @@ out:
     mbuf_free2(m);
 }
 
+#ifdef HTTP_PARSE
+static inline void tcp_ack_delay_add(struct work_space *ws, struct socket *sk)
+{
+    if (sk->http_ack) {
+        return;
+    }
+
+    if (ws->ack_delay.next >= TCP_ACK_DELAY_MAX) {
+        tcp_ack_delay_flush(ws);
+    }
+
+    ws->ack_delay.sockets[ws->ack_delay.next] = sk;
+    ws->ack_delay.next++;
+    sk->http_ack = 1;
+}
+
+static inline uint8_t http_client_process_data(struct work_space *ws, struct socket *sk,
+    uint8_t rx_flags, uint8_t *data, uint16_t data_len)
+{
+    int ret = 0;
+    int8_t tx_flags = 0;
+
+    ret = http_parse_run(sk, data, data_len);
+    if (ret == HTTP_PARSE_OK) {
+        if ((rx_flags & TH_FIN) == 0) {
+            tcp_ack_delay_add(ws, sk);
+            return 0;
+        }
+    } else if (ret == HTTP_PARSE_END) {
+        socket_init_http(sk);
+        if (sk->keepalive && ((rx_flags & TH_FIN) == 0)) {
+            tcp_ack_delay_add(ws, sk);
+            socket_start_keepalive_timer(sk, work_space_tsc(ws));
+            return 0;
+        } else {
+            tx_flags |= TH_FIN;
+            sk->http_ack = 0;
+        }
+    } else {
+        socket_init_http(sk);
+        sk->keepalive = 0;
+        sk->http_length = 0;
+        tx_flags |= TH_FIN;
+        net_stats_http_error();
+    }
+
+    return TH_ACK | tx_flags;
+}
+#endif
+
 static inline void tcp_client_process_data(struct work_space *ws, struct socket *sk, struct rte_mbuf *m,
     struct iphdr *iph, struct tcphdr *th)
 {
@@ -620,13 +672,17 @@ static inline void tcp_client_process_data(struct work_space *ws, struct socket 
 
     if (sk->state == SK_ESTABLISHED) {
         if (data_len) {
-            http_parse_response(data, data_len);
+#ifdef HTTP_PARSE
+            tx_flags = http_client_process_data(ws, sk, rx_flags, data, data_len);
+#else
             tx_flags |= TH_ACK;
+            http_parse_response(data, data_len);
             if (sk->keepalive == 0) {
                 tx_flags |= TH_FIN;
             } else {
                 socket_start_keepalive_timer(sk, work_space_tsc(ws));
             }
+#endif
         }
     }
 
@@ -906,3 +962,27 @@ void tcp_drop(__rte_unused struct work_space *ws, struct rte_mbuf *m)
         mbuf_free(m);
     }
 }
+
+#ifdef HTTP_PARSE
+int tcp_ack_delay_flush(struct work_space *ws)
+{
+    int i = 0;
+    struct socket *sk = NULL;
+
+    for (i = 0; i < ws->ack_delay.next; i++) {
+        sk = ws->ack_delay.sockets[i];
+        if (sk->http_ack) {
+            sk->http_ack = 0;
+            if (sk->state == SK_ESTABLISHED) {
+                tcp_reply(ws, sk, TH_ACK);
+            }
+       }
+    }
+
+    if (ws->ack_delay.next > 0) {
+        ws->ack_delay.next = 0;
+    }
+
+    return 0;
+}
+#endif

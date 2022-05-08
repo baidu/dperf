@@ -200,11 +200,28 @@ static int mbuf_data_push_tcp(struct mbuf_data *mdata)
     return 0;
 }
 
+static int mbuf_data_push_tcp_opt(struct mbuf_data *mdata, void *data, int len)
+{
+    struct tcphdr *th = NULL;
+
+    if ((len % 4) != 0) {
+        return -1;
+    }
+    th = mbuf_data_tcphdr(mdata);
+    th->th_off++;
+    mdata->l4_len += len;
+    if (mbuf_data_push(mdata, (uint8_t*)data, len) != 0) {
+        return -1;
+    }
+
+    mbuf_data_ip_tot_len_add(mdata, len);
+
+    return 0;
+}
+
 static int mbuf_data_push_tcp_mss(struct mbuf_data *mdata, uint16_t mss)
 {
-    uint16_t len = sizeof(struct tcp_opt_mss);
     struct tcp_opt_mss opt_mss;
-    struct tcphdr *th = NULL;
 
     if (mss == 0) {
         return 0;
@@ -213,15 +230,18 @@ static int mbuf_data_push_tcp_mss(struct mbuf_data *mdata, uint16_t mss)
     opt_mss.len = 4;
     opt_mss.mss = htons(mss);
 
-    th = mbuf_data_tcphdr(mdata);
-    th->th_off++;
-    mdata->l4_len += len;
-    if (mbuf_data_push(mdata, (uint8_t*)&opt_mss, len) != 0) {
-        return -1;
-    }
+    return mbuf_data_push_tcp_opt(mdata, (void *)&opt_mss, sizeof(struct tcp_opt_mss));
+}
 
-    mbuf_data_ip_tot_len_add(mdata, len);
-    return 0;
+static int mbuf_data_push_tcp_wscale(struct mbuf_data *mdata)
+{
+    /*
+     * nop
+     * kind = 3, len = 3, wscale
+     * */
+    uint8_t wscale[4] = {1, 3, 3, DEFAULT_WSCALE};
+
+    return mbuf_data_push_tcp_opt(mdata, (void *)wscale, 4);
 }
 
 static int mbuf_data_push_udp(struct mbuf_data *mdata)
@@ -279,8 +299,14 @@ int mbuf_cache_init_tcp(struct mbuf_cache *cache, struct work_space *ws, const c
         return -1;
     }
 
-    if (mbuf_data_push_tcp_mss(&mdata, mss) < 0) {
-        return -1;
+    if (mss > 0) {
+        if (mbuf_data_push_tcp_mss(&mdata, mss) < 0) {
+            return -1;
+        }
+
+        if (mbuf_data_push_tcp_wscale(&mdata) < 0) {
+            return -1;
+        }
     }
 
     if (mbuf_data_push_data(&mdata, data) < 0) {

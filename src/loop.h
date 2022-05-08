@@ -333,6 +333,10 @@ static inline void client_loop(struct work_space *ws, l3_input_t l3_input,
         work += client_launch(ws);
         ticks = tsc_time_go(&tt->tick, tt->tsc);
         if (ticks > 0) {
+            if (ws->ack_delay.next) {
+                tcp_ack_delay_flush(ws);
+            }
+
             work = 1;
             if (unlikely(slow_timer_run(ws) < 0)) {
                 break;

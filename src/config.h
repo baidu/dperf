@@ -30,7 +30,7 @@
 
 #define RTE_ARG_LEN         64
 #define CACHE_ALIGN_SIZE    64
-#define TCP_WIN             (1460 * 10)
+#define TCP_WIN             (1460 * 40)
 #define NETWORK_PORT_NUM    65536
 
 #define PACKET_SIZE_MAX     1514
@@ -58,7 +58,17 @@
 #define MSS_JUMBO_IPV4      (JUMBO_PKT_SIZE_MAX - 14 - 20 - 20)
 #define MSS_JUMBO_IPV6      (JUMBO_PKT_SIZE_MAX - 14 - 40 - 20)
 
+#define DEFAULT_WSCALE      13
+
 #define LOG_DIR             "/var/log/dperf"
+
+#define HTTP_HOST_MAX       128
+#define HTTP_PATH_MAX       256
+
+#define HTTP_HOST_DEFAULT   "dperf"
+#define HTTP_PATH_DEFAULT   "/"
+
+#define TCP_ACK_DELAY_MAX   1024
 
 struct config {
     bool server;
@@ -72,7 +82,8 @@ struct config {
     bool rss;
     bool quiet;
     bool tcp_rst;
-    bool http;          /* payload size >= HTTP_DATA_MIN_SIZE */
+    bool http;
+    bool stats_http;    /* payload size >= HTTP_DATA_MIN_SIZE */
     uint8_t tos;
     uint8_t tx_burst;
     uint8_t protocol;   /* TCP/UDP */
@@ -81,6 +92,9 @@ struct config {
     int af;
     uint64_t keepalive_request_interval;
     int keepalive_request_num;
+
+    char http_host[HTTP_HOST_MAX];
+    char http_path[HTTP_PATH_MAX];
 
     int payload_size;
     int packet_size;

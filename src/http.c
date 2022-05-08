@@ -31,9 +31,9 @@
  * */
 
 #define HTTP_REQ_FORMAT         \
-    "GET /%s HTTP/1.1\r\n"      \
+    "GET %s HTTP/1.1\r\n"       \
     "User-Agent: dperf\r\n"     \
-    "Host: dperf\r\n"           \
+    "Host: %s\r\n"              \
     "Accept: */*\r\n"           \
     "P: aa\r\n"                 \
     "\r\n"
@@ -60,13 +60,13 @@ const char *http_get_response(void)
     return http_rsp;
 }
 
-static void http_set_payload_client(char *dest, int len, int payload_size)
+static void http_set_payload_client(struct config *cfg, char *dest, int len, int payload_size)
 {
     int pad = 0;
     char buf[MBUF_DATA_SIZE] = {0};
 
     if (payload_size <= 0) {
-        snprintf(dest, len, HTTP_REQ_FORMAT, buf);
+        snprintf(dest, len, HTTP_REQ_FORMAT, cfg->http_path, cfg->http_host);
     } else if (payload_size < HTTP_DATA_MIN_SIZE) {
         memset(dest, 'a', payload_size);
         dest[payload_size] = 0;
@@ -75,7 +75,7 @@ static void http_set_payload_client(char *dest, int len, int payload_size)
         if (pad > 0) {
             memset(buf, 'a', pad);
         }
-        snprintf(dest, len, HTTP_REQ_FORMAT, buf);
+        snprintf(dest, len, HTTP_REQ_FORMAT, buf, cfg->http_host);
     }
 }
 
@@ -103,8 +103,8 @@ static void http_set_payload_server(char *dest, int len, int payload_size)
     }
 }
 
-void http_set_payload(int payload_size)
+void http_set_payload(struct config *cfg, int payload_size)
 {
     http_set_payload_server(http_rsp, MBUF_DATA_SIZE, payload_size);
-    http_set_payload_client(http_req, MBUF_DATA_SIZE, payload_size);
+    http_set_payload_client(cfg, http_req, MBUF_DATA_SIZE, payload_size);
 }

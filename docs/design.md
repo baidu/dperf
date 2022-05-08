@@ -57,7 +57,12 @@ dperf once used the time wheel timer. One time wheel timer consumes 32 bytes, an
 - Zero checksum. Usually we will use the network card function to offload the checksum of the message, but we have to calculate the pseudo header; for the same connection, the message type is fixed, dperf has already calculated the tail and head checksum, the whole process does not Checksum calculation.
 
 ### HTTP protocol implementation
-The dperf server is very stupid. It receives any 1 data packet (the first character is G, the beginning of GET), it considers it to be a complete request, and sends a fixed response. The dperf client is also very stupid. It receives any data message. If the 10th character is '2' (assuming "HTTP/1.1 200 OK"), it is considered a successful response.
+The dperf server is very stupid. It receives any 1 data packet (the first character is G, the beginning of GET), it considers it to be a complete request, and sends a fixed response.
+
+The dperf client supports HTTP and has the following reasonable requirements:
+- The message complies with the HTTP protocol specification
+- TCP packets cannot overlap
+- The following headers cannot cross packets: connection, content-length, transfer-encoding
 
 ### VXLAN
 Considering that many NICs do not have VXLAN inner-layer packet checksum offloading and offloading capabilities, dperf does not use these advanced functions to support to more NICs.

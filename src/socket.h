@@ -85,6 +85,15 @@ struct socket {
         uint16_t csum_udp;
     };
     uint16_t csum_tcp_opt;
+
+#ifdef HTTP_PARSE
+    /* ------16 bytes------  */
+    /* http protocol         */
+    int64_t http_length;
+    uint8_t http_parse_state;
+    uint8_t http_flags;
+    uint8_t http_ack;
+#endif
 };
 
 struct socket_port_table {
@@ -246,6 +255,18 @@ static inline void socket_close(struct socket *sk)
     }
 }
 
+#ifdef HTTP_PARSE
+static inline void socket_init_http(struct socket *sk)
+{
+    sk->http_length = 0;
+    sk->http_parse_state = 0;
+    sk->http_flags = 0;
+    sk->http_ack = 0;
+}
+#else
+#define socket_init_http(sk) do{}while(0)
+#endif
+
 static inline void socket_server_open(__rte_unused struct socket_table *st, struct socket *sk, struct tcphdr *th)
 {
     if (sk->state != SK_SYN_RECEIVED) {
@@ -281,6 +302,7 @@ static inline struct socket *socket_client_open(struct socket_table *st, uint64_
         sk->rcv_nxt = 0;
         sk->state = SK_SYN_SENT;
         net_stats_socket_open();
+        socket_init_http(sk);
         return sk;
     } else {
         return NULL;
@@ -288,6 +310,7 @@ static inline struct socket *socket_client_open(struct socket_table *st, uint64_
 }
 
 void socket_log(struct socket *sk, const char *tag);
+void socket_print(struct socket *sk, const char *tag);
 int socket_table_init(struct work_space *ws);
 #ifdef DPERF_DEBUG
 #define SOCKET_LOG(sk, tag) socket_log(sk, tag)

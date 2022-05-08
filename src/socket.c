@@ -66,6 +66,15 @@ void socket_log(struct socket *sk, const char *tag)
             sk->rcv_nxt, sk->snd_nxt, sk->snd_una, g_sk_states[sk->state]);
 }
 
+void socket_print(struct socket *sk, const char *tag)
+{
+    FILE *log = g_work_space->log;
+
+    g_work_space->log = stdout;
+    socket_log(sk, tag);
+    g_work_space->log = log;
+}
+
 static void socket_init(struct work_space *ws, struct socket *sk, uint32_t client_ip, uint16_t client_port,
      uint32_t server_ip, uint16_t server_port)
 {

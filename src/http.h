@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include "work_space.h"
 
-static inline void http_parse_response(uint8_t *data, uint16_t len)
+static inline void http_parse_response(const uint8_t *data, uint16_t len)
 {
     net_stats_tcp_rsp();
     /* HTTP/1.1 200 OK */
@@ -33,7 +33,7 @@ static inline void http_parse_response(uint8_t *data, uint16_t len)
     }
 }
 
-static inline void http_parse_request(uint8_t *data, uint16_t len)
+static inline void http_parse_request(const uint8_t *data, uint16_t len)
 {
     net_stats_tcp_req();
     /*
@@ -48,7 +48,7 @@ static inline void http_parse_request(uint8_t *data, uint16_t len)
 }
 
 #define HTTP_DATA_MIN_SIZE  70
-void http_set_payload(int payload_size);
+void http_set_payload(struct config *cfg, int payload_size);
 const char *http_get_request(void);
 const char *http_get_response(void);
 

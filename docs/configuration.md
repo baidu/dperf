@@ -264,12 +264,13 @@ Note: packet_size cannot exceed the MTU of the network environment.
 Set tcp MSS option.
 
 ## protocol
-- syntax: protocol tcp | udp
+- syntax: protocol tcp | udp | http
 - default: protocol tcp
 - required: no
 - mode: client, server
 
-TCP or UDP protocol. Regardless of the TCP or UDP protocol, the dperf client sends an HTTP Request, and the dperf server sends an HTTP Response.
+TCP or UDP or HTTP protocol. Regardless of the TCP or UDP protocol, the dperf client sends an HTTP Request, and the dperf server sends an HTTP Response.
+Currently, 'http' only support client mode, you could use it to test nginx.
 
 ## tx_burst
 - syntax: tx_burst Number(1-1024)
@@ -358,3 +359,19 @@ When dperf sends each TCP/UDP message, it modifies the destination IP of the mes
 Example:
 - change_ip 192.168.1.1 64 100
 - change_dip 2001:6:6:241::1 1 20
+
+## http_host
+- syntax: http_host String(1-127)
+- default: http_host dperf
+- required: no
+- mode: client
+
+Set the host header of the HTTP request.
+
+## http_path
+- syntax: http_path String(1-255)
+- default: http_path /
+- required: no
+- mode: client
+
+Set the path of the HTTP request.
