@@ -262,12 +262,13 @@ Example:
 设置tcp MSS。
 
 ## protocol
-- syntax: protocol tcp | udp
+- syntax: protocol tcp | udp | http
 - default: protocol tcp
 - required: no
 - mode: client, server
 
-TCP或者UDP协议。不论是TCP还是UDP协议，dperf客户端都是发送HTTP请求，dperf Server回复HTTP响应。
+TCP或者UDP协议或者HTTP协议。不论是TCP还是UDP协议，dperf客户端都是发送HTTP请求，dperf Server回复HTTP响应。
+当前，只有client模式才能配置http协议，可以用来测试nginx。
 
 ## tx_burst
 - syntax: tx_burst Number(1-1024)
@@ -355,3 +356,19 @@ dperf在发送每个TCP/UDP报文时，修改报文的目的IP; dperf采用轮�
 Example:
 - change_ip 192.168.1.1 64 100
 - change_dip 2001:6:6:241::1 1 20
+
+## http_host
+- syntax: http_host String(1-127)
+- default: http_host dperf
+- required: no
+- mode: client
+
+设置HTTP请求的Host头部。
+
+## http_path
+- syntax: http_path String(1-255)
+- default: http_path /
+- required: no
+- mode: client
+
+设置HTTP请求的PATH。

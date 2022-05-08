@@ -338,7 +338,7 @@ static int net_stats_print(struct net_stats *stats, char *buf, int buf_len)
     buf_skip(p, len, ret);
 
     if (g_config.protocol == IPPROTO_TCP) {
-        if (g_config.http) {
+        if (g_config.stats_http) {
             ret = net_stats_print_http(stats, p, len);
         } else {
             ret = net_stats_print_tcp(stats, p, len);

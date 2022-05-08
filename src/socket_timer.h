@@ -106,7 +106,7 @@ static inline void socket_start_keepalive_timer(struct socket *sk, uint64_t now_
          * |-------------|-------------|-------------|
          * timer_tsc     |--|now_tsc
          * */
-        if ((sk->timer_tsc + 2 * interval) > now_tsc) {
+        if ( ((sk->timer_tsc + interval) < now_tsc) && ((sk->timer_tsc + 2 * interval) > now_tsc)) {
             now_tsc = sk->timer_tsc + interval;
         }
 

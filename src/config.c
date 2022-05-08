@@ -66,6 +66,8 @@ static int config_parse_jumbo(int argc, char *argv[], void *data);
 static int config_parse_rss(int argc, char *argv[], void *data);
 static int config_parse_quiet(int argc, char *argv[], void *data);
 static int config_parse_tcp_rst(int argc, char *argv[], void *data);
+static int config_parse_http_host(int argc, char *argv[], void *data);
+static int config_parse_http_path(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -88,12 +90,12 @@ static struct config_keyword g_config_keywords[] = {
     {"launch_num", config_parse_launch_num, "Number, default " DEFAULT_STR(DEFAULT_LAUNCH)},
     {"client", config_parse_client, "IPAddress Number"},
     {"server", config_parse_server, "IPAddress Number"},
-    {"change_dip", config_parse_change_dip, "IPAddress Step Number\n"},
+    {"change_dip", config_parse_change_dip, "IPAddress Step Number"},
     {"listen", config_parse_listen, "Port Number, default 80 1" },
     {"payload_size", config_parse_payload_size, "Number"},
     {"packet_size", config_parse_packet_size, "Number"},
     {"mss", config_parse_mss, "Number, default 1460"},
-    {"protocol", config_parse_protocol, "tcp/udp, default tcp"},
+    {"protocol", config_parse_protocol, "http/tcp/udp, default tcp"},
     {"tx_burst", config_parse_tx_burst, "Number[1-1024]"},
     {"slow_start", config_parse_slow_start,
         "Number[" DEFAULT_STR(SLOW_START_MIN) "-" DEFAULT_STR(SLOW_START_MAX) "],"
@@ -106,6 +108,8 @@ static struct config_keyword g_config_keywords[] = {
     {"rss", config_parse_rss, ""},
     {"quiet", config_parse_quiet, ""},
     {"tcp_rst", config_parse_tcp_rst, "Number[0-1], default 1"},
+    {"http_host", config_parse_http_host, "String, default " HTTP_HOST_DEFAULT},
+    {"http_path", config_parse_http_path, "String, default " HTTP_PATH_DEFAULT},
     {NULL, NULL, NULL}
 };
 
@@ -869,6 +873,10 @@ static int config_parse_protocol(int argc, char *argv[], void *data)
     } else if (strcmp(argv[1], "udp") == 0) {
         cfg->protocol = IPPROTO_UDP;
         return 0;
+    } else if (strcmp(argv[1], "http") == 0) {
+        cfg->protocol = IPPROTO_TCP;
+        cfg->http = true;
+        return 0;
     } else {
         return -1;
     }
@@ -1061,6 +1069,56 @@ static int config_parse_tcp_rst(int argc, char *argv[], void *data)
         return -1;
     }
 
+    return 0;
+}
+
+static int config_parse_http_host(int argc, char *argv[], void *data)
+{
+    int len = 0;
+    struct config *cfg = data;
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    if (cfg->http_host[0] != 0) {
+        return -1;
+    }
+
+    len = strlen(argv[1]);
+    if (len >= HTTP_HOST_MAX) {
+        return -1;
+    }
+
+    strcpy(cfg->http_host, argv[1]);
+    return 0;
+}
+
+static int config_parse_http_path(int argc, char *argv[], void *data)
+{
+    int len = 0;
+    struct config *cfg = data;
+    const char *path = NULL;
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    if (cfg->http_path[0] != 0) {
+        return -1;
+    }
+
+    path = argv[1];
+    len = strlen(path);
+    if (len >= HTTP_PATH_MAX) {
+        return -1;
+    }
+
+    if (path[0] != '/') {
+        return -1;
+    }
+
+    strcpy(cfg->http_path, path);
     return 0;
 }
 
@@ -1545,10 +1603,10 @@ static int config_check_size(struct config *cfg)
     }
 
     if ((cfg->protocol == IPPROTO_TCP) && ((payload_size == 0) || (payload_size >= HTTP_DATA_MIN_SIZE))) {
-        cfg->http = true;
+        cfg->stats_http = true;
     }
 
-    http_set_payload(payload_size);
+    http_set_payload(cfg, payload_size);
     udp_set_payload(payload_size);
 
     return 0;
@@ -1607,7 +1665,7 @@ static int config_check_keepalive(struct config *cfg)
 {
     if (cfg->server == 0) {
         if (cfg->cc && (cfg->keepalive == false)) {
-            printf("Error: no 'keepalive'\n");
+            printf("Error: 'cc' requires 'keepalive'\n");
             return -1;
         }
     } else {
@@ -1648,6 +1706,50 @@ static int config_check_change_dip(struct config *cfg)
     if (ip_list->num < cfg->cpu_num) {
         printf("Error: number of \'change_dip\' is less than cpu number\n");
         return -1;
+    }
+
+    return 0;
+}
+
+static int config_check_http(struct config *cfg)
+{
+    int http_host = 0;
+    int http_path = 0;
+
+    http_host = (cfg->http_host[0] != 0);
+    http_path = (cfg->http_path[0] != 0);
+
+    if (cfg->packet_size || cfg->payload_size) {
+        if (http_host || http_path) {
+            printf("Error: The HTTP host/path cannot be set with packet_size or payload_size.\n");
+            return -1;
+        }
+    }
+
+    if (cfg->server) {
+        if (http_host || http_path) {
+            printf("Error: the HTTP host/path cannot be set in server mode.\n");
+            return -1;
+        }
+    }
+
+    if (cfg->protocol == IPPROTO_UDP) {
+        if (http_host || http_path) {
+            printf("Error: The HTTP host/path cannot be set in udp protocol.\n");
+            return -1;
+        }
+    }
+
+    if (!http_host) {
+        strcpy(cfg->http_host, HTTP_HOST_DEFAULT);
+    }
+
+    if (!http_path) {
+        strcpy(cfg->http_path, HTTP_PATH_DEFAULT);
+    }
+
+    if (cfg->http) {
+        cfg->stats_http = true;
     }
 
     return 0;
@@ -1716,6 +1818,11 @@ int config_parse(int argc, char **argv, struct config *cfg)
     }
 
     if (config_check_keepalive(cfg) < 0) {
+        return -1;
+    }
+
+    /* called before config_check_size() */
+    if (config_check_http(cfg) < 0) {
         return -1;
     }
 

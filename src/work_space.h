@@ -93,6 +93,10 @@ struct work_space {
     struct netif_port *port;
     void (*run_loop)(struct work_space *ws);
 
+    struct {
+        int next;
+        struct socket *sockets[TCP_ACK_DELAY_MAX];
+    } ack_delay;
     struct tx_queue tx_queue;
     struct rte_mbuf *mbuf_rx[NB_RXD];
     struct ip_list  dip_list;
