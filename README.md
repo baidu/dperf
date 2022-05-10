@@ -136,7 +136,7 @@ Below example will start a HTTP CPS stress test.
 ## Contributing
 
 dperf welcomes your contribution. See the [CONTRIBUTING](CONTRIBUTING.md) file for details.
-Welcome to the development team, please contact the [author](pengjianzhang@gmail.com) to add you to the developer mailing list.
+Welcome to the development team, please contact [Jianzhang Peng](https://github.com/pengjianzhang) to add you to the developer mailing list.
 
 ## Authors
 * Jianzhang Peng - *Initial work*
