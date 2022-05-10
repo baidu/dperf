@@ -134,6 +134,7 @@ ierrors 0                  oerrors  0                  imissed  0
 
 ## 贡献
 dperf 欢迎大家贡献。详情请参阅[贡献指南](CONTRIBUTING.md)。
+欢迎加入开发团队，请联系[作者](pengjianzhang@gmail.com)把你加入开发者邮件列表。
 
 ## 作者 
 * Jianzhang Peng - *项目发起人*
