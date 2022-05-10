@@ -65,6 +65,7 @@ struct work_space {
     uint8_t server:1;
     uint8_t kni:1;
     uint8_t change_dip:1;
+    uint8_t http:1;
     uint8_t tos;
     uint8_t port_id;
     uint8_t queue_id;
