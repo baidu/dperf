@@ -57,7 +57,7 @@ void socket_log(struct socket *sk, const char *tag)
 
     fprintf(log, "sec %lu ticks %lu %s sk: "
             IPV4_FMT ":%u ->" IPV4_FMT
-            ":%u syn %d fin %d push %d ack %d rcv_nxt %d snd_nxt %u snd_una %u %s\n",
+            ":%u syn %d fin %d push %d ack %d rcv_nxt %u snd_nxt %u snd_una %u %s\n",
             g_current_seconds, g_current_ticks,
             tag,
             IPV4_STR(sk->laddr), ntohs(sk->lport),

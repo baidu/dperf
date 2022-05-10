@@ -873,10 +873,12 @@ static int config_parse_protocol(int argc, char *argv[], void *data)
     } else if (strcmp(argv[1], "udp") == 0) {
         cfg->protocol = IPPROTO_UDP;
         return 0;
+#ifdef HTTP_PARSE
     } else if (strcmp(argv[1], "http") == 0) {
         cfg->protocol = IPPROTO_TCP;
         cfg->http = true;
         return 0;
+#endif
     } else {
         return -1;
     }

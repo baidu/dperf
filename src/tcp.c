@@ -474,6 +474,14 @@ static inline bool tcp_check_sequence(struct work_space *ws, struct socket *sk, 
         }
     }
 
+    /* CLOSING */
+    if ((sk->state == SK_FIN_WAIT_1) && (th->th_flags & TH_FIN) && (data_len == 1) &&
+        (ack == snd_nxt_old) && (seq == sk->rcv_nxt)) {
+        sk->rcv_nxt = seq + 1;
+        sk->state = SK_CLOSING;
+        return true;
+    }
+
     SOCKET_LOG_ENABLE(sk);
     /* my data packet lost */
     if (tcp_seq_le(ack, sk->snd_una)) {
@@ -539,6 +547,11 @@ static inline uint8_t tcp_process_fin(struct socket *sk, uint8_t rx_flags, uint8
                 /* wait FIN */
                 sk->state = SK_FIN_WAIT_2;
             }
+            break;
+        case SK_CLOSING:
+            /* In order to prevent the loss of fin, we make up a FIN, which has no cost */
+            sk->state = SK_LAST_ACK;
+            flags = TH_FIN | TH_ACK;
             break;
         case SK_LAST_ACK:
             socket_close(sk);
@@ -673,16 +686,19 @@ static inline void tcp_client_process_data(struct work_space *ws, struct socket 
     if (sk->state == SK_ESTABLISHED) {
         if (data_len) {
 #ifdef HTTP_PARSE
-            tx_flags = http_client_process_data(ws, sk, rx_flags, data, data_len);
-#else
-            tx_flags |= TH_ACK;
-            http_parse_response(data, data_len);
-            if (sk->keepalive == 0) {
-                tx_flags |= TH_FIN;
-            } else {
-                socket_start_keepalive_timer(sk, work_space_tsc(ws));
-            }
+            if (ws->http) {
+                tx_flags = http_client_process_data(ws, sk, rx_flags, data, data_len);
+            } else
 #endif
+            {
+                tx_flags |= TH_ACK;
+                http_parse_response(data, data_len);
+                if (sk->keepalive == 0) {
+                    tx_flags |= TH_FIN;
+                } else {
+                    socket_start_keepalive_timer(sk, work_space_tsc(ws));
+                }
+            }
         }
     }
 

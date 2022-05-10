@@ -33,7 +33,7 @@ enum {
     SK_ESTABLISHED,
     SK_CLOSE_WAIT, /* unused */
     SK_FIN_WAIT_1,
-    SK_CLOSING, /* unused */
+    SK_CLOSING,
     SK_LAST_ACK,
     SK_FIN_WAIT_2,
     SK_TIME_WAIT
