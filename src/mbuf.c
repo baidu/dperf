@@ -127,7 +127,7 @@ void mbuf_print(struct rte_mbuf *m, const char *tag)
     g_work_space->log = log;
 }
 
-void mbuf_copy(struct rte_mbuf *dst, struct rte_mbuf *src)
+static inline void mbuf_copy(struct rte_mbuf *dst, struct rte_mbuf *src)
 {
     uint8_t *data = NULL;
     uint8_t *data2 = NULL;
@@ -137,6 +137,18 @@ void mbuf_copy(struct rte_mbuf *dst, struct rte_mbuf *src)
     len = rte_pktmbuf_data_len(src);
     data2 = mbuf_push_data(dst, len);
     memcpy(data2, data, len);
+}
+
+struct rte_mbuf *mbuf_dup(struct rte_mbuf *m)
+{
+    struct rte_mbuf *m2 = NULL;
+    struct work_space *ws = g_work_space;
+    m2 = work_space_alloc_mbuf(ws);
+    if (m2 != NULL) {
+        mbuf_copy(m2, m);
+    }
+
+    return m2;
 }
 
 bool mbuf_is_neigh(struct rte_mbuf *m)

@@ -134,10 +134,6 @@ static void arp_process_reply(struct work_space *ws, struct rte_mbuf *m)
         work_space_update_gw(ws, &eth->s_addr);
     }
 
-    if (ws->kni) {
-        return kni_recv(ws, m);
-    }
-
     mbuf_free(m);
 }
 
@@ -148,10 +144,8 @@ static void arp_process_request(struct work_space *ws, struct rte_mbuf *m)
 
     arph = mbuf_arphdr(m);
     dip = arph->ar_tip;
+
     if (!work_space_ip_exist(ws, dip)) {
-        if (ws->kni) {
-            return kni_recv(ws, m);
-        }
         mbuf_free(m);
         return;
     }
@@ -165,6 +159,10 @@ void arp_process(struct work_space *ws, struct rte_mbuf *m)
 
     net_stats_arp_rx();
     arph = mbuf_arphdr(m);
+
+    if (ws->kni) {
+        kni_broadcast(ws, m);
+    }
 
     if (arph->ar_op == htons(ARP_REQUEST)) {
         arp_process_request(ws, m);

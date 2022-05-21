@@ -300,6 +300,16 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
     mbuf_free2(m);
 }
 
+void kni_broadcast(struct work_space *ws, struct rte_mbuf *m)
+{
+    struct rte_mbuf *m2 = NULL;
+
+    m2 = mbuf_dup(m);
+    if (m2) {
+        kni_recv(ws, m);
+    }
+}
+
 static void kni_send_mbuf(struct work_space *ws, struct rte_mbuf *m)
 {
     if (port_is_bond4(ws->port) && mbuf_is_neigh(m)) {

@@ -314,10 +314,7 @@ One 'vxlan' can be set per 'port'. 'innerSMAC' is the source MAC address of the 
 - mode: client, server
 
 Enable the kni interface. We create a kni interface for each 'port'. Common interface Names are vEth/vnic, etc. The default name is dperf.
-The IP address and routing of the kni interface need to be manually configured.
-It is recommended to assign a separate IP to the kni interface.
-When only one CPU is enabled, the kni interface IP can be the traffic IP;
-If multiple CPUs are used, the kni interface IP can use the first traffic IP of the server.
+The IP address and route of the kni interface need to be manually configured, and can only be configured as the 'port' IP.
 
 ## tos
 - syntax: tos Number(0x00-0xff or 0-255)

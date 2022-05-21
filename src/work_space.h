@@ -223,4 +223,24 @@ struct rte_mbuf *work_space_alloc_mbuf(struct work_space *ws);
 void work_space_set_launch_interval(uint64_t launch_interval);
 void work_space_wait_start(void);
 
+/*
+ * <m> is a ip packet
+ * */
+static inline bool work_space_is_local_addr(const struct work_space *ws, const struct rte_mbuf *m)
+{
+    uint32_t daddr = 0;
+    const struct iphdr *iph = NULL;
+    const struct ip6_hdr *ip6h = NULL;
+
+   iph = (const struct iphdr *)mbuf_ip_hdr(m);
+   ip6h = (const struct ip6_hdr *)iph;
+   if (iph->version == 4) {
+        daddr = iph->daddr;
+    } else {
+        daddr = ip6h->ip6_dst.s6_addr32[3];
+    }
+
+    return (daddr == ws->port->local_ip.ip);
+}
+
 #endif
