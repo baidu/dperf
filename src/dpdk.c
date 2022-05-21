@@ -140,7 +140,7 @@ int dpdk_init(struct config *cfg, char *argv0)
 
     rss_init();
     /* One-way traffic does not require RSS and FDIR */
-    if ((!cfg->rss) && (!cfg->flood)) {
+    if ((cfg->rss == RSS_NONE) && (!cfg->flood)) {
         if (flow_init(cfg) < 0) {
             printf("flow init fail\n");
             return -1;

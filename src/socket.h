@@ -28,8 +28,8 @@
 enum {
     SK_CLOSED,
     SK_LISTEN, /* unused */
-    SK_SYN_SENT,
-    SK_SYN_RECEIVED,
+    SK_SYN_SENT,        /* also UDP client send */
+    SK_SYN_RECEIVED,    /* also UDP client recv */
     SK_ESTABLISHED,
     SK_CLOSE_WAIT, /* unused */
     SK_FIN_WAIT_1,
@@ -112,7 +112,9 @@ struct socket_table {
     uint16_t port_min;
     uint16_t port_max;
 
-    bool  rss;
+    uint8_t rss;
+    uint8_t rss_id;
+    uint8_t rss_num;
     struct socket_table *socket_table_hash[256]; /* server rss hash */
                      /*[client-ip][client-port][server-port]*/
     struct socket_port_table *ht[NETWORK_PORT_NUM];
@@ -144,12 +146,32 @@ static inline struct socket *socekt_table_get_socket_rss(struct socket_table *st
 
     while (1) {
         sk = &(sp->base[sp->next]);
+        if (st->rss == RSS_AUTO) {
+            sp->next++;
+            /* 1. each worker picks socekts in port order
+             * 2. avoid incorrectly hashed sockets
+             * */
+            if (((ntohs(sk->lport) % st->rss_num) != st->rss_id) || (sk->laddr == 0)) {
+                if (sp->next >= sp->num) {
+                    sp->next = 0;
+                }
+                continue;
+            }
+            break;
+        }
+
         if (sk->laddr != 0) {
             sp->next++;
             if (sp->next >= sp->num) {
                 sp->next = 0;
             }
             break;
+        } else if (st->rss == RSS_L3L4) {
+            sp->next++;
+            if (sp->next >= sp->num) {
+                sp->next = 0;
+            }
+            continue;
         } else {
             sp->next += NETWORK_PORT_NUM * st->port_num - st->port_num;
             if (sp->next >= sp->num) {
@@ -167,7 +189,7 @@ static inline struct socket *socekt_table_get_socket(struct socket_table *st)
     struct socket *sk = NULL;
     struct socket_pool *sp = &st->socket_pool;
 
-    if (st->rss == 0) {
+    if (st->rss == RSS_NONE) {
         sk = &(sp->base[sp->next]);
         sp->next++;
         if (sp->next >= sp->num) {
@@ -204,6 +226,46 @@ static inline struct socket *socket_common_lookup(const struct socket_table *st,
     return NULL;
 }
 
+static inline void socket_dup(struct socket *dst, struct socket *src)
+{
+    /*
+     * TCP: we cannot break a tcp connection, so we keep this socket alive here.
+     * */
+    if (src->flags) {
+        dst->rcv_nxt = src->rcv_nxt;
+        dst->snd_nxt = src->snd_nxt;
+        dst->snd_una = src->snd_una;
+        dst->flags = src->flags;
+    }
+    dst->keepalive = src->keepalive;
+    dst->timer_tsc = src->timer_tsc;
+    dst->state = src->state;
+    net_stats_socket_dup();
+}
+
+static inline void socket_client_check_rss_auto(const struct socket_table *st,
+    uint32_t daddr, uint32_t saddr, uint16_t dport, uint16_t sport, struct socket *sk)
+{
+    uint32_t idx = 0;
+    struct socket *sk2 = NULL;
+    const struct socket_table *st2 = NULL;
+
+    idx = ntohs(dport) % st->rss_num;
+    if (idx != st->rss_id) {
+        st2 = st->socket_table_hash[idx];
+        if (unlikely(st2 == NULL)) {
+            return;
+        }
+
+        sk2 = socket_common_lookup(st2, daddr, saddr, dport, sport);
+        if (sk2 && (sk2->laddr == daddr) && (sk2->faddr == saddr)) {
+            socket_dup(sk, sk2);
+            sk2->laddr = 0;
+            sk2->faddr = 0;
+        }
+    }
+}
+
 static inline struct socket *socket_client_lookup(const struct socket_table *st, const struct iphdr *iph,
     const struct tcphdr *th)
 {
@@ -214,6 +276,9 @@ static inline struct socket *socket_client_lookup(const struct socket_table *st,
     ip_hdr_get_addr_low32(iph, saddr, daddr);
     sk = socket_common_lookup(st, daddr, saddr, th->th_dport, th->th_sport);
     if (sk && (sk->laddr == daddr) && (sk->faddr == saddr)) {
+        if (unlikely(st->rss == RSS_AUTO)) {
+            socket_client_check_rss_auto(st, daddr, saddr, th->th_dport, th->th_sport, sk);
+        }
         return sk;
     }
 
@@ -230,7 +295,7 @@ static inline struct socket *socket_server_lookup(const struct socket_table *st,
 
     ip_hdr_get_addr_low32(iph, saddr, daddr);
 
-    if (unlikely(st->rss)) {
+    if (unlikely(st->rss == RSS_L3)) {
         idx = ntohl(daddr) & 0xff;
         st = st->socket_table_hash[idx];
         if (unlikely(st == NULL)) {

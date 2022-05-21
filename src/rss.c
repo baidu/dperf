@@ -23,6 +23,7 @@
 #include "config.h"
 #include "work_space.h"
 #include "socket.h"
+#include "ip.h"
 
 #define RSS_HASH_KEY_LENGTH 40
 static uint8_t rss_hash_key_symmetric_be[RSS_HASH_KEY_LENGTH];
@@ -41,8 +42,13 @@ static uint64_t rss_get_rss_hf(struct rte_eth_dev_info *dev_info)
     uint64_t ipv6_flags = 0;
 
     offloads = dev_info->flow_type_rss_offloads;
-    ipv4_flags = RTE_ETH_RSS_IPV4 | RTE_ETH_RSS_FRAG_IPV4;
-    ipv6_flags = RTE_ETH_RSS_IPV6 | RTE_ETH_RSS_FRAG_IPV6;
+    if (g_config.rss == RSS_L3) {
+        ipv4_flags = RTE_ETH_RSS_IPV4 | RTE_ETH_RSS_FRAG_IPV4;
+        ipv6_flags = RTE_ETH_RSS_IPV6 | RTE_ETH_RSS_FRAG_IPV6;
+    } else if (g_config.rss == RSS_L3L4) {
+        ipv4_flags = RTE_ETH_RSS_NONFRAG_IPV4_UDP | RTE_ETH_RSS_NONFRAG_IPV4_TCP;
+        ipv6_flags = RTE_ETH_RSS_NONFRAG_IPV6_UDP | RTE_ETH_RSS_NONFRAG_IPV6_TCP;
+    }
 
     if (g_config.ipv6) {
         if ((offloads & ipv6_flags) == 0) {
@@ -62,6 +68,11 @@ int rss_config_port(struct rte_eth_conf *conf, struct rte_eth_dev_info *dev_info
     uint64_t rss_hf = 0;
     struct rte_eth_rss_conf *rss_conf = NULL;
 
+    if (g_config.rss == RSS_AUTO) {
+        conf->rxmode.mq_mode = RTE_ETH_MQ_RX_RSS;
+        return 0;
+    }
+
     rss_hf = rss_get_rss_hf(dev_info);
     if (rss_hf == 0) {
         return -1;
@@ -76,46 +87,59 @@ int rss_config_port(struct rte_eth_conf *conf, struct rte_eth_dev_info *dev_info
     return 0;
 }
 
-static uint32_t rss_hash_socket_ipv4(__rte_unused struct work_space *ws, struct socket *sk)
-{
-    uint32_t input[2];
-    uint32_t hash = 0;
-
-    input[0] = rte_be_to_cpu_32(sk->laddr);
-    input[1] = rte_be_to_cpu_32(sk->faddr);
-    hash = rte_softrss_be(input, 2, rss_hash_key_symmetric_be);
-    return hash;
-}
-
-static uint32_t rss_hash_socket_ipv6(struct work_space *ws, struct socket *sk)
+static uint32_t rss_hash_data(uint32_t *data, int len)
 {
     int i = 0;
-    int len = 8;
-    struct {
-        ipaddr_t lip;
-        ipaddr_t fip;
-    } input;
-    uint32_t *data = NULL;
-    uint32_t hash = 0;
 
-    if (ws->cfg->server) {
-        input.fip = ws->port->client_ip_range.start;
-        input.lip = ws->port->server_ip_range.start;
-    } else {
-        input.lip = ws->port->client_ip_range.start;
-        input.fip = ws->port->server_ip_range.start;
-    }
-
-    input.lip.ip = sk->laddr;
-    input.fip.ip = sk->faddr;
-
-    data = (uint32_t *)&input;
     for (i = 0; i < len; i++) {
         data[i] = rte_be_to_cpu_32(data[i]);
     }
 
-    hash = rte_softrss_be(data, len, rss_hash_key_symmetric_be);
-    return hash;
+    return rte_softrss_be(data, len, rss_hash_key_symmetric_be);
+}
+
+static uint32_t rss_hash_socket_ipv4(struct work_space *ws, struct socket *sk)
+{
+    int len = 2;
+    struct rte_ipv4_tuple tuple;
+
+    tuple.src_addr = sk->faddr;
+    tuple.dst_addr = sk->laddr;
+    if (ws->cfg->rss == RSS_L3L4) {
+        tuple.dport = sk->lport;
+        tuple.sport = sk->fport;
+        len++;
+    }
+
+    return rss_hash_data((uint32_t *)&tuple, len);
+}
+
+static uint32_t rss_hash_socket_ipv6(struct work_space *ws, struct socket *sk)
+{
+    int len = 8;
+    ipaddr_t laddr;
+    ipaddr_t faddr;
+    struct rte_ipv6_tuple tuple;
+    struct netif_port *port = NULL;
+
+    port = ws->port;
+    if (ws->cfg->server) {
+        ipaddr_join(&port->client_ip_range.start, sk->faddr, &faddr);
+        ipaddr_join(&port->server_ip_range.start, sk->laddr, &laddr);
+    } else {
+        ipaddr_join(&port->client_ip_range.start, sk->laddr, &laddr);
+        ipaddr_join(&port->server_ip_range.start, sk->faddr, &faddr);
+    }
+    memcpy(tuple.src_addr, &laddr, 16);
+    memcpy(tuple.dst_addr, &faddr, 16);
+
+    if (ws->cfg->rss == RSS_L3L4) {
+        tuple.dport = sk->fport;
+        tuple.sport = sk->lport;
+        len++;
+    }
+
+    return rss_hash_data((uint32_t *)&tuple, len);
 }
 
 bool rss_check_socket(struct work_space *ws, struct socket *sk)

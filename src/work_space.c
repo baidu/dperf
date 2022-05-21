@@ -196,6 +196,7 @@ struct work_space *work_space_new(struct config *cfg, int id)
     ws->id = id;
     ws->ipv6 = cfg->af == AF_INET6;
     ws->http = cfg->http;
+    ws->flood = cfg->flood;
     ws->cfg = cfg;
     ws->tos = cfg->tos;
     ws->tx_queue.tx_burst = cfg->tx_burst;
@@ -388,12 +389,10 @@ static void work_space_init_rss(struct work_space *ws)
     struct socket_table *st = NULL;
     struct socket_table *st2 = NULL;
 
-    if (!ws->cfg->rss) {
-        return;
-    }
-
     st = &ws->socket_table;
-    st->rss = true;
+    st->rss = ws->cfg->rss;
+    st->rss_id = ws->queue_id;
+    st->rss_num = ws->port->queue_num;
 
     for (i = 0; i < THREAD_NUM_MAX; i++) {
         ws2 = g_work_space_all[i];
@@ -402,7 +401,11 @@ static void work_space_init_rss(struct work_space *ws)
         }
 
         st2 = &ws2->socket_table;
-        idx = ntohl(st2->server_ip) & 0xff;
+        if (st->rss == RSS_L3) {
+            idx = ntohl(st2->server_ip) & 0xff;
+        } else {
+            idx = ws2->queue_id;
+        }
         st->socket_table_hash[idx] = st2;
     }
 }

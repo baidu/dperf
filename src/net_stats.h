@@ -38,6 +38,7 @@ struct net_stats {
     uint64_t tos_rx;
 
     /* socket */
+    uint64_t socket_dup;
     uint64_t socket_open;
     uint64_t socket_close;
     uint64_t socket_error;
@@ -71,7 +72,7 @@ struct net_stats {
     /* udp */
     uint64_t udp_rx;
     uint64_t udp_tx;
-    uint64_t udp_rto;
+    uint64_t udp_rt;
     uint64_t udp_drop;
 
     /* arp */
@@ -104,12 +105,15 @@ void net_stats_timer_handler(struct work_space *ws);
 void net_stats_print_total(FILE *fp);
 void net_stats_print_speed(FILE *fp, int seconds);
 extern __thread struct net_stats g_net_stats;
+#define net_stats_socket_dup()      do {g_net_stats.socket_dup++;\
+                                        g_net_stats.socket_open++; g_net_stats.socket_current++;} while (0)
 #define net_stats_socket_error()    do {g_net_stats.socket_error++;} while (0)
 #define net_stats_socket_open()     do {g_net_stats.socket_open++; g_net_stats.socket_current++;} while (0)
 #define net_stats_socket_close()    do {g_net_stats.socket_close++; g_net_stats.socket_current--;} while (0)
 #define net_stats_tx_drop(n)        do {g_net_stats.tx_drop += (n);} while (0)
 #define net_stats_rx_bad()          do {g_net_stats.rx_bad++;} while (0)
 
+#define net_stats_udp_rt()          do {g_net_stats.udp_rt++;} while (0)
 #define net_stats_syn_rt()          do {g_net_stats.syn_rt++;} while (0)
 #define net_stats_fin_rt()          do {g_net_stats.fin_rt++;} while (0)
 #define net_stats_ack_rt()          do {g_net_stats.ack_rt++;} while (0)

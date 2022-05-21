@@ -326,12 +326,16 @@ kni接口的IP地址与路由需要手动配置，建议为kni接口分配独立
 注意：tos对kni接口发出的报文不生效。
 
 ## rss
-- syntax: rss
+- syntax: rss [l3/l3l4/auto]
 - default: -
 - required: no
 - mode: client, server
 
-使用网卡L3 RSS分流。没有FDIR特性的网卡需要开启多队列/多线程时需要开启此开关。
+使用网卡RSS分流。没有FDIR特性的网卡需要开启多队列/多线程时需要开启此开关。
+- l3: 使用基于IP地址的对称哈希算法分流，要求网卡支持修改RSS配置, 这是默认选项
+- l3l4: 使用l3l4对称哈希算法分流, 要求网卡支持修改RSS配置
+- auto: 使用网卡默认算法分流, 要求一个port只能配置一个server IP
+
 注意：'vxlan'暂时还不能与'rss'同时使用。
 
 ## tcp_rst

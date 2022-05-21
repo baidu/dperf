@@ -28,7 +28,8 @@ dperf使用网卡的分流特性（FDIR)。
 每个dperf client线程只请求一个目的IP，dperf client上使用报文的源IP分流。
 经过分流后，线程之间没有共享资源，没有锁竞争，理论上性能可以线性扩展，实际上会因为共享CPU执行单元、Cache、总线、网卡等物理资源，难免会相互干扰, 做不到百分百线性。
 
-对于不支持FDIR特性的网卡。dperf使用L3 RSS分流。dperf使用对称的hash key，客户端会选择特定IP，使得同一个连接的TX/RX方向的报文都落在同一个线程上。
+对于不支持FDIR特性的网卡。dperf使用L3/L3L4 RSS分流。dperf使用对称的hash key，客户端会选择特定IP，使得同一个连接的TX/RX方向的报文都落在同一个线程上。
+对于不支持设置RSS的网卡。dperf适用默认的RSS分流算法，连接的第一个发送队列可能不是接收队列，dperf使用第一个响应报文来修正。
 dperf服务器上共享socket表，报文哈希到任何一个线程都可以正常处理。RSS的性能与FDIR差异不大。
 
 ### 极小socket

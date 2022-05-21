@@ -70,6 +70,11 @@
 
 #define TCP_ACK_DELAY_MAX   1024
 
+#define RSS_NONE            0
+#define RSS_L3              1
+#define RSS_L3L4            2
+#define RSS_AUTO            3
+
 struct config {
     bool server;
     bool keepalive;
@@ -79,7 +84,7 @@ struct config {
     bool daemon;
     bool flood;
     bool jumbo;
-    bool rss;
+    uint8_t rss;
     bool quiet;
     bool tcp_rst;
     bool http;
