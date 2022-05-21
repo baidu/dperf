@@ -96,12 +96,11 @@ void bond_broadcast(struct work_space *ws, struct rte_mbuf *m)
     port = ws->port;
     for (i = 0; i < port->pci_num; i++) {
         port_id = port->port_id_list[i];
-        m2 = work_space_alloc_mbuf(ws);
+        m2 = mbuf_dup(m);
         if (m2 == NULL) {
             break;
         }
 
-        mbuf_copy(m2, m);
         net_stats_tx(m2);
         if (rte_eth_tx_burst(port_id, ws->queue_id, &m2, 1) != 1) {
             mbuf_free(m2);

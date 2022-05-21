@@ -91,7 +91,7 @@ static void work_space_get_port(struct work_space *ws)
         ws->vni = VXLAN_HTON(vxlan->vni);
     }
 
-    if (ws->port->kni && (ws->queue_id == 0)) {
+    if (ws->port->kni) {
         ws->kni = true;
     }
 }

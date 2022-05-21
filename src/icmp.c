@@ -33,15 +33,7 @@ void icmp_process(struct work_space *ws, struct rte_mbuf *m)
 
     net_stats_icmp_rx();
     if (icmph->type != ICMP_ECHO) {
-        if (ws->kni) {
-            return kni_recv(ws, m);
-        }
-        mbuf_free(m);
-        return;
-    }
-
-    if (!work_space_ip_exist(ws, iph->daddr)) {
-        if (ws->kni) {
+        if (ws->kni && work_space_is_local_addr(ws, m)) {
             return kni_recv(ws, m);
         }
         mbuf_free(m);

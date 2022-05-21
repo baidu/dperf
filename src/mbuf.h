@@ -98,7 +98,7 @@ static inline void mbuf_free2(struct rte_mbuf *m)
     }
 }
 
-void mbuf_copy(struct rte_mbuf *dst, struct rte_mbuf *src);
 bool mbuf_is_neigh(struct rte_mbuf *m);
+struct rte_mbuf *mbuf_dup(struct rte_mbuf *m);
 
 #endif
