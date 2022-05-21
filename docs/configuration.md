@@ -329,12 +329,16 @@ Set the tos of the IPv4 header or the traffic class of the IPv6 header, which ca
 Note: tos does not take effect on the packets sent by the kni interface.
 
 ## rss
-- syntax: rss
+- syntax: rss [l3/l3l4/auto]
 - default: -
 - required: no
 - mode: client, server
 
-Use the network interface L3 RSS distribution. When a network card without FDIR wants to use multi-queue/multi-threading, rss needs to be enabled.
+Use network card RSS distribution. This switch needs to be turned on when the network card without FDIR feature needs to enable multi-queue/multi-threading.
+- l3: Use the IP address-based symmetric hash algorithm to offload traffic, requiring the network card to support modifying the RSS configuration, which is the default option
+- l3l4: Use the l3l4 symmetric hash algorithm to split traffic, requiring the network card to support modifying the RSS configuration
+- auto: Use the default algorithm of the network card to split traffic, requiring only one server IP to be configured for a port
+
 Note: 'vxlan' cannot be used simultaneously with 'rss' yet.
 
 ## tcp_rst

@@ -105,7 +105,7 @@ static struct config_keyword g_config_keywords[] = {
     {"kni", config_parse_kni, "[ifName], default " KNI_NAME_DEFAULT},
     {"tos", config_parse_tos, "Number[0x00-0xff], default 0, eg 0x01 or 1"},
     {"jumbo", config_parse_jumbo, ""},
-    {"rss", config_parse_rss, ""},
+    {"rss", config_parse_rss, "[l3/l3l4/auto, default l3"},
     {"quiet", config_parse_quiet, ""},
     {"tcp_rst", config_parse_tcp_rst, "Number[0-1], default 1"},
     {"http_host", config_parse_http_host, "String, default " HTTP_HOST_DEFAULT},
@@ -1027,15 +1027,30 @@ static int config_parse_rss(int argc, __rte_unused char *argv[], void *data)
 {
     struct config *cfg = data;
 
-    if (argc > 1) {
+    if (argc > 2) {
         return -1;
     }
 
-    if (cfg->rss == true) {
+    if (cfg->rss != RSS_NONE) {
         printf("Error: duplicate rss\n");
         return -1;
     }
-    cfg->rss = true;
+
+    if (argc == 2) {
+        if (strcmp(argv[1], "l3") == 0) {
+            cfg->rss = RSS_L3;
+        } else if (strcmp(argv[1], "l3l4") == 0) {
+            cfg->rss = RSS_L3L4;
+        } else if (strcmp(argv[1], "auto") == 0) {
+            cfg->rss = RSS_AUTO;
+        } else {
+            printf("Error: unknown rss type \'%s\'\n", argv[1]);
+            return -1;
+        }
+    } else {
+        cfg->rss = RSS_L3;
+    }
+
     return 0;
 }
 
@@ -1213,7 +1228,7 @@ static int config_set_port_ip_range(struct config *cfg)
                 return -1;
             }
 
-            if (!cfg->rss) {
+            if (cfg->rss == RSS_NONE) {
                 printf("Error: 'rss' is required if cpu num is not equal to server ip num\n");
                 return -1;
             }
@@ -1644,20 +1659,42 @@ static int config_check_mss(struct config *cfg)
     return 0;
 }
 
+static int config_server_addr_check_num(struct config *cfg, int num)
+{
+    const struct ip_range *ipr = NULL;
+
+    for_each_ip_range(&(cfg->server_ip_group), ipr) {
+        if (ipr->num != num) {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 static int config_check_rss(struct config *cfg)
 {
-    if (cfg->rss == false) {
+
+    if (cfg->rss == RSS_NONE) {
         return 0;
     }
 
     if ((cfg->cpu_num == cfg->port_num) || (cfg->flood)) {
         printf("Warnning: rss is disabled\n");
-        cfg->rss = false;
+        cfg->rss = RSS_NONE;
     }
 
     if (cfg->vxlan) {
         printf("Error: rss is not supported for vxlan.\n");
         return -1;
+    }
+
+    /* must be 1 server ip */
+    if (cfg->rss == RSS_AUTO) {
+        if (config_server_addr_check_num(cfg, 1) != 0) {
+            printf("Error: rss \'auto\' requires one server address.\n");
+            return -1;
+        }
     }
 
     return 0;

@@ -99,9 +99,17 @@ static int net_stats_print_socket(struct net_stats *stats, char *buf, int buf_le
     char curr[STATS_BUF_LEN];
     char rtt[STATS_BUF_LEN];
     int len = buf_len;
+    uint64_t sk_open = 0;
+    uint64_t sk_close = 0;
 
-    net_stats_format_print(stats->socket_open, open, STATS_BUF_LEN);
-    net_stats_format_print(stats->socket_close, close, STATS_BUF_LEN);
+    sk_open = stats->socket_open - stats->socket_dup;
+    sk_close = stats->socket_close;
+    if (sk_close >= stats->socket_dup) {
+        sk_close -= stats->socket_dup;
+    }
+
+    net_stats_format_print(sk_open, open, STATS_BUF_LEN);
+    net_stats_format_print(sk_close, close, STATS_BUF_LEN);
     net_stats_format_print(stats->socket_error, error, STATS_BUF_LEN);
     net_stats_format_print(stats->socket_current, curr, STATS_BUF_LEN);
 
@@ -259,7 +267,7 @@ static int net_stats_print_retransmit(struct net_stats *stats, char *buf, int bu
     char push_rt[STATS_BUF_LEN];
     char tcp_drop[STATS_BUF_LEN];
 
-    char udp_rto[STATS_BUF_LEN];
+    char udp_rt[STATS_BUF_LEN];
     char udp_drop[STATS_BUF_LEN];
     int len = buf_len;
 
@@ -275,8 +283,8 @@ static int net_stats_print_retransmit(struct net_stats *stats, char *buf, int bu
             syn_rt, fin_rt, ack_rt, push_rt);
         SNPRINTF(p, len, "tcpDrop %-18s udpDrop  %-18s\n", tcp_drop, udp_drop);
     } else {
-        net_stats_format_print(stats->udp_rto, udp_rto, STATS_BUF_LEN);
-        SNPRINTF(p, len, "udpRt   %-18s udpDrop  %-18s tcpDrop  %-18s\n", udp_rto, udp_drop, tcp_drop);
+        net_stats_format_print(stats->udp_rt, udp_rt, STATS_BUF_LEN);
+        SNPRINTF(p, len, "udpRt   %-18s udpDrop  %-18s tcpDrop  %-18s\n", udp_rt, udp_drop, tcp_drop);
     }
     return p - buf;
 

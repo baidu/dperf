@@ -114,12 +114,16 @@ static inline void socket_start_keepalive_timer(struct socket *sk, uint64_t now_
     }
 }
 
-static inline void socket_start_retransmit_timer(__rte_unused struct socket *sk, uint64_t now_tsc)
+static inline void socket_start_retransmit_timer_force(struct socket *sk, uint64_t now_tsc)
 {
     struct socket_queue *queue = &g_retransmit_timer.queue;
+    socket_add_timer(queue, sk, now_tsc);
+}
 
+static inline void socket_start_retransmit_timer(struct socket *sk, uint64_t now_tsc)
+{
     if (sk->snd_nxt != sk->snd_una) {
-        socket_add_timer(queue, sk, now_tsc);
+        socket_start_retransmit_timer_force(sk, now_tsc);
     }
 }
 

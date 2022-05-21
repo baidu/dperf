@@ -361,6 +361,12 @@ static inline void tcp_do_retransmit(struct work_space *ws, struct socket *sk)
         return;
     }
 
+    /* rss auto: this socket is closed by another worker */
+    if (unlikely(sk->laddr == 0)) {
+        socket_close(sk);
+        return;
+    }
+
     sk->retrans++;
     if (sk->retrans < RETRANSMIT_NUM_MAX) {
         flags = sk->flags;
@@ -816,7 +822,7 @@ static inline void tcp_client_process(struct work_space *ws, struct rte_mbuf *m)
 static inline void tcp_do_keepalive(struct work_space *ws, struct socket *sk)
 {
     if ((sk->snd_nxt != sk->snd_una) || (sk->state != SK_ESTABLISHED) || (sk->keepalive == 0)) {
-        if (g_config.flood) {
+        if (ws->flood) {
             if (work_space_in_duration(ws)) {
                 tcp_reply(ws, sk, TH_SYN);
                 sk->snd_una = sk->snd_nxt;
@@ -846,12 +852,10 @@ static inline void tcp_do_keepalive(struct work_space *ws, struct socket *sk)
 
 static inline int tcp_client_launch(struct work_space *ws)
 {
-    bool flood = false;
     uint64_t i = 0;
     uint64_t num = 0;
     struct socket *sk = NULL;
 
-    flood = g_config.flood;
     num = work_space_client_launch_num(ws);
     for (i = 0; i < num; i++) {
         sk = socket_client_open(&ws->socket_table, work_space_tsc(ws));
@@ -860,7 +864,7 @@ static inline int tcp_client_launch(struct work_space *ws)
         }
 
         tcp_reply(ws, sk, TH_SYN);
-        if (flood) {
+        if (ws->flood) {
             if (sk->keepalive) {
                 sk->snd_una = sk->snd_nxt;
                 socket_start_keepalive_timer(sk, work_space_tsc(ws));

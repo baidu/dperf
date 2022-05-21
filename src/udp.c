@@ -145,14 +145,34 @@ static inline struct rte_mbuf* udp_send(struct work_space *ws, struct socket *sk
     return m;
 }
 
+static inline void udp_retransmit_handler(__rte_unused struct work_space *ws, struct socket *sk)
+{
+    /* rss auto: this socket is closed by another worker */
+    if (sk->laddr != 0) {
+        net_stats_udp_rt();
+    }
+
+    socket_close(sk);
+}
+
 static void udp_socket_keepalive_timer_handler(struct work_space *ws, struct socket *sk)
 {
-    if (ws->server == 0) {
-        if (work_space_in_duration(ws)) {
-            sk->keepalive_request_num++;
-            udp_send(ws, sk);
-            socket_start_keepalive_timer(sk, work_space_tsc(ws));
+    if (work_space_in_duration(ws)) {
+        /* rss auto: this socket is closed by another worker */
+        if (unlikely(sk->laddr == 0)) {
+            socket_close(sk);
+            return;
         }
+
+        /* if not flood mode, let's check packet loss */
+        if ((!ws->flood) && (sk->state == SK_SYN_SENT)) {
+            net_stats_udp_rt();
+        }
+
+        sk->state = SK_SYN_SENT;
+        sk->keepalive_request_num++;
+        udp_send(ws, sk);
+        socket_start_keepalive_timer(sk, work_space_tsc(ws));
     }
 }
 
@@ -170,6 +190,7 @@ static void udp_client_process(struct work_space *ws, struct rte_mbuf *m)
         goto out;
     }
 
+    sk->state = SK_SYN_RECEIVED;
     if (sk->keepalive == 0) {
         net_stats_rtt(ws, sk);
         socket_close(sk);
@@ -208,12 +229,10 @@ out:
 
 static int udp_client_launch(struct work_space *ws)
 {
-    bool flood = false;
     uint64_t i = 0;
     struct socket *sk = NULL;
     uint64_t num = 0;
 
-    flood = g_config.flood;
     num = work_space_client_launch_num(ws);
     for (i = 0; i < num; i++) {
         sk = socket_client_open(&ws->socket_table, work_space_tsc(ws));
@@ -225,8 +244,10 @@ static int udp_client_launch(struct work_space *ws)
         udp_send(ws, sk);
         if (sk->keepalive) {
             socket_start_keepalive_timer(sk, work_space_tsc(ws));
-        } else if (flood) {
+        } else if (ws->flood) {
             socket_close(sk);
+        } else {
+            socket_start_retransmit_timer_force(sk, work_space_tsc(ws));
         }
     }
 
@@ -235,9 +256,14 @@ static int udp_client_launch(struct work_space *ws)
 
 static inline int udp_client_socket_timer_process(struct work_space *ws)
 {
+    struct socket_timer *rt_timer = &g_retransmit_timer;
     struct socket_timer *kp_timer = &g_keepalive_timer;
 
-    socket_timer_run(ws, kp_timer, g_config.keepalive_request_interval, udp_socket_keepalive_timer_handler);
+    if (g_config.keepalive) {
+        socket_timer_run(ws, kp_timer, g_config.keepalive_request_interval, udp_socket_keepalive_timer_handler);
+    } else {
+        socket_timer_run(ws, rt_timer, RETRANSMIT_TIMEOUT, udp_retransmit_handler);
+    }
     return 0;
 }
 

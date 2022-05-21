@@ -24,7 +24,8 @@ The performance of L4LB is so high that it is very difficult to test its perform
 ### Multi threads and Flow Director
 Dperf is a multi-threaded program, each thread uses only 1 RX and 1 TX. dperf uses the diversion feature (FDIR) of the network card. Each dperf server thread is bound to a listening IP, and the destination IP of the message used on the dperf server is shunted. Each dperf client thread only requests one destination IP, and the dperf client uses the source IP of the packet to divert. After shunting, there is no shared resources between threads and no lock competition. Theoretically, the performance can be linearly expanded. In fact, due to the sharing of physical resources such as the CPU execution unit, Cache, bus, and network card, it is inevitable that they will interfere with each other and cannot achieve 100%. 100 linear.
 
-For NICs that do not support the FDIR feature. dperf uses L3 RSS offload. dperf uses a symmetric hash key, and the client will select a specific IP, so that the packets in the TX/RX direction of the same connection all fall on the same thread.
+For NICs that do not support the FDIR feature. dperf uses L3/L3L4 RSS splits. dperf uses a symmetric hash key, and the client will select a specific IP, so that the packets in the TX/RX direction of the same connection all fall on the same > thread.
+For network cards that do not support setting RSS. dperf uses the default RSS offloading algorithm. The first sending queue connected to the connection may not be the receiving queue, and dperf uses the first response message to correct it.
 The socket table is shared on the dperf server, and the message hash to any thread can be processed normally. The performance of RSS is not much different from that of FDIR.
 
 ### Very small socket
