@@ -25,6 +25,7 @@
 #include "lldp.h"
 #include "kni.h"
 #include "socket_timer.h"
+#include <rte_ip_frag.h>
 
 /* optimal value, don't change */
 #define MBUF_PREFETCH_NUM 4
@@ -120,7 +121,7 @@ static inline void ipv4_input(struct work_space *ws, struct rte_mbuf *m,
         iph = mbuf_ip_hdr(m);
         proto = iph->protocol;
         /* don't process ip options */
-        if (unlikely(iph->ihl != 5)) {
+        if (unlikely((iph->ihl != 5) || rte_ipv4_frag_pkt_is_fragmented((const struct rte_ipv4_hdr *)iph))) {
             net_stats_rx_bad();
             mbuf_free(m);
             return;
