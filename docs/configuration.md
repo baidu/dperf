@@ -376,3 +376,11 @@ Set the host header of the HTTP request.
 - mode: client
 
 Set the path of the HTTP request.
+
+## lport_range
+- syntax: lport_range Number [Number]
+- default: 1 65535
+- required: no
+- mode: client
+
+Set the local port range for clients. It is recommended to set the local port range to [1000-65535] on Google Cloud.

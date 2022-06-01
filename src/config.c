@@ -68,6 +68,7 @@ static int config_parse_quiet(int argc, char *argv[], void *data);
 static int config_parse_tcp_rst(int argc, char *argv[], void *data);
 static int config_parse_http_host(int argc, char *argv[], void *data);
 static int config_parse_http_path(int argc, char *argv[], void *data);
+static int config_parse_lport_range(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -110,6 +111,7 @@ static struct config_keyword g_config_keywords[] = {
     {"tcp_rst", config_parse_tcp_rst, "Number[0-1], default 1"},
     {"http_host", config_parse_http_host, "String, default " HTTP_HOST_DEFAULT},
     {"http_path", config_parse_http_path, "String, default " HTTP_PATH_DEFAULT},
+    {"lport_range", config_parse_lport_range, "Number [Number], default 1 65535"},
     {NULL, NULL, NULL}
 };
 
@@ -1139,6 +1141,42 @@ static int config_parse_http_path(int argc, char *argv[], void *data)
     return 0;
 }
 
+static int config_parse_lport_range(int argc, char *argv[], void *data)
+{
+    int lport_min = 1;
+    int lport_max = NETWORK_PORT_NUM - 1;
+    struct config *cfg = data;
+
+    if ((argc < 2) || (argc > 3)) {
+        return -1;
+    }
+
+    if ((cfg->lport_min != 0) || (cfg->lport_max != 0)) {
+        return -1;
+    }
+
+    lport_min = atoi(argv[1]);
+    if ((lport_min <= 0) || (lport_min >= NETWORK_PORT_NUM)) {
+        return -1;
+    }
+
+    if (argc == 3) {
+        lport_max = atoi(argv[2]);
+        if ((lport_max <= 0) || (lport_max >= NETWORK_PORT_NUM)) {
+            return -1;
+        }
+    }
+
+    if (lport_min >= lport_max) {
+        return -1;
+    }
+
+    cfg->lport_min = lport_min;
+    cfg->lport_max = lport_max;
+
+    return 0;
+}
+
 static void config_manual(void)
 {
     config_keyword_help(g_config_keywords);
@@ -1794,6 +1832,17 @@ static int config_check_http(struct config *cfg)
     return 0;
 }
 
+static void config_check_lport_range(struct config *cfg)
+{
+    if (cfg->lport_min == 0) {
+        cfg->lport_min = 1;
+    }
+
+    if (cfg->lport_max == 0) {
+        cfg->lport_max = NETWORK_PORT_NUM - 1;
+    }
+}
+
 int config_parse(int argc, char **argv, struct config *cfg)
 {
     int conf = 0;
@@ -1928,6 +1977,8 @@ int config_parse(int argc, char **argv, struct config *cfg)
     if (config_check_rss(cfg) < 0) {
         return -1;
     }
+
+    config_check_lport_range(cfg);
 
     if (test) {
         printf("Config file OK\n");

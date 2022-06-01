@@ -93,6 +93,9 @@ struct config {
     uint8_t tx_burst;
     uint8_t protocol;   /* TCP/UDP */
 
+    int lport_min;
+    int lport_max;
+
     char kni_ifname[RTE_KNI_NAMESIZE];
     int af;
     uint64_t keepalive_request_interval;

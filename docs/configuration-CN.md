@@ -374,3 +374,11 @@ Example:
 - mode: client
 
 设置HTTP请求的PATH。
+
+## lport_range
+- syntax: lport_range Number [Number]
+- default: 1 65535
+- required: no
+- mode: client
+
+设置客户端的本地端口范围。在Google Cloud上建议设置本地端口范围为[1000-65535]。
