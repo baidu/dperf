@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.2.0 - 2022-06-01
+### Added
+
+- http client
+- change_dip: before the packet is sent, a huge IP pool is used to change the dest IP
+
+### Changed
+
+- rss support l3/l3l4/auto
+- optimize statistics
+
+### Fixed
+
+- FIX: kni only use interface IP
+- FIX: large rx/tx descriptor number
+- FIX: print more message for bad gateway error
+- FIX: tcp closing state
+- FIX: separate tcp and http
+
 ## v1.1.0 - 2022-04-13
 ### Added
 
