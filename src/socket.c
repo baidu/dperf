@@ -79,7 +79,9 @@ static void socket_init(struct work_space *ws, struct socket *sk, uint32_t clien
      uint32_t server_ip, uint16_t server_port)
 {
     uint32_t seed = 0;
+    struct config *cfg = NULL;
 
+    cfg = ws->cfg;
     sk->state = 0; /* TCP_CLOSED; */
     sk->keepalive = ws->cfg->keepalive;
 
@@ -93,6 +95,11 @@ static void socket_init(struct work_space *ws, struct socket *sk, uint32_t clien
         sk->laddr = client_ip;
         sk->fport = server_port;
         sk->lport = client_port;
+
+        /* disable this socket */
+        if ((ntohs(sk->lport) < cfg->lport_min) || (ntohs(sk->lport) > cfg->lport_max)) {
+            sk->state = SK_LISTEN;
+        }
     }
 
     seed = (uint32_t)rte_rdtsc();

@@ -27,7 +27,7 @@
 
 enum {
     SK_CLOSED,
-    SK_LISTEN, /* unused */
+    SK_LISTEN,          /* disable a socket, client only */
     SK_SYN_SENT,        /* also UDP client send */
     SK_SYN_RECEIVED,    /* also UDP client recv */
     SK_ESTABLISHED,
