@@ -326,7 +326,7 @@ Set the tos of the IPv4 header or the traffic class of the IPv6 header, which ca
 Note: tos does not take effect on the packets sent by the kni interface.
 
 ## rss
-- syntax: rss [l3/l3l4/auto]
+- syntax: rss [l3/l3l4/auto] [mq_rx_none|mq_rx_rss]
 - default: -
 - required: no
 - mode: client, server
@@ -335,6 +335,8 @@ Use network card RSS distribution. This switch needs to be turned on when the ne
 - l3: Use the IP address-based symmetric hash algorithm to offload traffic, requiring the network card to support modifying the RSS configuration, which is the default option
 - l3l4: Use the l3l4 symmetric hash algorithm to split traffic, requiring the network card to support modifying the RSS configuration
 - auto: Use the default algorithm of the network card to split traffic, requiring only one server IP to be configured for a port
+- mq_rx_rss: Use the DPDK parameter 'RTE_ETH_MQ_RX_RSS' to enable the RSS feature of the network card, which is the default parameter
+- mq_rx_none: Do not use the DPDK parameter 'RTE_ETH_MQ_RX_RSS' to configure the network card, some network cards do not allow configuration, and can only be used in auto mode
 
 Note: 'vxlan' cannot be used simultaneously with 'rss' yet.
 
