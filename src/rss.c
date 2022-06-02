@@ -69,7 +69,9 @@ int rss_config_port(struct rte_eth_conf *conf, struct rte_eth_dev_info *dev_info
     struct rte_eth_rss_conf *rss_conf = NULL;
 
     if (g_config.rss == RSS_AUTO) {
-        conf->rxmode.mq_mode = RTE_ETH_MQ_RX_RSS;
+        if (g_config.mq_rx_rss) {
+            conf->rxmode.mq_mode = RTE_ETH_MQ_RX_RSS;
+        }
         return 0;
     }
 

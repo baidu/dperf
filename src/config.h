@@ -85,6 +85,7 @@ struct config {
     bool flood;
     bool jumbo;
     uint8_t rss;
+    bool mq_rx_rss;
     bool quiet;
     bool tcp_rst;
     bool http;
