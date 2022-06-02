@@ -189,6 +189,7 @@ static inline struct socket *socekt_table_get_socket(struct socket_table *st)
     struct socket *sk = NULL;
     struct socket_pool *sp = &st->socket_pool;
 
+retry:
     if (st->rss == RSS_NONE) {
         sk = &(sp->base[sp->next]);
         sp->next++;
@@ -198,6 +199,11 @@ static inline struct socket *socekt_table_get_socket(struct socket_table *st)
     } else {
         sk = socekt_table_get_socket_rss(st);
     }
+
+    if (unlikely(sk->state == SK_LISTEN)) {
+        goto retry;
+    }
+
     return sk;
 }
 
