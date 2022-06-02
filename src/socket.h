@@ -242,8 +242,11 @@ static inline void socket_dup(struct socket *dst, struct socket *src)
         dst->snd_nxt = src->snd_nxt;
         dst->snd_una = src->snd_una;
         dst->flags = src->flags;
+        dst->keepalive = src->keepalive;
+    } else {
+        /* UDP: close keepalive, just count */
+        dst->keepalive = 0;
     }
-    dst->keepalive = src->keepalive;
     dst->timer_tsc = src->timer_tsc;
     dst->state = src->state;
     net_stats_socket_dup();
