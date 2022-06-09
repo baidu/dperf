@@ -997,7 +997,7 @@ static int config_parse_kni(int argc, char *argv[], void *data)
         ifname = KNI_NAME_DEFAULT;
     }
 
-    if (strlen(ifname) >= (RTE_KNI_NAMESIZE - 2)) {
+    if (strlen(ifname) >= KNI_NAMESIZE) {
         printf("long kni name\n");
         return -1;
     }

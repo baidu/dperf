@@ -75,6 +75,8 @@
 #define RSS_L3L4            2
 #define RSS_AUTO            3
 
+#define KNI_NAMESIZE        10
+
 struct config {
     bool server;
     bool keepalive;
@@ -97,7 +99,7 @@ struct config {
     int lport_min;
     int lport_max;
 
-    char kni_ifname[RTE_KNI_NAMESIZE];
+    char kni_ifname[KNI_NAMESIZE];
     int af;
     uint64_t keepalive_request_interval;
     int keepalive_request_num;
