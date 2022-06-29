@@ -536,7 +536,7 @@ err:
 
 void net_stats_timer_handler(struct work_space *ws)
 {
-    struct net_stats *s = &g_net_stats;;
+    struct net_stats *s = &g_net_stats;
     s->cpusage = cpuload_cal_cpusage(&ws->load, ws->time.tsc);
 }
 
