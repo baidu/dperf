@@ -131,6 +131,7 @@ ierrors 0                  oerrors  0                  imissed  0
 
 ## 相关文章
 - [How to set up dperf](https://metonymical.hatenablog.com/entry/2022/02/11/234927)
+- [Using dperf to test network bandwidth](test/performance/bandwidth/README.md)
 
 ## 贡献
 dperf 欢迎大家贡献。详情请参阅[贡献指南](CONTRIBUTING.md)。
