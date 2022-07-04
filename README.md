@@ -132,6 +132,7 @@ Below example will start a HTTP CPS stress test.
 
 ## Related Articles
 - [How to set up dperf](https://metonymical.hatenablog.com/entry/2022/02/11/234927)
+- [Using dperf to test network bandwidth](test/performance/bandwidth/README.md)
 
 ## Contributing
 
