@@ -6,13 +6,13 @@ It supports many processor architectures and both FreeBSD and Linux.
 
 dperf(https://github.com/baidu/dperf) is a DPDK based 100Gbps network performance and load testing software.
 
-*Maybe dpdk-ans/f-stack/flexTOE are all open source high performant network frameworks based on DPDK and can be used to bw test, but they are not used by us because they do not support arm or the supported dpdk version is too old.*
+*Maybe dpdk-ans/f-stack/flexTOE are all open source high performant network frameworks based on DPDK and can be used to bw test, but they are not used by us because they do not support ARM or the supported dpdk version is too old.*
 
 **Practice has proved that dperf can support the latest dpdk version, and support cx5/cx6 NIC, and can be compiled and run successfully on ARM.**
 
 ## Compile DPDK
 
-1. install rdma-core driver
+1. install rdma-core driver and MLNX OFED
 
     (1) git clone https://github.com/linux-rdma/rdma-core
 
@@ -27,6 +27,8 @@ dperf(https://github.com/baidu/dperf) is a DPDK based 100Gbps network performanc
     (6) export LIBRARY_PATH=$RDMA_CORE_BUILD_DIR/lib
 
     (7) export LD_LIBRARY_PATH=$RDMA_CORE_BUILD_DIR/lib
+
+    (8) ./mlnxofedinstall  --upstream-libs --dpdk --with-mft --with-mstflint --force(refer to https://docs.nvidia.com/networking/display/MLNXOFEDv531001/Downloading+Mellanox+OFED)
 
 
 2. apt install doca-tools
@@ -91,4 +93,7 @@ dperf(https://github.com/baidu/dperf) is a DPDK based 100Gbps network performanc
     (2) Increasing "cc" gradually may help you improve bandwidth.
 
     (3) "dperf-config/client-template-bw.conf" and "dperf-config/server-template-bw.conf" provide templates for testing bandwidth.
+
+## Authors
+Hua Zhang hua.zhang.2106108@gmail.com 
 
