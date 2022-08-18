@@ -76,6 +76,7 @@ struct work_space {
     bool exit;
     bool stop;
     bool start;
+    uint16_t vlan_id;
     uint32_t vni:24;
     uint32_t vxlan:8;
     uint32_t vtep_ip; /* each queue has a vtep ip */
@@ -156,6 +157,11 @@ static inline void work_space_tx_flush(struct work_space *ws)
 static inline void work_space_tx_send(struct work_space *ws, struct rte_mbuf *mbuf)
 {
     struct tx_queue *queue = &ws->tx_queue;
+
+    if (ws->vlan_id) {
+        mbuf->ol_flags |= PKT_TX_VLAN;
+        mbuf->vlan_tci = ws->vlan_id;
+    }
 
     net_stats_tx(mbuf);
     queue->tx[queue->tail] = mbuf;

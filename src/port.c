@@ -85,6 +85,25 @@ static int port_init_mbuf_pool(struct netif_port *port)
     return 0;
 }
 
+static int port_config_vlan(struct rte_eth_conf *conf, struct rte_eth_dev_info *dev_info)
+{
+    if (dev_info->tx_offload_capa & RTE_ETH_TX_OFFLOAD_VLAN_INSERT) {
+        conf->txmode.offloads |= RTE_ETH_TX_OFFLOAD_VLAN_INSERT;
+    } else {
+        printf("Error: port cannot insert vlan\n");
+        return -1;
+    }
+
+    if (dev_info->rx_offload_capa & RTE_ETH_RX_OFFLOAD_VLAN_STRIP) {
+        conf->rxmode.offloads |= DEV_RX_OFFLOAD_VLAN_STRIP;
+    } else {
+        printf("Error: port cannot strip vlan\n");
+        return -1;
+    }
+
+    return 0;
+}
+
 int port_config(struct netif_port *port)
 {
     int i = 0;
@@ -105,6 +124,12 @@ int port_config(struct netif_port *port)
 
     if (nb_txd > dev_info.tx_desc_lim.nb_max) {
         nb_txd = dev_info.tx_desc_lim.nb_max;
+    }
+
+    if (g_config.vlan_id) {
+        if (port_config_vlan(&g_port_conf, &dev_info) < 0) {
+            return -1;
+        }
     }
 
     if (g_config.rss) {

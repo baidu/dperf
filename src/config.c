@@ -60,6 +60,7 @@ static int config_parse_tx_burst(int argc, char *argv[], void *data);
 static int config_parse_slow_start(int argc, char *argv[], void *data);
 static int config_parse_wait(int argc, char *argv[], void *data);
 static int config_parse_vxlan(int argc, char *argv[], void *data);
+static int config_parse_vlan(int argc, char *argv[], void *data);
 static int config_parse_kni(int argc, char *argv[], void *data);
 static int config_parse_tos(int argc, char *argv[], void *data);
 static int config_parse_jumbo(int argc, char *argv[], void *data);
@@ -103,6 +104,7 @@ static struct config_keyword g_config_keywords[] = {
         " default " DEFAULT_STR(SLOW_START_DEFAULT)},
     {"wait", config_parse_wait, "Number, default " DEFAULT_STR(WAIT_DEFAULT)},
     {"vxlan", config_parse_vxlan, "vni inner-smac inner-dmac vtep-local num vtep-remote num"},
+    {"vlan", config_parse_vlan, "vlanID[" DEFAULT_STR(VLAN_ID_MIN) "-" DEFAULT_STR(VLAN_ID_MAX) "]"},
     {"kni", config_parse_kni, "[ifName], default " KNI_NAME_DEFAULT},
     {"tos", config_parse_tos, "Number[0x00-0xff], default 0, eg 0x01 or 1"},
     {"jumbo", config_parse_jumbo, ""},
@@ -928,6 +930,30 @@ static int config_parse_vxlan(int argc, char *argv[], void *data)
     return 0;
 }
 
+static int config_parse_vlan(int argc, char *argv[], void *data)
+{
+    int vlan_id = 0;
+    struct config *cfg = data;
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    if (cfg->vlan_id != 0) {
+        printf("Error: duplicate vlan\n");
+        return -1;
+    }
+
+    vlan_id = atoi(argv[1]);
+    if ((vlan_id < VLAN_ID_MIN) || (vlan_id > VLAN_ID_MAX)) {
+        printf("bad vlan id %s\n", argv[1]);
+        return -1;
+    }
+
+    cfg->vlan_id = vlan_id;
+    return 0;
+}
+
 /*
  * ret in [min, max]
  * */
@@ -1290,6 +1316,25 @@ static int config_set_port_ip_range(struct config *cfg)
             }
         }
         i++;
+    }
+
+    return 0;
+}
+
+static int config_check_vlan(struct config *cfg)
+{
+    struct netif_port *port = NULL;
+
+    if (cfg->vxlan_num) {
+        printf("Error: Cannot enable vlan and vxlan at the same time\n");
+        return -1;
+    }
+
+    config_for_each_port(cfg, port) {
+        if (port->bond) {
+            printf("Error: Cannot enable vlan and bond at the same time\n");
+            return -1;
+        } 
     }
 
     return 0;
@@ -1965,6 +2010,10 @@ int config_parse(int argc, char **argv, struct config *cfg)
     }
 
     if (config_check_vxlan(cfg) < 0) {
+        return -1;
+    }
+
+    if (config_check_vlan(cfg) < 0) {
         return -1;
     }
 
