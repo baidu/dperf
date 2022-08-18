@@ -193,6 +193,7 @@ struct work_space *work_space_new(struct config *cfg, int id)
     g_work_space = ws;
     g_work_space_all[id] = ws;
     ws->server = cfg->server;
+    ws->vlan_id = cfg->vlan_id;
     ws->id = id;
     ws->ipv6 = cfg->af == AF_INET6;
     ws->http = cfg->http;

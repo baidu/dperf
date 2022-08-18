@@ -77,6 +77,9 @@
 
 #define KNI_NAMESIZE        10
 
+#define VLAN_ID_MIN         1
+#define VLAN_ID_MAX         4094
+
 struct config {
     bool server;
     bool keepalive;
@@ -95,6 +98,7 @@ struct config {
     uint8_t tos;
     uint8_t tx_burst;
     uint8_t protocol;   /* TCP/UDP */
+    uint16_t vlan_id;
 
     int lport_min;
     int lport_max;
