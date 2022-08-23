@@ -23,8 +23,7 @@
 #include <sys/time.h>
 #include <rte_cycles.h>
 
-/* 1 tick = 0.1 ms */
-#define TICKS_PER_SEC (10000)
+#define TICKS_PER_SEC_DEFAULT (10 * 1000)
 #define TSC_PER_SEC g_tsc_per_second
 
 extern uint64_t g_tsc_per_second;
@@ -60,7 +59,7 @@ static inline void tick_time_update(struct tick_time *tt)
     tt->tsc = rte_rdtsc();
 }
 
-void tick_init(void);
+void tick_init(int ticks_per_sec);
 void tick_time_init(struct tick_time *tt);
 void tick_wait_init(struct timeval *last_tv);
 uint64_t tick_wait_one_second(struct timeval *last_tv);

@@ -209,7 +209,9 @@ static inline void tcp_flags_tx_count(uint8_t tcp_flags)
 static struct rte_mbuf *tcp_reply(struct work_space *ws, struct socket *sk, uint8_t tcp_flags)
 {
     struct rte_mbuf *m = NULL;
+    uint64_t now_tsc = 0;
 
+    now_tsc = work_space_tsc(ws);
     sk->flags = tcp_flags;
     tcp_flags_tx_count(tcp_flags);
 
@@ -230,9 +232,14 @@ static struct rte_mbuf *tcp_reply(struct work_space *ws, struct socket *sk, uint
 
     if (sk->state != SK_CLOSED) {
         if (tcp_flags & (TH_PUSH | TH_SYN | TH_FIN)) {
-            socket_start_retransmit_timer(sk, work_space_tsc(ws));
+            /* for accurate PPS */
+            if ((!ws->server) && (sk->keepalive != 0)) {
+                now_tsc = socket_accurate_timer_tsc(sk, now_tsc);
+            }
+
+            socket_start_retransmit_timer(sk, now_tsc);
         } else if (ws->server) {
-            socket_start_timeout_timer(sk, work_space_tsc(ws));
+            socket_start_timeout_timer(sk, now_tsc);
         }
     }
 
@@ -702,7 +709,7 @@ static inline void tcp_client_process_data(struct work_space *ws, struct socket 
                 if (sk->keepalive == 0) {
                     tx_flags |= TH_FIN;
                 } else {
-                    socket_start_keepalive_timer(sk, work_space_tsc(ws));
+                    socket_start_keepalive_timer(sk, sk->timer_tsc);
                 }
             }
         }

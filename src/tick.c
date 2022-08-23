@@ -77,13 +77,17 @@ static uint64_t tick_get_hz(void)
     return total / num;
 }
 
-void tick_init(void)
+void tick_init(int ticks_per_sec)
 {
     uint64_t hz = 0;
 
+    if (ticks_per_sec == 0) {
+        ticks_per_sec = TICKS_PER_SEC_DEFAULT;
+    }
+
     hz = tick_get_hz();
     g_tsc_per_second = hz;
-    g_tsc_per_tick = hz / TICKS_PER_SEC;
+    g_tsc_per_tick = hz / ticks_per_sec;
 }
 
 static void tsc_time_init(struct tsc_time *tt, uint64_t now, uint64_t interval)

@@ -147,7 +147,7 @@ int dpdk_init(struct config *cfg, char *argv0)
         }
     }
 
-    tick_init();
+    tick_init(cfg->ticks_per_sec);
     config_set_tsc(cfg, g_tsc_per_second);
 
     return 0;

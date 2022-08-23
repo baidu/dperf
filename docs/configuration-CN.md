@@ -45,8 +45,8 @@
 'keepalive'使用场景：
 - 并发测试：设置较大的并发连接数（cc 10m），较大的interval，如60s。
 - 带宽测试：设置较大的packet_size（如 1500），较小的interval（如1ms）。
-- 单向PPS测试：设置flood，较小packet_size（如64），较小的并发连接数cc（如3000），较小的interval（如1ms）。
-- 双向PPS测试：设置较小packet_size（如64），较小的并发连接数cc（如3000），较小的interval（如1ms）。
+- 单向PPS测试：设置flood，较小packet_size（如64），较小的并发连接数cc（如3000），较小的interval（如1ms或10us）。
+- 双向PPS测试：设置较小packet_size（如64），较小的并发连接数cc（如3000），较小的interval（如1ms或10us）。
 
 ## cpu
 - syntax: cpu n0 n1 n2-n3...

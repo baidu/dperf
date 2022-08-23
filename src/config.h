@@ -100,11 +100,16 @@ struct config {
     uint8_t protocol;   /* TCP/UDP */
     uint16_t vlan_id;
 
+    int ticks_per_sec;
+
     int lport_min;
     int lport_max;
 
     char kni_ifname[KNI_NAMESIZE];
     int af;
+
+    uint64_t keepalive_request_interval_us;
+    /* tsc */
     uint64_t keepalive_request_interval;
     int keepalive_request_num;
 
