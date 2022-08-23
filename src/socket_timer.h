@@ -95,21 +95,26 @@ static inline void socket_stop_timeout_timer(struct socket *sk)
     socket_queue_del(sk);
 }
 
+static inline uint64_t socket_accurate_timer_tsc(struct socket *sk, uint64_t now_tsc)
+{
+    uint64_t interval = g_config.keepalive_request_interval;
+    /*
+     * |-------------|-------------|-------------|
+     * timer_tsc     |--|now_tsc
+     * */
+    if (((sk->timer_tsc + interval) < now_tsc) && ((sk->timer_tsc + 2 * interval) > now_tsc)) {
+        now_tsc = sk->timer_tsc + interval;
+    }
+
+    return now_tsc;
+}
+
 static inline void socket_start_keepalive_timer(struct socket *sk, uint64_t now_tsc)
 {
-    uint64_t interval = 0;
     struct socket_queue *queue = &g_keepalive_timer.queue;
 
     if (sk->keepalive && (sk->snd_nxt == sk->snd_una)) {
-        interval = g_config.keepalive_request_interval;
-        /*
-         * |-------------|-------------|-------------|
-         * timer_tsc     |--|now_tsc
-         * */
-        if ( ((sk->timer_tsc + interval) < now_tsc) && ((sk->timer_tsc + 2 * interval) > now_tsc)) {
-            now_tsc = sk->timer_tsc + interval;
-        }
-
+        now_tsc = socket_accurate_timer_tsc(sk, now_tsc);
         socket_add_timer(queue, sk, now_tsc);
     }
 }

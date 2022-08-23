@@ -80,7 +80,7 @@ struct config g_config = {
 static struct config_keyword g_config_keywords[] = {
     {"daemon", config_parse_daemon, ""},
     {"keepalive", config_parse_keepalive, "Interval(Timeout) [Number[0-" DEFAULT_STR(KEEPALIVE_REQ_NUM) "]], "
-                "eg 1ms"},
+                "eg 1ms/10us/1s"},
     {"mode", config_parse_mode, "client/server"},
     {"cpu", config_parse_cpu, "n0 n1 n2-n3..., eg 0-4 7 8 9 10"},
     {"socket_mem", config_parse_socket_mem, "n0,n1,n2..."},
@@ -210,10 +210,12 @@ static int config_parse_keepalive_request_interval(struct config *cfg, char *str
         return -1;
     }
 
-    if (strcmp(p, "ms") == 0) {
+    if (strcmp(p, "us") == 0) {
         rate = 1;
+    } else if (strcmp(p, "ms") == 0) {
+        rate = 1000;
     } else if (strcmp(p, "s") == 0) {
-        rate = 1000; /* ms */
+        rate = 1000 * 1000; /* ms */
     } else {
         return -1;
     }
@@ -223,7 +225,20 @@ static int config_parse_keepalive_request_interval(struct config *cfg, char *str
         return -1;
     }
 
-    cfg->keepalive_request_interval = val * rate;
+    if (rate == 1) {
+        if ((val % 10) != 0) {
+            printf("Error: keepalive request interval must be a multiple of 10us\n");
+            return -1;
+        }
+
+        if ((val >= 1000) && ((val % 1000) != 0)) {
+            printf("Error: microseconds can only be used if the interval is less than 1 millisecond\n");
+            return -1;
+        }
+    }
+
+    val *= rate;
+    cfg->keepalive_request_interval_us = val;
     return 0;
 }
 
@@ -1803,11 +1818,30 @@ static int config_check_rss(struct config *cfg)
 
 static int config_check_keepalive(struct config *cfg)
 {
+    int ticks_per_sec = 0;
     if (cfg->server == 0) {
         if (cfg->cc && (cfg->keepalive == false)) {
             printf("Error: 'cc' requires 'keepalive'\n");
             return -1;
         }
+
+        /* interval is less 100us, eg 10us, 20us ...  */
+        if (cfg->keepalive_request_interval_us < 50) {
+           /* 5 us */
+            ticks_per_sec = 1000 * 100 * 2;
+        } else if (cfg->keepalive_request_interval_us < 100) {
+            /* 10 us */
+            ticks_per_sec = 1000 * 100;
+        } else if (cfg->keepalive_request_interval_us < 500) {
+            /* 50 us */
+            ticks_per_sec = 1000 * 10 * 2;
+        } else if (cfg->keepalive_request_interval_us < 1000) {
+            /* 100 us */
+            ticks_per_sec = 1000 * 10;
+        } else {
+            ticks_per_sec = TICKS_PER_SEC_DEFAULT;
+        }
+        cfg->ticks_per_sec = ticks_per_sec;
     } else {
         cfg->keepalive_request_num = 0;
     }
@@ -2089,5 +2123,19 @@ uint32_t config_get_total_socket_num(struct config *cfg, int id)
 
 void config_set_tsc(struct config *cfg, uint64_t hz)
 {
-    cfg->keepalive_request_interval *= (hz / 1000);
+    uint64_t us = 0;
+    uint64_t ms = 0;
+    uint64_t tsc = 0;
+
+    us = cfg->keepalive_request_interval_us;
+
+    /* ms */
+    if ((us % 1000) == 0) {
+        ms = us / 1000;
+        tsc = ms * (hz / 1000);
+    } else {
+        tsc = (us * (hz / 1000)) / 1000;
+    }
+
+    cfg->keepalive_request_interval = tsc;
 }
