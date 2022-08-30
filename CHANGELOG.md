@@ -1,5 +1,32 @@
 # Changelog
 
+## v1.3.0 - 2022-09-01
+### Added
+
+- 10us keepalive request interval
+
+    thanks jiawen94
+- vlan
+
+    thanks hgkiller
+- config client local port range for google cloud
+
+    thanks MichaelZhangCN, vsv1020, wanggaoli
+- article: using dperf to test network bandwidth
+
+    thanks thunderZH963(Hua Zhang)
+
+### Fixed
+
+- in 'rss auto' mode, the number of UDP concurrent connections is incorrectly counted
+- mq_rx_none: don't set RTE_ETH_MQ_RX_RSS
+- compile warning
+
+    thanks digger-yu
+- double semicolons
+
+    thanks yangwenrui
+
 ## v1.2.0 - 2022-06-01
 ### Added
 
