@@ -306,7 +306,7 @@ void kni_broadcast(struct work_space *ws, struct rte_mbuf *m)
 
     m2 = mbuf_dup(m);
     if (m2) {
-        kni_recv(ws, m);
+        kni_recv(ws, m2);
     }
 }
 
