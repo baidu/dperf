@@ -1340,6 +1340,10 @@ static int config_check_vlan(struct config *cfg)
 {
     struct netif_port *port = NULL;
 
+    if (cfg->vlan_id == 0) {
+        return 0;
+    }
+
     if (cfg->vxlan_num) {
         printf("Error: Cannot enable vlan and vxlan at the same time\n");
         return -1;
@@ -1349,7 +1353,7 @@ static int config_check_vlan(struct config *cfg)
         if (port->bond) {
             printf("Error: Cannot enable vlan and bond at the same time\n");
             return -1;
-        } 
+        }
     }
 
     return 0;
