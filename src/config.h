@@ -89,6 +89,7 @@ struct config {
     bool daemon;
     bool flood;
     bool jumbo;
+    bool payload_random;
     uint8_t rss;
     bool mq_rx_rss;
     bool quiet;
@@ -158,6 +159,7 @@ int config_parse(int argc, char **argv, struct config *cfg);
 uint32_t config_get_total_socket_num(struct config *cfg, int id);
 struct netif_port *config_port_get(struct config *cfg, int thread_id, int *p_queue_id);
 void config_set_tsc(struct config *cfg, uint64_t hz);
+void config_set_payload(struct config *cfg, char *data, int len, int new_line);
 
 #endif
 

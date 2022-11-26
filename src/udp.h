@@ -24,7 +24,8 @@
 #include <rte_common.h>
 
 struct work_space;
-void udp_set_payload(int page_size);
+struct config;
+void udp_set_payload(struct config *cfg, int page_size);
 int udp_init(struct work_space *ws);
 void udp_drop(__rte_unused struct work_space *ws, struct rte_mbuf *m);
 

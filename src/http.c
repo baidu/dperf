@@ -68,18 +68,18 @@ static void http_set_payload_client(struct config *cfg, char *dest, int len, int
     if (payload_size <= 0) {
         snprintf(dest, len, HTTP_REQ_FORMAT, cfg->http_path, cfg->http_host);
     } else if (payload_size < HTTP_DATA_MIN_SIZE) {
-        memset(dest, 'a', payload_size);
-        dest[payload_size] = 0;
+        config_set_payload(cfg, dest, payload_size, 1);
     } else {
         pad = payload_size - HTTP_DATA_MIN_SIZE;
         if (pad > 0) {
-            memset(buf, 'a', pad);
+            config_set_payload(cfg, buf, pad, 0);
         }
+        buf[0] = '/';
         snprintf(dest, len, HTTP_REQ_FORMAT, buf, cfg->http_host);
     }
 }
 
-static void http_set_payload_server(char *dest, int len, int payload_size)
+static void http_set_payload_server(struct config *cfg, char *dest, int len, int payload_size)
 {
     int pad = 0;
     char buf[MBUF_DATA_SIZE] = {0};
@@ -89,15 +89,11 @@ static void http_set_payload_server(char *dest, int len, int payload_size)
         data = http_rsp_body_default;
         snprintf(dest, len, HTTP_RSP_FORMAT, (int)strlen(data), data);
     } else if (payload_size < HTTP_DATA_MIN_SIZE) {
-        memset(dest, 'a', payload_size);
-        dest[payload_size] = 0;
+        config_set_payload(cfg, dest, payload_size, 1);
     } else {
         pad = payload_size - HTTP_DATA_MIN_SIZE;
         if (pad > 0) {
-            memset(buf, 'a', pad);
-            if (pad > 1) {
-                buf[pad - 1] = '\n';
-            }
+            config_set_payload(cfg, buf, pad, 1);
         }
         snprintf(dest, len, HTTP_RSP_FORMAT, (int)strlen(buf), buf);
     }
@@ -105,6 +101,6 @@ static void http_set_payload_server(char *dest, int len, int payload_size)
 
 void http_set_payload(struct config *cfg, int payload_size)
 {
-    http_set_payload_server(http_rsp, MBUF_DATA_SIZE, payload_size);
+    http_set_payload_server(cfg, http_rsp, MBUF_DATA_SIZE, payload_size);
     http_set_payload_client(cfg, http_req, MBUF_DATA_SIZE, payload_size);
 }
