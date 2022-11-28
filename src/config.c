@@ -51,6 +51,7 @@ static int config_parse_client(int argc, char *argv[], void *data);
 static int config_parse_server(int argc, char *argv[], void *data);
 static int config_parse_change_dip(int argc, char *argv[], void *data);
 static int config_parse_listen(int argc, char *argv[], void *data);
+static int config_parse_payload_random(int argc, char *argv[], void *data);
 static int config_parse_payload_size(int argc, char *argv[], void *data);
 static int config_parse_packet_size(int argc, char *argv[], void *data);
 static int config_parse_mss(int argc, char *argv[], void *data);
@@ -94,6 +95,7 @@ static struct config_keyword g_config_keywords[] = {
     {"server", config_parse_server, "IPAddress Number"},
     {"change_dip", config_parse_change_dip, "IPAddress Step Number"},
     {"listen", config_parse_listen, "Port Number, default 80 1" },
+    {"payload_random", config_parse_payload_random, ""},
     {"payload_size", config_parse_payload_size, "Number"},
     {"packet_size", config_parse_packet_size, "Number"},
     {"mss", config_parse_mss, "Number, default 1460"},
@@ -821,6 +823,46 @@ static int config_parse_wait(int argc, char *argv[], void *data)
     }
     cfg->wait = val;
 
+    return 0;
+}
+
+void config_set_payload(struct config *cfg, char *data, int len, int new_line)
+{
+    int i = 0;
+    int num = 'z' - 'a' + 1;
+    struct timeval tv;
+
+    if (len == 0) {
+        data[0] = 0;
+        return;
+    }
+
+    if (!cfg->payload_random) {
+        memset(data, 'a', len);
+    } else {
+        gettimeofday(&tv, NULL);
+        srandom(tv.tv_usec);
+        for (i = 0; i < len; i++) {
+            data[i] = 'a' + random() % num;
+        }
+    }
+
+    if ((len > 1) && new_line) {
+        data[len - 1] = '\n';
+    }
+
+    data[len] = 0;
+}
+
+static int config_parse_payload_random(int argc, __rte_unused char *argv[], void *data)
+{
+    struct config *cfg = data;
+
+    if (argc != 1) {
+        return -1;
+    }
+
+    cfg->payload_random = true;
     return 0;
 }
 
@@ -1744,7 +1786,7 @@ static int config_check_size(struct config *cfg)
     }
 
     http_set_payload(cfg, payload_size);
-    udp_set_payload(payload_size);
+    udp_set_payload(cfg, payload_size);
 
     return 0;
 }

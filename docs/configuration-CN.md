@@ -226,6 +226,14 @@ Example:
 
 注意：dperf在启动时会把所有的socket分配好，所以不要配置太大的端口范围。
 
+## payload_random
+- syntax: payload_random
+- default: -
+- required: no
+- mode: client, server
+
+设置payload为随机的字符('a'-'z')，默认为全'a'。
+
 ## payload_size
 - syntax: payload_size Number(>=1)
 - default: -

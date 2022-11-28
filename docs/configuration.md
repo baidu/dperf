@@ -228,6 +228,14 @@ Set the port ranges that the server listens to, and the client sends packets to 
 
 Note: dperf will allocate all sockets at startup. Please do not set a large port range.
 
+## payload_random
+- syntax: payload_random
+- default: -
+- required: no
+- mode: client, server
+
+Set the payload to random characters ('a'-'z'), the default is all 'a'.
+
 ## payload_size
 - syntax: payload_size Number(>=1)
 - default: -

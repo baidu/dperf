@@ -31,22 +31,9 @@
 
 static char g_udp_data[MBUF_DATA_SIZE] = "hello dperf!!\n";
 
-void udp_set_payload(int page_size)
+void udp_set_payload(struct config *cfg, int page_size)
 {
-    int i = 0;
-
-    if (page_size == 0) {
-        return;
-    }
-
-    for (i = 0; i < page_size; i++) {
-        g_udp_data[i] = 'a';
-    }
-
-    if (page_size > 1) {
-        g_udp_data[page_size - 1] = '\n';
-    }
-    g_udp_data[page_size] = 0;
+    config_set_payload(cfg, g_udp_data, page_size, 1);
 }
 
 static inline void udp_change_dipv6(struct work_space *ws, struct ip6_hdr *ip6h, struct udphdr *uh)
