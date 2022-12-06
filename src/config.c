@@ -22,6 +22,7 @@
 #include <getopt.h>
 #include <dirent.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "client.h"
 #include "config_keyword.h"

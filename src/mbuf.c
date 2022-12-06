@@ -37,10 +37,6 @@ struct rte_mempool *mbuf_pool_create(const char *str, uint16_t port_id, uint16_t
     int mbuf_size = 0;
 
     socket_id = rte_eth_dev_socket_id(port_id);
-    if (socket_id < 0) {
-        printf("bad socket_id %d of port %u\n", socket_id, port_id);
-        return NULL;
-    }
     snprintf(name, RTE_RING_NAMESIZE, "%s_%d_%d", str, port_id, queue_id);
 
     if (g_config.jumbo) {
