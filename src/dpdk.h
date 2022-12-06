@@ -76,9 +76,8 @@
 #define RTE_IPV6_UDPTCP_CKSUM(iph, th) rte_ipv6_udptcp_cksum((const struct rte_ipv6_hdr *)iph, (const void *)th)
 #endif
 
-#if RTE_VERSION >= RTE_VERSION_NUM(22, 11, 0, 0)
-#define PKT_TX_VLAN                 RTE_MBUF_F_TX_VLAN
-#define DEV_RX_OFFLOAD_VLAN_STRIP   RTE_ETH_RX_OFFLOAD_VLAN_STRIP
+#if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)
+#define RTE_MBUF_F_TX_VLAN  PKT_TX_VLAN
 #endif
 
 struct config;

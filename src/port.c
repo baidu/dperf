@@ -97,7 +97,7 @@ static int port_config_vlan(struct rte_eth_conf *conf, struct rte_eth_dev_info *
     }
 
     if (dev_info->rx_offload_capa & RTE_ETH_RX_OFFLOAD_VLAN_STRIP) {
-        conf->rxmode.offloads |= DEV_RX_OFFLOAD_VLAN_STRIP;
+        conf->rxmode.offloads |= RTE_ETH_RX_OFFLOAD_VLAN_STRIP;
     } else {
         printf("Error: port cannot strip vlan\n");
         return -1;
