@@ -325,6 +325,8 @@ static void tcp_reply_rst(struct work_space *ws, struct rte_mbuf *m)
     struct eth_hdr *eth = NULL;
     struct iphdr *iph = NULL;
     struct tcphdr *th = NULL;
+    int nlen = 0;
+    int olen = 0;
 
     /* not support rst yet */
     if (ws->vxlan) {
@@ -336,25 +338,24 @@ static void tcp_reply_rst(struct work_space *ws, struct rte_mbuf *m)
     eth = mbuf_eth_hdr(m);
     iph = mbuf_ip_hdr(m);
     th = mbuf_tcp_hdr(m);
-
+    olen = rte_pktmbuf_data_len(m);
     eth_addr_swap(eth);
     if (iph->version == 4) {
         tcp_rst_set_ip(iph);
         tcp_rst_set_tcp(th);
         th->th_sum = RTE_IPV4_UDPTCP_CKSUM(iph, th);
         iph->check = RTE_IPV4_CKSUM(iph);
-        rte_pktmbuf_data_len(m) = sizeof(struct eth_hdr)
-                                + sizeof(struct iphdr)
-                                + sizeof(struct tcphdr);
+        nlen = sizeof(struct eth_hdr) + sizeof(struct iphdr) + sizeof(struct tcphdr);
     } else {
         tcp_rst_set_ipv6((struct ip6_hdr *)iph);
         tcp_rst_set_tcp(th);
         th->th_sum = RTE_IPV6_UDPTCP_CKSUM(iph, th);
-        rte_pktmbuf_data_len(m) = sizeof(struct eth_hdr)
-                                + sizeof(struct ip6_hdr)
-                                + sizeof(struct tcphdr);
+        nlen = sizeof(struct eth_hdr) + sizeof(struct ip6_hdr) + sizeof(struct tcphdr);
     }
 
+    if (olen > nlen) {
+        rte_pktmbuf_trim(m, olen - nlen);
+    }
     net_stats_rst_tx();
     work_space_tx_send(ws, m);
 }
