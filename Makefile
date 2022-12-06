@@ -14,7 +14,7 @@ RTE_TARGET ?= x86_64-native-linuxapp-gcc
 include $(RTE_SDK)/mk/rte.vars.mk
 CFLAGS += -O3 -g -I./src
 CFLAGS += -DHTTP_PARSE
-CFLAGS += $(WERROR_FLAGS)
+CFLAGS += $(WERROR_FLAGS) -Wno-address-of-packed-member
 
 ifdef DPERF_DEBUG
 CFLAGS += -DDPERF_DEBUG
@@ -33,6 +33,7 @@ endif
 
 CFLAGS += -O3 -g -I./src
 CFLAGS += -DHTTP_PARSE
+CFLAGS += -Wno-address-of-packed-member
 CFLAGS += $(shell $(PKGCONF) --cflags libdpdk)
 LDFLAGS += $(shell $(PKGCONF) --libs libdpdk) -lpthread -lrte_net_bond -lrte_bus_pci -lrte_bus_vdev
 

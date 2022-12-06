@@ -36,7 +36,9 @@ static struct rte_eth_conf g_port_conf = {
 #if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)
         .max_rx_pkt_len = ETHER_MAX_LEN,
 #endif
+#if RTE_VERSION < RTE_VERSION_NUM(22, 11, 0, 0)
         .split_hdr_size = 0,
+#endif
 #if RTE_VERSION < RTE_VERSION_NUM(18, 11, 0, 0)
         .hw_ip_checksum = 1,
         .hw_vlan_strip  = 1,
