@@ -159,7 +159,7 @@ static inline void work_space_tx_send(struct work_space *ws, struct rte_mbuf *mb
     struct tx_queue *queue = &ws->tx_queue;
 
     if (ws->vlan_id) {
-        mbuf->ol_flags |= PKT_TX_VLAN;
+        mbuf->ol_flags |= RTE_MBUF_F_TX_VLAN;
         mbuf->vlan_tci = ws->vlan_id;
     }
 
