@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.4.0 - 2022-12-14
+### Added
+
+- support dpdk-22.11
+
+    thanks ykzj
+
+- support LoongArch
+
+    thanks choumin
+
+- payload random
+
+    thanks uname-v
+
+### Fixed
+
+- crash at tcp reply reset
+
+- vlan check
+
+    thanks owenstake
+- crash by kni_broadcast()
+
+    thanks sheva7777
+
 ## v1.3.0 - 2022-09-01
 ### Added
 
