@@ -537,6 +537,10 @@ static int config_parse_port(int argc, char *argv[], void *data)
         }
     }
 
+    if (ipaddr_eq(&port->local_ip, &port->gateway_ip)) {
+        return -1;
+    }
+
     sprintf(port->bond_name, "net_bonding%d", cfg->port_num);
     port->id = -1;
     cfg->port_num++;
@@ -1639,6 +1643,85 @@ static int config_check_server_addr(const struct config *cfg)
     return 0;
 }
 
+static int config_check_address_confliec_port(const struct config *cfg, const struct ip_group *ipg, int local)
+{
+    const ipaddr_t *addr = NULL;
+    const struct netif_port *port = NULL;
+    const struct ip_range *ip_range = NULL;
+
+    config_for_each_port(cfg, port) {
+        if (local) {
+            addr = &port->local_ip;
+        } else {
+            addr = &port->gateway_ip;
+        }
+        for_each_ip_range(ipg, ip_range) {
+            if (port->ipv6) {
+                if (ip_range_exist_ipv6(ip_range, addr)) {
+                    return -1;
+                }
+            } else {
+                if (ip_range_exist(ip_range, addr->ip)) {
+                    return -1;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+static int config_check_address_conflict(const struct config *cfg)
+{
+    const struct ip_group *cipg = NULL;
+    const struct ip_group *sipg = NULL;
+    const struct ip_range *ip_range0 = NULL;
+    const struct ip_range *ip_range1 = NULL;
+
+    cipg = &cfg->client_ip_group;
+    sipg = &cfg->server_ip_group;
+    for_each_ip_range(cipg, ip_range0) {
+        for_each_ip_range(sipg, ip_range1) {
+            if (config_ip_range_overlap(ip_range0, ip_range1)) {
+                printf("Error: client and server address conflict\n");
+                return -1;
+            }
+        }
+    }
+
+    /*
+     * client mode:
+     *  local ip cannot in server ip rage
+     *  gateway ip cannot in client ip rage
+     * server mode:
+     *  local ip cannot in client ip range
+     *  gateway ip cannot in server ip range
+     * */
+    if (cfg->server) {
+        if (config_check_address_confliec_port(cfg, cipg, 1) < 0) {
+            printf("Error: local ip conflict with client address\n");
+            return -1;
+        }
+
+        if (config_check_address_confliec_port(cfg, sipg, 0) < 0) {
+            printf("Error: gateway ip conflict with server address\n");
+            return -1;
+        }
+    } else {
+        if (config_check_address_confliec_port(cfg, sipg, 1) < 0) {
+            printf("Error: local ip conflict with server address\n");
+            return -1;
+        }
+
+        if (config_check_address_confliec_port(cfg, cipg, 0) < 0) {
+            printf("Error: gateway ip conflict with client address\n");
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 static int config_check_wait(struct config *cfg)
 {
     if (cfg->server) {
@@ -2075,6 +2158,10 @@ int config_parse(int argc, char **argv, struct config *cfg)
     }
 
     if (config_check_server_addr(cfg) < 0) {
+        return -1;
+    }
+
+    if (config_check_address_conflict(cfg) < 0) {
         return -1;
     }
 
