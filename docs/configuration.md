@@ -356,7 +356,7 @@ Note: 'vxlan' cannot be used simultaneously with 'rss' yet.
 
 Set whether dperf replies rst to SYN packets requesting unopened TCP ports.
 
-##change_dip
+## change_dip
 - syntax: change_dip IPAddress Step Number
 - default: -
 - required: no
