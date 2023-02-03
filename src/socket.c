@@ -233,6 +233,9 @@ int socket_table_init(struct work_space *ws)
     st->port_min = cfg->listen;
     st->port_max = cfg->listen + cfg->listen_num - 1;
     st->port_num = cfg->listen_num;
+    if (cfg->client_hop) {
+        st->client_hop = 1;
+    }
 
     if (cfg->server) {
         socket_port_table_init_ip_group(ws, st, &cfg->client_ip_group);

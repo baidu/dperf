@@ -90,6 +90,7 @@ struct config {
     bool flood;
     bool jumbo;
     bool payload_random;
+    bool client_hop;
     uint8_t rss;
     bool mq_rx_rss;
     bool quiet;
