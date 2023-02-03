@@ -394,3 +394,11 @@ Set the path of the HTTP request.
 - mode: client
 
 Set the local port range for clients. It is recommended to set the local port range to [1000-65535] on Google Cloud.
+
+## client_hop
+- syntax: client_hop
+- default: -
+- required: no
+- mode: client
+
+client changes ip and port at the same time when create new connections.

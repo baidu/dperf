@@ -112,6 +112,7 @@ struct socket_table {
     uint16_t port_min;
     uint16_t port_max;
 
+    uint8_t client_hop;
     uint8_t rss;
     uint8_t rss_id;
     uint8_t rss_num;
@@ -202,6 +203,13 @@ retry:
 
     if (unlikely(sk->state == SK_LISTEN)) {
         goto retry;
+    }
+
+    if (st->client_hop) {
+        sp->next += 65535;
+        if (sp->next >= sp->num) {
+            sp->next = 0;
+        }
     }
 
     return sk;

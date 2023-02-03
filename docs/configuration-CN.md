@@ -392,3 +392,11 @@ Example:
 - mode: client
 
 设置客户端的本地端口范围。在Google Cloud上建议设置本地端口范围为[1000-65535]。
+
+## client_hop
+- syntax: client_hop
+- default: -
+- required: no
+- mode: client
+
+client在创建新连接时同时改变IP与端口。
