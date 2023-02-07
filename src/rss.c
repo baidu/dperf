@@ -68,6 +68,11 @@ int rss_config_port(struct rte_eth_conf *conf, struct rte_eth_dev_info *dev_info
     uint64_t rss_hf = 0;
     struct rte_eth_rss_conf *rss_conf = NULL;
 
+    /* no need to configure hardware */
+    if (g_config.flood) {
+        return 0;
+    }
+
     if (g_config.rss == RSS_AUTO) {
         if (g_config.mq_rx_rss) {
             conf->rxmode.mq_mode = RTE_ETH_MQ_RX_RSS;

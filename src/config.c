@@ -1386,7 +1386,16 @@ static int config_set_port_ip_range(struct config *cfg)
                 return -1;
             }
 
-            if (cfg->rss == RSS_NONE) {
+            if (cfg->flood) {
+                if (cfg->dip_list.num) {
+                    continue;
+                }
+
+                if (cfg->rss != RSS_L3L4) {
+                    cfg->rss = RSS_L3L4;
+                    printf("Warning: 'rss l3l4' is enabled\n");
+                }
+            } else if (cfg->rss == RSS_NONE) {
                 printf("Error: 'rss' is required if cpu num is not equal to server ip num\n");
                 return -1;
             }
@@ -1934,12 +1943,11 @@ static int config_server_addr_check_num(struct config *cfg, int num)
 
 static int config_check_rss(struct config *cfg)
 {
-
     if (cfg->rss == RSS_NONE) {
         return 0;
     }
 
-    if ((cfg->cpu_num == cfg->port_num) || (cfg->flood)) {
+    if (cfg->cpu_num == cfg->port_num) {
         printf("Warnning: rss is disabled\n");
         cfg->rss = RSS_NONE;
     }
@@ -1947,6 +1955,13 @@ static int config_check_rss(struct config *cfg)
     if (cfg->vxlan) {
         printf("Error: rss is not supported for vxlan.\n");
         return -1;
+    }
+
+    if (cfg->flood) {
+        if ((cfg->rss == RSS_AUTO) || (cfg->rss == RSS_L3)) {
+            printf("Error: \'rss auto|l3\' conflicts with \'flood\'\n");
+            return -1;
+        }
     }
 
     /* must be 1 server ip */
@@ -2203,6 +2218,10 @@ int config_parse(int argc, char **argv, struct config *cfg)
         return -1;
     }
 
+    if (config_check_rss(cfg) < 0) {
+        return -1;
+    }
+
     if (config_set_port_ip_range(cfg) != 0) {
         return -1;
     }
@@ -2220,10 +2239,6 @@ int config_parse(int argc, char **argv, struct config *cfg)
     }
 
     if (config_check_target(cfg) < 0) {
-        return -1;
-    }
-
-    if (config_check_rss(cfg) < 0) {
         return -1;
     }
 
