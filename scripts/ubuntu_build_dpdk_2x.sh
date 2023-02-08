@@ -45,14 +45,12 @@ function install_kernel_dev()
 function install_dpdk()
 {
     cd $HOME_DIR
-    ###################################
-    ##新增判断如果当前目录有dpdk就不下载
-    if [ -f dpdk-22.11.1.tar.xz ]; then 
-      exit 
-    else 
-    wget https://fast.dpdk.org/rel/$DPDK_XZ
-    fi
-    ####################################
+    #######################################
+    ##新增判断如果当前目录有dpdk安装包就不下载
+     if [ ! -f "$DPDK_XZ" ]; then
+     wget http://fast.dpdk.org/rel/$DPDK_XZ
+     fi
+    #######################################
     tar -xvf $DPDK_XZ
     cd $DPDK_DIR
 
@@ -82,16 +80,16 @@ function install_dperf()
     cd $HOME_DIR
     git clone https://github.com/baidu/dperf.git
     cd dperf
-    export PKG_CONFIG_PATH=/root/dpdk-stable-22.11.1/mydpdk/lib/x86_64-linux-gnu/pkgconfig
-    export LD_LIBRARY_PATH=/root/dpdk-stable-22.11.1/mydpdk/lib/x86_64-linux-gnu/
+    export PKG_CONFIG_PATH=/root/dpdk-stable-22.11.1/mydpdk/lib/x86_64-linux-gnu/pkgconfig/
     make
+    export LD_LIBRARY_PATH=/root/dpdk-stable-22.11.1/mydpdk/lib/x86_64-linux-gnu/
 }
 
 
 pip3 install launchpadlib pyelftools
 pip3 install --upgrade pip distlib setuptools
 pip3 install meson ninja
-apt install build-essential git pkg-config  libelf-dev
+apt install build-essential git pkg-config  libelf-dev -y
 
 
 #install_kernel_dev
