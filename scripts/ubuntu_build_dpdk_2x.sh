@@ -82,7 +82,9 @@ function install_dperf()
     cd dperf
     export PKG_CONFIG_PATH=/root/dpdk-stable-22.11.1/mydpdk/lib/x86_64-linux-gnu/pkgconfig/
     make
-    export LD_LIBRARY_PATH=/root/dpdk-stable-22.11.1/mydpdk/lib/x86_64-linux-gnu/
+    echo "/root/dpdk-stable-22.11.1/mydpdk/lib/x86_64-linux-gnu/" >> /etc/ld.so.conf
+    ldconfig
+    #export LD_LIBRARY_PATH=/root/dpdk-stable-22.11.1/mydpdk/lib/x86_64-linux-gnu/
 }
 
 
