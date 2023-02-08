@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# root@dperf:~#  lsb_release -a
+# No LSB modules are available.
+# Distributor ID: Ubuntu
+# Description:    Ubuntu 18.04.6 LTS
+# Release:        18.04
+# Codename:       bionic
+# root@dperf:~# python3 -V
+# Python 3.9.15
+# root@dperf:~# 
+
 DPDK_VERSION=22.11.1
 if [ $# -eq 1 ]; then
     DPDK_VERSION=$1
