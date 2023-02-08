@@ -45,7 +45,14 @@ function install_kernel_dev()
 function install_dpdk()
 {
     cd $HOME_DIR
-    #wget http://fast.dpdk.org/rel/$DPDK_XZ
+    ###################################
+    ##新增判断如果当前目录有dpdk就不下载
+    if [ -f dpdk-22.11.1.tar.xz ]; then 
+      exit 
+    else 
+    wget https://fast.dpdk.org/rel/$DPDK_XZ
+    fi
+    ####################################
     tar -xvf $DPDK_XZ
     cd $DPDK_DIR
 
