@@ -274,6 +274,8 @@ Reference:
 | tx_burst       | tx_burst Number(1-1024)                      | 8       | no       | client, server      |
 | tos            | tos Number(0x00-0xff or 0-255)               | 0       | no       | client, server      |
 | vxlan          | vxlan vni innerSMAC innerDMAC localVtep<br>IPAddr Number remoteVtepIPAddr Number        | -       | no       | client, server      |
+| wait           | wait Seconds                                 | 3       | no       | client              |
+
 
 #########################  必须配置的参数          ##########################################
 
