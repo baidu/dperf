@@ -20,16 +20,6 @@ DPDK_XZ=dpdk-${DPDK_VERSION}.tar.xz
 DPDK_TAR=dpdk-${DPDK_VERSION}.tar
 DPDK_DIR=dpdk-stable-${DPDK_VERSION}
 
-function install_re2c()
-{
-    cd $HOME_DIR
-    wget https://github.com/skvadrik/re2c/releases/download/3.0/re2c-3.0.tar.xz
-    tar -xvf re2c-3.0.tar.xz
-    cd re2c-3.0
-    ./configure
-    make
-    make install
-}
 
 function install_meson
 {
@@ -46,9 +36,9 @@ function install_dpdk()
 {
     cd $HOME_DIR
     #######################################
-    ##新增判断如果当前目录有dpdk安装包就不下载
+    ##if the current directory has a dpdk installation package, it will not be downloaded
      if [ ! -f "$DPDK_XZ" ]; then
-     wget http://fast.dpdk.org/rel/$DPDK_XZ
+        wget http://fast.dpdk.org/rel/$DPDK_XZ
      fi
     #######################################
     tar -xvf $DPDK_XZ
@@ -60,11 +50,11 @@ function install_dpdk()
     if [ $? -eq 0 ]; then
         OPT_LIBS="-Ddisable_libs=\"\""
     fi
-    meson build --prefix=$HOME_DIR/$DPDK_DIR/mydpdk -Dbuildtype=debug -Dexamples=ALL -Denable_kmods=true $OPT_LIBS
+    meson build --prefix=$HOME_DIR/$DPDK_DIR/mydpdk  -Dexamples=ALL -Denable_kmods=true $OPT_LIBS
 
     ninja -C build install
-    /bin/sh /root/dpdk-stable-22.11.1/config/../buildtools/symlink-drivers-solibs.sh lib/x86_64-linux-gnu dpdk/pmds-21.0
-    ldconfig
+    #/bin/sh /root/dpdk-stable-22.11.1/config/../buildtools/symlink-drivers-solibs.sh lib/x86_64-linux-gnu dpdk/pmds-21.0
+    #ldconfig
 }
 
 function install_igb_uio()
@@ -96,7 +86,6 @@ apt install build-essential git pkg-config  libelf-dev -y
 
 #install_kernel_dev
 install_meson
-#install_re2c
 install_dpdk
 install_igb_uio
 install_dperf
