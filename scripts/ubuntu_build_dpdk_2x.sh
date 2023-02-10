@@ -36,7 +36,7 @@ function install_dpdk()
 {
     cd $HOME_DIR
     #######################################
-    ##if the current directory has a dpdk installation package, it will not be downloaded
+    ##if the current directory has a dpdk install package, it will not be download.
      if [ ! -f "$DPDK_XZ" ]; then
         wget http://fast.dpdk.org/rel/$DPDK_XZ
      fi
