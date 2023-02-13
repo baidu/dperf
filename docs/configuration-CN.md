@@ -69,7 +69,7 @@ Example:
 - cpu 0-3 12-15
 - cpu 0 1 2 3 4 5
 
-##daemon:
+## daemon
 在daemon模式下，dperf的统计数据写入日志文件('/var/log/dperf/dperf-ctl-[server|client].log'), 否则打印到屏幕上
 
 ## duration
