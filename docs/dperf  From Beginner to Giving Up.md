@@ -837,6 +837,8 @@ launch_num      8
 
 
 # 13  实战部分-测试 
+下面的部分配置取自项目下test下performance，笔者对该部分参数及统计信息理解还不透彻，没法给出更详尽的说明
+
 ## 13.1  Throughput 
 //把payload_size调大，把并发调小就可以了
 测试出现了skErr，你把tx burst调小试试
