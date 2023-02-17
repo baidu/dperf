@@ -677,7 +677,7 @@ https://core.dpdk.org/supported/nics/
   lspci -v -s 02:00.0
 ```
 ## 9.5 下载安装网卡igb_uio驱动 
- 7.4 快速安装脚本中已经包含
+7.4 快速安装脚本中已经包含 
 
 ## 9.6 用igb_uio绑定网卡
 ```
@@ -803,6 +803,13 @@ http://doc.dpdk.org/guides/linux_gsg/linux_eal_parameters.html#linux-specific-ea
 为每个套接字预分配指定数量的内存。该参数是以逗号分隔的值列表。例如：
 --socket-mem 1024,2048
 这将在 socket 0 上分配 1 GB 的内存，在 socket 1 上分配 2048 MB 的内存。
+dperf支持一个numa上跑两个dperf
+例如4G大页
+client上配置
+socket_mem 2048
+server上配置
+socket_mem 2048
+
 ```
 
 ```
