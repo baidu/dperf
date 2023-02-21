@@ -264,7 +264,7 @@ Reference:
 | payload_random | payload_random                               | -       | no       | client, server      |
 | packet_size    | pakcet_size Number(0-1514)                   | -       | no       | client, server      |
 | port           | port PCI BOND IPAddress Gateway [GatewayMAC] | -       | yes      | client, server      |
-| protocol       | protocol tcp | udp | http                    | tcp     | no       | client, server      |
+| protocol       | protocol tcp  udp  http                    | tcp     | no       | client, server      |
 | quiet          | quiet                                        | -       | no       | client, server      |
 | rss            | rss [l3/l3l4/auto] [mq_rx_none mq_rx_rss]    | -       | no       | client, server      |
 | server         | server IPAddrStart IPAddrNumber              | -       | yes      | client, server      |
