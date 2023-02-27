@@ -80,6 +80,10 @@
 #define VLAN_ID_MIN         1
 #define VLAN_ID_MAX         4094
 
+#define PIPELINE_MIN        0
+#define PIPELINE_MAX        100
+#define PIPELINE_DEFAULT    0
+
 struct config {
     bool server;
     bool keepalive;
@@ -98,6 +102,7 @@ struct config {
     bool http;
     bool stats_http;    /* payload size >= HTTP_DATA_MIN_SIZE */
     uint8_t tos;
+    uint8_t pipeline;
     uint8_t tx_burst;
     uint8_t protocol;   /* TCP/UDP */
     uint16_t vlan_id;

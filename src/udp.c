@@ -142,8 +142,17 @@ static inline void udp_retransmit_handler(__rte_unused struct work_space *ws, st
     socket_close(sk);
 }
 
+static inline void udp_send_request(struct work_space *ws, struct socket *sk)
+{
+    sk->state = SK_SYN_SENT;
+    sk->keepalive_request_num++;
+    udp_send(ws, sk);
+}
+
 static void udp_socket_keepalive_timer_handler(struct work_space *ws, struct socket *sk)
 {
+    int pipeline = g_config.pipeline;
+
     if (work_space_in_duration(ws)) {
         /* rss auto: this socket is closed by another worker */
         if (unlikely(sk->laddr == 0)) {
@@ -156,10 +165,13 @@ static void udp_socket_keepalive_timer_handler(struct work_space *ws, struct soc
             net_stats_udp_rt();
         }
 
-        sk->state = SK_SYN_SENT;
-        sk->keepalive_request_num++;
-        udp_send(ws, sk);
-        socket_start_keepalive_timer(sk, work_space_tsc(ws));
+        do {
+            udp_send_request(ws, sk);
+            pipeline--;
+        } while (pipeline > 0);
+        if (g_config.keepalive_request_interval) {
+            socket_start_keepalive_timer(sk, work_space_tsc(ws));
+        }
     }
 }
 
@@ -181,6 +193,8 @@ static void udp_client_process(struct work_space *ws, struct rte_mbuf *m)
     if (sk->keepalive == 0) {
         net_stats_rtt(ws, sk);
         socket_close(sk);
+    } else if ((g_config.keepalive_request_interval == 0) && (!ws->stop)) {
+        udp_send_request(ws, sk);
     }
 
     mbuf_free(m);
@@ -219,6 +233,7 @@ static int udp_client_launch(struct work_space *ws)
     uint64_t i = 0;
     struct socket *sk = NULL;
     uint64_t num = 0;
+    int pipeline = g_config.pipeline;
 
     num = work_space_client_launch_num(ws);
     for (i = 0; i < num; i++) {
@@ -227,10 +242,15 @@ static int udp_client_launch(struct work_space *ws)
             continue;
         }
 
-        /* fot rtt calculationn */
-        udp_send(ws, sk);
+        do {
+            udp_send(ws, sk);
+            pipeline--;
+        } while (pipeline > 0);
         if (sk->keepalive) {
-            socket_start_keepalive_timer(sk, work_space_tsc(ws));
+            if (g_config.keepalive_request_interval) {
+                /* for rtt calculationn */
+                socket_start_keepalive_timer(sk, work_space_tsc(ws));
+            }
         } else if (ws->flood) {
             socket_close(sk);
         } else {

@@ -39,14 +39,27 @@
 - dperf server上不需要配置'num'。
 
 对于dperf client:
-- dperf client每隔'interval'时间发送一个请求。
+- dperf client每隔'interval'时间发送一个请求; 当'interval'为0时，client收到udp响应后会立刻发起新请求。
 - dperf client在发送完'num'个请求后关闭连接。
 
 'keepalive'使用场景：
 - 并发测试：设置较大的并发连接数（cc 10m），较大的interval，如60s。
 - 带宽测试：设置较大的packet_size（如 1500），较小的interval（如1ms）。
 - 单向PPS测试：设置flood，较小packet_size（如64），较小的并发连接数cc（如3000），较小的interval（如1ms或10us）。
-- 双向PPS测试：设置较小packet_size（如64），较小的并发连接数cc（如3000），较小的interval（如1ms或10us）。
+- 双向PPS测试：设置较小packet_size（如64），较小的并发连接数cc（如3000），较小的interval（如1ms或1us）。
+- udp大象流测试：设置interval为0us。
+
+## pipeline
+- syntax: pipeline num
+- default: 0
+- required: no
+- mode: client
+
+udp client在一个连接里同时发起num个请求，可以成倍增大PPS。
+
+Example:
+- 单向udp大象流: cc 1; pipeline 4; keepalive 1us; flood
+- 双向udp大象流: cc 1; pipeline 4; keepalive 0us
 
 ## cpu
 - syntax: cpu n0 n1 n2-n3...
