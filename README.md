@@ -135,7 +135,6 @@ Below example will start a HTTP CPS stress test.
 - [Using dperf to test network bandwidth](test/performance/bandwidth/README.md)
 - [DPVS v1.9.2 Performance Tests by dperf](https://github.com/iqiyi/dpvs/blob/master/test/release/v1.9.2/performance.md)
 - [Using dperf to test 100Gbps bandwidth(zh)](https://zhuanlan.zhihu.com/p/601137162)
-- [Using dperf to test the performance of DPVS(zh)](https://blog.csdn.net/yuubeka/article/details/128945241)
 
 ## Contributing
 
