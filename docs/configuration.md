@@ -39,14 +39,26 @@ For dperf server:
 - 'num' does not need to be configured on the dperf server.
 
 For dperf client:
-- dperf client sends a request every 'interval' time.
+- dperf client sends a request every 'interval' time; when the 'interval' is 0, the client will initiate a new request immediately after receiving the UDP response.
 - The dperf client closed the connection after sending 'num' requests.
 
 'keepalive' usage scenarios:
 - CC test: set a larger number of concurrent connections (cc 10m), a larger interval, such as 60s.
 - tps test: set a larger packet_size (such as 1500) and a smaller interval (such as 1ms).
 - TX PPS test: set flood, smaller packet_size (eg 64), smaller number of concurrent connections cc (eg 3000), smaller interval (eg 1ms or 10us).
-- TX and RX PPS test: set a smaller packet_size (such as 64), a smaller number of concurrent connections cc (such as 3000), and a smaller interval (such as 1ms or 10us).
+- TX and RX PPS test: set a smaller packet_size (such as 64), a smaller number of concurrent connections cc (such as 3000), and a smaller interval (such as 1ms or 1us).
+
+## pipeline
+- syntax: pipeline num
+- default: 0
+- required: no
+- mode: client
+
+UDP Client initiates NUM requests at the same time in a connection, which can increase PPS.
+
+Example:
+- one-way UDP elephant flow: cc 1; pipeline 4; keepalive 1us; flood
+- two-way UDP elephant flow: cc 1; pipeline 4; keepalive 0us
 
 ## cpu
 - syntax: cpu n0 n1 n2-n3...
