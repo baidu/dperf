@@ -134,6 +134,7 @@ ierrors 0                  oerrors  0                  imissed  0
 - [Using dperf to test network bandwidth](test/performance/bandwidth/README.md)
 - [DPVS v1.9.2 Performance Tests by dperf](https://github.com/iqiyi/dpvs/blob/master/test/release/v1.9.2/performance.md)
 - [Using dperf to test 100Gbps bandwidth(zh)](https://zhuanlan.zhihu.com/p/601137162)
+- [Using dperf to test the performance of DPVS(zh)](https://blog.csdn.net/yuubeka/article/details/128945241)
 
 ## 贡献
 dperf 欢迎大家贡献。详情请参阅[贡献指南](CONTRIBUTING.md)。
