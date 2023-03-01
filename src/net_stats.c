@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * Author: Jianzhang Peng (pengjianzhang@baidu.com)
+ * Author: Jianzhang Peng (pengjianzhang@gmail.com)
  */
 
 #include "net_stats.h"
@@ -27,18 +27,24 @@
 
 #include "cpuload.h"
 #include "work_space.h"
+#include "version.h"
 
 static struct net_stats *g_net_stats_all[THREAD_NUM_MAX];
 static struct net_stats g_net_stats_total;
 __thread struct net_stats g_net_stats;
 
+#define NET_STATS_CLOUR_ON          "\033[41;37m"
+#define NET_STATS_CLOUR_OFF         "\033[0m"
+#define NET_STATS_ERR_FMT           NET_STATS_CLOUR_ON"%s"NET_STATS_CLOUR_OFF
+
+#define STATS_BUF_LEN 64
 #define NET_STATS(s, i)             (((uint64_t*)(s))[(i)])
 #define NET_STATS_ELEMENTS_NUM      (int)(sizeof(struct net_stats) / sizeof(uint64_t))
 #define NET_STATS_INC_ELEMENTS_NUM  (int)((offsetof(struct net_stats, mutable_start)) / sizeof(uint64_t))
 
 #define FOR_EACH_NET_STATS(s, i)   for (i = 0; (i < g_config.cpu_num) && ((s = g_net_stats_all[i]), 1); i++)
 
-static void net_stats_format_print(uint64_t val, char *buf, int len)
+static void net_stats_format_print2(uint64_t val, char *buf, int len)
 {
     int i = 0;
     uint64_t values[5] = {0, 0, 0, 0, 0};
@@ -61,6 +67,50 @@ static void net_stats_format_print(uint64_t val, char *buf, int len)
     }
 }
 
+static void net_stats_format_print3(uint64_t val, char *buf, int len, int space, int err)
+{
+    int i = 0;
+    int n = 0;
+    int str_len = 0;
+    char str[STATS_BUF_LEN] = {0};
+    char *p = NULL;
+    char *last = NULL;
+
+    net_stats_format_print2(val, str, STATS_BUF_LEN);
+    str_len = strlen(str);
+
+    if ((err == 0) || (val == 0)) {
+        snprintf(buf, len, "%s", str);
+    } else {
+        snprintf(buf, len, NET_STATS_ERR_FMT, str);
+    }
+
+    n = space - str_len;
+    if (n <= 0) {
+        return;
+    }
+
+    p = buf + strlen(buf);
+    last = buf + len - 1;
+    for (i = 0; i < n; i++) {
+        if (p <= last) {
+            *p = ' ';
+            p++;
+        } else {
+            break;
+        }
+    }
+    if (p <= last) {
+        *p = 0;
+    } else {
+        *last = 0;
+    }
+}
+
+#define net_stats_format_print(val, buf, len)           net_stats_format_print3(val, buf, len, 18, 0)
+#define net_stats_format_print_err(val, buf, len)       net_stats_format_print3(val, buf, len, 18, 1)
+#define net_stats_format_print_short_err(val, buf, len) net_stats_format_print3(val, buf, len, 10, 1)
+
 #define SNPRINTF(p, len, fmt...) do {           \
     int ret = snprintf(p, len, fmt);            \
     if (ret >= len) {                           \
@@ -71,7 +121,6 @@ static void net_stats_format_print(uint64_t val, char *buf, int len)
     }                                           \
 } while (0)
 
-#define STATS_BUF_LEN 64
 static void net_stats_print_rtt(struct net_stats *stats, char rtt_str[], int len)
 {
     uint64_t rtt_tsc = stats->rtt_tsc;
@@ -80,14 +129,16 @@ static void net_stats_print_rtt(struct net_stats *stats, char rtt_str[], int len
     uint64_t rtt_us = 0;
     uint64_t rtt_us_minor = 0;
     char rtt[STATS_BUF_LEN];
+    char rtt2[STATS_BUF_LEN];
 
     if (rtt_num > 0) {
         rtt_us = rtt_tsc / (rtt_num * tsc_per_us);
         rtt_us_minor = ((rtt_tsc % (rtt_num * tsc_per_us)) * 10) / (rtt_num * tsc_per_us);
     }
 
-    net_stats_format_print(rtt_us, rtt, STATS_BUF_LEN);
-    snprintf(rtt_str, len, "%s.%lu", rtt, rtt_us_minor);
+    net_stats_format_print2(rtt_us, rtt, STATS_BUF_LEN);
+    snprintf(rtt2, STATS_BUF_LEN, "%s.%lu", rtt, rtt_us_minor);
+    snprintf(rtt_str, len, "%-10s", rtt2);
 }
 
 static int net_stats_print_socket(struct net_stats *stats, char *buf, int buf_len)
@@ -110,14 +161,14 @@ static int net_stats_print_socket(struct net_stats *stats, char *buf, int buf_le
 
     net_stats_format_print(sk_open, open, STATS_BUF_LEN);
     net_stats_format_print(sk_close, close, STATS_BUF_LEN);
-    net_stats_format_print(stats->socket_error, error, STATS_BUF_LEN);
+    net_stats_format_print_err(stats->socket_error, error, STATS_BUF_LEN);
     net_stats_format_print(stats->socket_current, curr, STATS_BUF_LEN);
 
     if ((g_config.server) || (g_config.keepalive)) {
-        SNPRINTF(p, len, "skOpen  %-18s skClose  %-18s skCon    %-18s skErr   %-18s\n", open, close, curr, error);
+        SNPRINTF(p, len, "skOpen  %s skClose  %s skCon    %s skErr   %s\n", open, close, curr, error);
     } else {
         net_stats_print_rtt(stats, rtt, STATS_BUF_LEN);
-        SNPRINTF(p, len, "skOpen  %-18s skClose  %-18s skCon    %-18s skErr   %-18s rtt(us) %-10s\n", open, close, curr, error, rtt);
+        SNPRINTF(p, len, "skOpen  %s skClose  %s skCon    %s skErr   %s rtt(us) %s\n", open, close, curr, error, rtt);
     }
     return p - buf;
 
@@ -135,7 +186,7 @@ static int net_stats_print_tcp(struct net_stats *stats, char *buf, int buf_len)
     net_stats_format_print(stats->tcp_req, tcp_req, STATS_BUF_LEN);
     net_stats_format_print(stats->tcp_rsp, tcp_rsp, STATS_BUF_LEN);
 
-    SNPRINTF(p, len, "tcpReq  %-18s tcpRsp   %-18s\n", tcp_req, tcp_rsp);
+    SNPRINTF(p, len, "tcpReq  %s tcpRsp   %s\n", tcp_req, tcp_rsp);
     return p - buf;
 
 err:
@@ -153,9 +204,9 @@ static int net_stats_print_http(struct net_stats *stats, char *buf, int buf_len)
 
     net_stats_format_print(stats->http_2xx, http_2xx, STATS_BUF_LEN);
     net_stats_format_print(stats->http_get, http_get, STATS_BUF_LEN);
-    net_stats_format_print(stats->http_error, http_error, STATS_BUF_LEN);
+    net_stats_format_print_err(stats->http_error, http_error, STATS_BUF_LEN);
 
-    SNPRINTF(p, len, "httpGet %-18s http2XX  %-18s httpErr  %-18s\n", http_get, http_2xx, http_error);
+    SNPRINTF(p, len, "httpGet %s http2XX  %s httpErr  %s\n", http_get, http_2xx, http_error);
     return p - buf;
 
 err:
@@ -177,9 +228,9 @@ static int net_stats_print_pkt(struct net_stats *stats, char *buf, int buf_len)
     net_stats_format_print(stats->pkt_tx, pkt_tx, STATS_BUF_LEN);
     net_stats_format_print(((uint64_t)stats->byte_rx) * 8, bits_rx, STATS_BUF_LEN);
     net_stats_format_print(((uint64_t)stats->byte_tx) * 8, bits_tx, STATS_BUF_LEN);
-    net_stats_format_print(stats->tx_drop, tx_drop, STATS_BUF_LEN);
+    net_stats_format_print_err(stats->tx_drop, tx_drop, STATS_BUF_LEN);
 
-    SNPRINTF(p, len, "pktRx   %-18s pktTx    %-18s bitsRx   %-18s bitsTx  %-18s dropTx  %-18s\n",
+    SNPRINTF(p, len, "pktRx   %s pktTx    %s bitsRx   %s bitsTx  %s dropTx  %s\n",
                     pkt_rx, pkt_tx, bits_rx, bits_tx, tx_drop);
     return p - buf;
 
@@ -204,10 +255,10 @@ static int net_stats_print_tcp_flags(struct net_stats *stats, char *buf, int buf
     net_stats_format_print(stats->fin_rx, fin_rx, STATS_BUF_LEN);
     net_stats_format_print(stats->fin_tx, fin_tx, STATS_BUF_LEN);
 
-    net_stats_format_print(stats->rst_rx, rst_rx, STATS_BUF_LEN);
-    net_stats_format_print(stats->rst_tx, rst_tx, STATS_BUF_LEN);
+    net_stats_format_print_short_err(stats->rst_rx, rst_rx, STATS_BUF_LEN);
+    net_stats_format_print_short_err(stats->rst_tx, rst_tx, STATS_BUF_LEN);
 
-    SNPRINTF(p, len, "synRx   %-18s synTx    %-18s finRx    %-18s finTx   %-18s rstRx   %-10s rstTx %-10s\n",
+    SNPRINTF(p, len, "synRx   %s synTx    %s finRx    %s finTx   %s rstRx   %s rstTx %s\n",
                     syn_rx, syn_tx, fin_rx, fin_tx, rst_rx, rst_tx);
     return p - buf;
 
@@ -241,15 +292,15 @@ static int net_stats_print_proto_rx_tx(struct net_stats *stats, char *buf, int b
     net_stats_format_print(stats->tcp_tx, tcp_tx, STATS_BUF_LEN);
     net_stats_format_print(stats->tos_rx, tos_rx, STATS_BUF_LEN);
     net_stats_format_print(stats->other_rx, other_rx, STATS_BUF_LEN);
-    net_stats_format_print(stats->rx_bad, rx_bad, STATS_BUF_LEN);
+    net_stats_format_print_err(stats->rx_bad, rx_bad, STATS_BUF_LEN);
 
-    SNPRINTF(p, len, "tcpRx   %-18s tcpTx    %-18s udpRx    %-18s udpTx   %-18s\n",
+    SNPRINTF(p, len, "tcpRx   %s tcpTx    %s udpRx    %s udpTx   %s\n",
                     tcp_rx, tcp_tx, udp_rx, udp_tx);
 
-    SNPRINTF(p, len, "arpRx   %-18s arpTx    %-18s icmpRx   %-18s icmpTx  %-18s\n",
+    SNPRINTF(p, len, "arpRx   %s arpTx    %s icmpRx   %s icmpTx  %s\n",
                     arp_rx, arp_tx, icmp_rx, icmp_tx);
 
-    SNPRINTF(p, len, "tosRx   %-18s otherRx  %-18s badRx    %-18s\n",
+    SNPRINTF(p, len, "tosRx   %s otherRx  %s badRx    %s\n",
                     tos_rx, other_rx, rx_bad);
 
     return p - buf;
@@ -271,20 +322,20 @@ static int net_stats_print_retransmit(struct net_stats *stats, char *buf, int bu
     char udp_drop[STATS_BUF_LEN];
     int len = buf_len;
 
-    net_stats_format_print(stats->tcp_drop, tcp_drop, STATS_BUF_LEN);
-    net_stats_format_print(stats->udp_drop, udp_drop, STATS_BUF_LEN);
+    net_stats_format_print_err(stats->tcp_drop, tcp_drop, STATS_BUF_LEN);
+    net_stats_format_print_err(stats->udp_drop, udp_drop, STATS_BUF_LEN);
     if (g_config.protocol == IPPROTO_TCP) {
-        net_stats_format_print(stats->syn_rt, syn_rt, STATS_BUF_LEN);
-        net_stats_format_print(stats->fin_rt, fin_rt, STATS_BUF_LEN);
-        net_stats_format_print(stats->ack_rt, ack_rt, STATS_BUF_LEN);
-        net_stats_format_print(stats->push_rt, push_rt, STATS_BUF_LEN);
+        net_stats_format_print_err(stats->syn_rt, syn_rt, STATS_BUF_LEN);
+        net_stats_format_print_err(stats->fin_rt, fin_rt, STATS_BUF_LEN);
+        net_stats_format_print_err(stats->ack_rt, ack_rt, STATS_BUF_LEN);
+        net_stats_format_print_err(stats->push_rt, push_rt, STATS_BUF_LEN);
 
-        SNPRINTF(p, len, "synRt   %-18s finRt    %-18s ackRt    %-18s pushRt  %-18s\n",
+        SNPRINTF(p, len, "synRt   %s finRt    %s ackRt    %s pushRt  %s\n",
             syn_rt, fin_rt, ack_rt, push_rt);
-        SNPRINTF(p, len, "tcpDrop %-18s udpDrop  %-18s\n", tcp_drop, udp_drop);
+        SNPRINTF(p, len, "tcpDrop %s udpDrop  %s\n", tcp_drop, udp_drop);
     } else {
-        net_stats_format_print(stats->udp_rt, udp_rt, STATS_BUF_LEN);
-        SNPRINTF(p, len, "udpRt   %-18s udpDrop  %-18s tcpDrop  %-18s\n", udp_rt, udp_drop, tcp_drop);
+        net_stats_format_print_err(stats->udp_rt, udp_rt, STATS_BUF_LEN);
+        SNPRINTF(p, len, "udpRt   %s udpDrop  %s tcpDrop  %s\n", udp_rt, udp_drop, tcp_drop);
     }
     return p - buf;
 
@@ -302,7 +353,7 @@ static int net_stats_print_kni(struct net_stats *stats, char *buf, int buf_len)
     net_stats_format_print(stats->kni_rx, kni_rx, STATS_BUF_LEN);
     net_stats_format_print(stats->kni_tx, kni_tx, STATS_BUF_LEN);
 
-    SNPRINTF(p, len, "kniRx   %-18s kniTx    %-18s\n", kni_rx, kni_tx);
+    SNPRINTF(p, len, "kniRx   %s kniTx    %s\n", kni_rx, kni_tx);
 
     return p - buf;
 err:
@@ -458,13 +509,13 @@ static void net_stats_print_eth(FILE *fp)
         imis += st.imissed;
     }
 
-    net_stats_format_print(ierr, ierrors, STATS_BUF_LEN);
-    net_stats_format_print(oerr, oerrors, STATS_BUF_LEN);
-    net_stats_format_print(imis, imissed, STATS_BUF_LEN);
+    net_stats_format_print_err(ierr, ierrors, STATS_BUF_LEN);
+    net_stats_format_print_err(oerr, oerrors, STATS_BUF_LEN);
+    net_stats_format_print_err(imis, imissed, STATS_BUF_LEN);
     if (fp) {
-        fprintf(fp, "ierrors %-18s oerrors  %-18s imissed  %-18s\n\n", ierrors, oerrors, imissed);
+        fprintf(fp, "ierrors %s oerrors  %s imissed  %s\n\n", ierrors, oerrors, imissed);
     } else {
-        printf("ierrors %-18s oerrors  %-18s imissed  %-18s\n\n", ierrors, oerrors, imissed);
+        printf("ierrors %s oerrors  %s imissed  %s\n\n", ierrors, oerrors, imissed);
     }
 }
 
@@ -517,15 +568,21 @@ void net_stats_print_total(FILE *fp)
     struct net_stats sum;
 
     SNPRINTF(p, len, "\n");
-    SNPRINTF(p, len, "-------------\n");
-    SNPRINTF(p, len, "Test Finished\n");
-    SNPRINTF(p, len, "-------------\n");
+    SNPRINTF(p, len, "-----------------------\n");
+    SNPRINTF(p, len, "dperf Test Finished\n");
+    SNPRINTF(p, len, "Version: %s\n", VERSION);
+    SNPRINTF(p, len, "License: %s\n", "Apache 2.0");
+    SNPRINTF(p, len, "Author:  %s\n", "Jianzhang Peng");
+
+    SNPRINTF(p, len, "-----------------------\n");
+    SNPRINTF(p, len, "\nTotal Numbers:\n");
     net_stats_sum(&sum);
     ret = net_stats_print(&sum, p, len);
     buf_skip(p, len, ret);
     net_stats_output(fp, g_net_stats_buf);
     net_stats_print_eth(fp);
 
+    SNPRINTF(p, len, "-----------------------\n");
     if (fp) {
         fflush(fp);
     }
