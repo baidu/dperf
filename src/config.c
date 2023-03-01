@@ -236,8 +236,9 @@ static int config_parse_keepalive_request_interval(struct config *cfg, char *str
         if ((val >= 10) && (val % 10) != 0) {
             printf("Error: keepalive request interval must be a multiple of 10us\n");
             return -1;
-        } else if ((val < 10) && (val % 2) != 0) {
+        } else if (((val > 1)) && (val < 10) && (val % 2) != 0) {
             printf("Error: keepalive request interval must be a multiple of 2us\n");
+            return -1;
         }
 
         if ((val >= 1000) && ((val % 1000) != 0)) {
