@@ -130,6 +130,7 @@ ierrors 0                  oerrors  0                  imissed  0
  - dperf 没有路由功能。建议配合三层交换机搭建测试环境。
 
 ## 相关文章
+- [dperf FAQ(zh)](https://zhuanlan.zhihu.com/p/561093951)
 - [How to set up dperf](https://metonymical.hatenablog.com/entry/2022/02/11/234927)
 - [Using dperf to test network bandwidth](test/performance/bandwidth/README.md)
 - [DPVS v1.9.2 Performance Tests by dperf](https://github.com/iqiyi/dpvs/blob/master/test/release/v1.9.2/performance.md)
