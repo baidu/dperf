@@ -254,7 +254,7 @@ Set the payload to random characters ('a'-'z'), the default is all 'a'.
 - required: no
 - mode: client, server
 
-Set the size of the request and response, in bytes.
+Set the size of the request and response, in bytes, not including L2, L3, L4 header sizes.
 For tcp protocol, if payload_size is less than 70, dperf will be forced to 70, which is the minimum HTTP packet length.
 If you want to set smaller data packets, use packet_size.
 
