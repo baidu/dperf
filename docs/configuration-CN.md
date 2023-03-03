@@ -253,7 +253,7 @@ Example:
 - required: no
 - mode: client, server
 
-设置请求与响应的大小，单位是字节。
+设置请求与响应的大小，单位是字节，不包括L2、L3、L4头部大小。
 对于tcp协议，如果payload_size小于70，dperf会强制为70，这是最小的HTTP报文长度。
 如果要设置更小的数据报文，请使用packet_size。
 
