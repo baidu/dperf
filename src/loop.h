@@ -304,7 +304,7 @@ static inline void server_loop(struct work_space *ws, l3_input_t l3_input,
         tick_time_update(tt);
         ticks = tsc_time_go(&tt->tick, tt->tsc);
         CPULOAD_ADD_TSC(&ws->load, tt->tsc, work);
-        if (ticks > 0) {
+        if (unlikely(ticks > 0)) {
             work = 1;
             if (unlikely(slow_timer_run(ws) < 0)) {
                 break;
@@ -333,7 +333,7 @@ static inline void client_loop(struct work_space *ws, l3_input_t l3_input,
         CPULOAD_ADD_TSC(&ws->load, tt->tsc, work);
         work += client_launch(ws);
         ticks = tsc_time_go(&tt->tick, tt->tsc);
-        if (ticks > 0) {
+        if (unlikely(ticks > 0)) {
             if (ws->ack_delay.next) {
                 tcp_ack_delay_flush(ws);
             }
