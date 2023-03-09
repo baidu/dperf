@@ -136,6 +136,7 @@ ierrors 0                  oerrors  0                  imissed  0
 - [DPVS v1.9.2 Performance Tests by dperf](https://github.com/iqiyi/dpvs/blob/master/test/release/v1.9.2/performance.md)
 - [Using dperf to test 100Gbps bandwidth(zh)](https://zhuanlan.zhihu.com/p/601137162)
 - [How to install dperf on ubuntu](https://github.com/digger-yu/blog/blob/main/how%20to%20install%20dperf%20on%20ubuntu.md)
+- [Using dperf to test the performance of DPVS(zh)](https://blog.csdn.net/yuubeka/article/details/128945241)
 
 ## 贡献
 dperf 欢迎大家贡献。详情请参阅[贡献指南](CONTRIBUTING.md)。
