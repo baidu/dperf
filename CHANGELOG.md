@@ -1,5 +1,48 @@
 # Changelog
 
+## v1.5.0 - 2023-03-10
+### Added
+
+- udp elephant flow
+
+    thanks sheva7777
+- client_hop
+
+    thanks hgkiller
+- supported Mellanox MT27500 [ConnectX-3]
+
+    thanks SdotChen
+- article: Using dperf to test the performance of DPVS(zh)
+
+    thanks sheva7777
+- article: How to install dperf on ubuntu(zh)
+
+    thanks digger-yu
+- article: Using dperf to test 100Gbps bandwidth(zh)
+
+    thanks CHRIS123540
+- article: DPVS v1.9.2 Performance Tests by dperf
+
+    thanks ywc689
+- article: dperf FAQ(zh)
+
+### Changed
+
+- print error numbers with red color
+
+### Fixed
+
+- flood with rss l3l4
+
+    thanks sheva7777
+- use unlikeyly to predict condition
+
+    thanks panzhengyu
+- address conflict in configuration file
+
+    thanks CHRIS123540
+- docs/configuration: update payload_size
+
 ## v1.4.0 - 2022-12-14
 ### Added
 
