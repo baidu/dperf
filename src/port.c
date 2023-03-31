@@ -258,6 +258,7 @@ int port_init_all(struct config *cfg)
 #endif
 
     if ((nb_ports == 0) || (nb_ports < cfg->port_num)) {
+        printf("not enough ports available: avail %d require %d\n", nb_ports, cfg->port_num);
         return -1;
     }
 
