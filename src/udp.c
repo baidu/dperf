@@ -189,7 +189,11 @@ static void udp_client_process(struct work_space *ws, struct rte_mbuf *m)
         goto out;
     }
 
-    sk->state = SK_SYN_RECEIVED;
+    if (sk->state != SK_CLOSED) {
+        sk->state = SK_SYN_RECEIVED;
+    } else {
+        goto out;
+    }
     if (sk->keepalive == 0) {
         net_stats_rtt(ws, sk);
         socket_close(sk);
