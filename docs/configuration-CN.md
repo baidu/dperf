@@ -345,7 +345,7 @@ kni接口的IP地址与路由需要手动配置, 只能配置为'port'的IP。
 注意：tos对kni接口发出的报文不生效。
 
 ## rss
-- syntax: rss [l3/l3l4/auto] [mq_rx_none|mq_rx_rss]
+- syntax: rss [l3/l3l4/auto] [mq_rx_none|mq_rx_rss|l3|l3l4]
 - default: -
 - required: no
 - mode: client, server
@@ -353,7 +353,7 @@ kni接口的IP地址与路由需要手动配置, 只能配置为'port'的IP。
 使用网卡RSS分流。没有FDIR特性的网卡需要开启多队列/多线程时需要开启此开关。
 - l3: 使用基于IP地址的对称哈希算法分流，要求网卡支持修改RSS配置, 这是默认选项
 - l3l4: 使用l3l4对称哈希算法分流, 要求网卡支持修改RSS配置
-- auto: 使用网卡默认算法分流, 要求一个port只能配置一个server IP
+- auto: 使用网卡默认算法分流, 可以指定为l3或者l3l4, 要求一个port只能配置一个server IP
 - mq_rx_rss: 使用DPDK参数'RTE_ETH_MQ_RX_RSS'开启网卡的RSS特性, 这是默认参数
 - mq_rx_none: 不使用DPDK参数'RTE_ETH_MQ_RX_RSS'去配置网卡，部分网卡不允许配置，只能用在auto模式
 
