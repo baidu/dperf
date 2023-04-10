@@ -114,7 +114,7 @@ static struct config_keyword g_config_keywords[] = {
     {"kni", config_parse_kni, "[ifName], default " KNI_NAME_DEFAULT},
     {"tos", config_parse_tos, "Number[0x00-0xff], default 0, eg 0x01 or 1"},
     {"jumbo", config_parse_jumbo, ""},
-    {"rss", config_parse_rss, "[l3/l3l4/auto [mq_rx_none|mq_rx_rss], default l3 mq_rx_rss"},
+    {"rss", config_parse_rss, "[l3/l3l4/auto [mq_rx_none|mq_rx_rss|l3|l3l4], default l3 mq_rx_rss"},
     {"quiet", config_parse_quiet, ""},
     {"tcp_rst", config_parse_tcp_rst, "Number[0-1], default 1"},
     {"http_host", config_parse_http_host, "String, default " HTTP_HOST_DEFAULT},
@@ -1180,6 +1180,12 @@ static int config_parse_rss(int argc, __rte_unused char *argv[], void *data)
                     return -1;
                 }
                 mq_rx_rss = false;
+            } else if ((cfg->rss == RSS_AUTO) && ((strcmp(argv[2], "l3") == 0))) {
+                cfg->rss_auto = RSS_L3;
+                mq_rx_rss = true;
+            } else if ((cfg->rss == RSS_AUTO) && ((strcmp(argv[2], "l3l4") == 0))) {
+                cfg->rss_auto = RSS_L3L4;
+                mq_rx_rss = true;
             } else {
                 printf("Error: unknown rss config \'%s\'\n", argv[2]);
                 return -1;

@@ -97,6 +97,7 @@ struct config {
     bool client_hop;
     uint8_t rss;
     bool mq_rx_rss;
+    uint8_t rss_auto;
     bool quiet;
     bool tcp_rst;
     bool http;
