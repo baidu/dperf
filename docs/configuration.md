@@ -33,7 +33,7 @@ Turn off output statistics per second.
 Keepalive means that multiple requests and responses can be sent in one connection.
 
 For dperf server:
-- When 'keepalve' is not enabled, the dperf server closes the connection at the fastest speed by setting FIN in the response message. (Think about it, can a program calling the POSIX socket API do this?)
+- When 'keepalive' is not enabled, the dperf server closes the connection at the fastest speed by setting FIN in the response message. (Think about it, can a program calling the POSIX socket API do this?)
 - After enabling 'keepalive', the dperf server will wait for the client FIN/RST or a period of time before closing the connection.
 - The connection idle timeout of the dperf server is the retransmission timeout (about 8 seconds) plus 'timeout'.
 - 'num' does not need to be configured on the dperf server.
@@ -259,7 +259,7 @@ For tcp protocol, if payload_size is less than 70, dperf will be forced to 70, w
 If you want to set smaller data packets, use packet_size.
 
 ## packet_size
-- syntax: pakcet_size Number(0-1514)
+- syntax: packet_size Number(0-1514)
 - default: -
 - required: no
 - mode: client, server
@@ -272,7 +272,7 @@ Sets the data packet size, including the Ethernet header, excluding the 4-byte F
 - required: no
 - mode: client, server
 
-Enable jumbo frames. After enabling jumbo frames, pakcet_size can be set to 9724.
+Enable jumbo frames. After enabling jumbo frames, packet_size can be set to 9724.
 Note: packet_size cannot exceed the MTU of the network environment.
 
 ## mss

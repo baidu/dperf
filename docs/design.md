@@ -43,7 +43,7 @@ This is the result of my thinking:
 
 - The protocol stack is only used for performance testing of the four-layer load balancer;
 - There is no need to support congestion control and SACK; only need to implement stop-and-wait protocol and retransmit over time. The client sends a request message and waits for a message from the server to respond, but the response is still one message. If the timeout expires, and the other party has not received the confirmation, it will retransmit. If the retransmission is unsuccessful for many times, the connection will be considered as a failure;
-- There is no need to support the event mechanism, the application layer processing is performed immediately after receiving the message, socekt and application layer processing are deeply integrated into the TCP protocol stack;
+- There is no need to support the event mechanism, the application layer processing is performed immediately after receiving the message, socket and application layer processing are deeply integrated into the TCP protocol stack;
 - There is no need to support TCP keepalive timer, there is no idle connection for a long time, short connection does not need TCP keepalive timer, long connection will send requests regularly, and TCP keepalive timer is not required;
 - No timewait timer is required. The closed connection allows quick recycling;
 - Since dperf only sends 1 message at a time and receives 1 message at a time, we believe that dperf's sending window and receiving window are sufficient, and it will not happen or support that the message is partially confirmed.
@@ -53,7 +53,7 @@ dperf once used the time wheel timer. One time wheel timer consumes 32 bytes, an
 
 ### Zero Copy, Zero Sockbuf, Zero Checksum
 - Zero copy. Except for the startup phase, dperf does not copy any data, including Ethernet header/IP header/transport layer header/payload, because these contents are almost fixed.
-- Zero receive buffer. dperf does not care about the content of the payload. These contents are nothing more than the filler of the message. dper only cares about how many bytes are received.
+- Zero receive buffer. dperf does not care about the content of the payload. These contents are nothing more than the filler of the message. dperf only cares about how many bytes are received.
 - Zero sending buffer. The ordinary protocol stack needs to send buffers, and only after receiving the confirmation from the other party, can these buffers be released, otherwise it is retransmitted; in addition, it needs to be considered that the sequence number of the other party's confirmation may be anywhere in the buffer, not necessarily confirming a message At the end of; the management of the sending buffer is a more complicated task. The data sent is the same, so dperf does not need a socket-level sending buffer, just a global message pool.
 - Zero checksum. Usually we will use the network card function to offload the checksum of the message, but we have to calculate the pseudo header; for the same connection, the message type is fixed, dperf has already calculated the tail and head checksum, the whole process does not Checksum calculation.
 
