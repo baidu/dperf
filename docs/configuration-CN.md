@@ -39,7 +39,7 @@
 - dperf server上不需要配置'num'。
 
 对于dperf client:
-- dperf client每隔'interval'时间发送一个请求; 当'interval'为0时，client收到udp响应后会立刻发起新请求。
+- dperf client每隔'interval'时间发送一个请求；当'interval'为0时，client收到udp响应后会立刻发起新请求。
 - dperf client在发送完'num'个请求后关闭连接。
 
 'keepalive'使用场景：
@@ -106,9 +106,9 @@ Reference:
 配置dperf使用的网口。通过配置多条'port'，dperf就可以使用多个口。
 作为DPDK程序，dperf需要从操作系统接管这些网口。在启动dperf之前，你需要使用DPDK脚本'dpdk-devbind.py'绑定驱动（Mellanox网卡除外）。
 - PCI: 网口的PIC号，使用'dpdk-devbind.py -s'可查看PCI；
-- BOND: 格式为bondMode:Policy(PIC0,PCI1,...), Mode取值为[0-4], Policy为[0-2];
+- BOND: 格式为bondMode:Policy(PIC0,PCI1,...), Mode取值为[0-4], Policy为[0-2]；
 - IPAddress: 给网口指定一个IP地址，用于与'Gateway'互连；
-- Gateway: 网关的IP地址。dperf没有路由能力，它只会把报文发给网关，ARP、NS、ND报文除外;
+- Gateway: 网关的IP地址。dperf没有路由能力，它只会把报文发给网关，ARP、NS、ND报文除外；
 - Gateway-MAC: 可选，网关的MAC地址。
 
 Example:
@@ -375,7 +375,7 @@ kni接口的IP地址与路由需要手动配置, 只能配置为'port'的IP。
 
 当开启'flood'后，可以使用'change_ip'来修改发送报文的目的IP。
 'change_ip'可以配置多行，最多支持65536个IP地址。这些IP地址平均分配到每个线程。
-dperf在发送每个TCP/UDP报文时，修改报文的目的IP; dperf采用轮询方式从地址池中获取IP。
+dperf在发送每个TCP/UDP报文时，修改报文的目的IP；dperf采用轮询方式从地址池中获取IP。
 'IPAddress'是起始地址，'Step'表示下一个IP的间隔，'Number'表示IP总数。
 
 Example:
