@@ -1311,7 +1311,7 @@ static int config_parse_lport_range(int argc, char *argv[], void *data)
         }
     }
 
-    if (lport_min >= lport_max) {
+    if (lport_min > lport_max) {
         return -1;
     }
 
