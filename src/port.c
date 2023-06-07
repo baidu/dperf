@@ -29,6 +29,7 @@
 
 uint8_t g_dev_tx_offload_ipv4_cksum;
 uint8_t g_dev_tx_offload_tcpudp_cksum;
+static uint16_t g_port_usage[RTE_MAX_ETHPORTS];
 
 static struct rte_eth_conf g_port_conf = {
     .rxmode = {
@@ -197,19 +198,19 @@ static int port_init_port_id(struct netif_port *port)
     char *pci = NULL;
     int socket = 0;
 
-    for (i = 0; i < port->pci_num; i++) {
-        pci = port->pci_list[i];
-        if (rte_eth_dev_get_port_by_name(pci, &port_id) != 0) {
-            printf("warning: cannot find port id by pic %s\n", pci);
-        } else {
-            port_id = (uint16_t)i;
+    int num_ports = rte_eth_dev_count_avail();
+    for (i = 0; i < num_ports; i++) {
+        /* skip used portid */
+        if(g_port_usage[i] == 1) {
+            continue;
         }
+        port_id = (uint16_t)i;
+        g_port_usage[i] = 1;
 
-        port->port_id_list[i] = port_id;
+        port->port_id_list[0] = port_id;
         socket = rte_eth_dev_socket_id(port_id);
-        if (i == 0) {
-            port->socket = socket;
-        } else if (port->socket != socket) {
+        port->socket = socket;
+        if (port->socket != socket) {
             printf("slaves not in same socket\n ");
             return -1;
         }
