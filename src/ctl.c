@@ -108,6 +108,7 @@ static void *ctl_thread_main(void *data)
 
     cfg = (struct config *)data;
     count = cfg->duration;
+    cfg->duration += g_config.slow_start;
 
     fp = ctl_log_open(cfg);
     work_space_wait_start();
