@@ -1418,7 +1418,7 @@ static int config_set_port_ip_range(struct config *cfg)
             }
 
             if (port->queue_num < port->server_ip_range.num) {
-                printf("Error: cpu num less than server ip num at 'client' mode\n");
+                printf("Error: cpu num less than server ip num\n");
                 return -1;
             }
 
