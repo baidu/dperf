@@ -2343,10 +2343,10 @@ static uint32_t config_client_ip_range_socket_num(struct config *cfg, struct ip_
 {
     /*
      * client-ip-num * client-port-num * server-ip-num * server-listen-port-num
-     * client-ip-num: 1-65535, skip port 0
+     * client-port-num: 1-65535, skip port 0
      * server-ip-num: 1, each thread using one server-ip
      * */
-    return ip_range->num * cfg->listen_num * (NETWORK_PORT_NUM - 1);
+    return ip_range->num * cfg->listen_num * (cfg->lport_max - cfg->lport_min + 1);
 }
 
 uint32_t config_get_total_socket_num(struct config *cfg, int id)

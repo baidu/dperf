@@ -95,11 +95,6 @@ static void socket_init(struct work_space *ws, struct socket *sk, uint32_t clien
         sk->laddr = client_ip;
         sk->fport = server_port;
         sk->lport = client_port;
-
-        /* disable this socket */
-        if ((ntohs(sk->lport) < cfg->lport_min) || (ntohs(sk->lport) > cfg->lport_max)) {
-            sk->state = SK_LISTEN;
-        }
     }
 
     seed = (uint32_t)rte_rdtsc();
@@ -121,8 +116,8 @@ static struct socket_port_table *socket_port_table_new(struct work_space *ws, st
 
     table = (struct socket_port_table *)(&(sp->base[sp->next]));
     /* skip port 0 */
-    for (port = 1; port < NETWORK_PORT_NUM; port++) {
-        for (server_port = st->port_min; server_port <= st->port_max; server_port++) {
+    for (port = st->client_port_min; port <= st->client_port_max; port++) {
+        for (server_port = st->server_port_min; server_port <= st->server_port_max; server_port++) {
             client_port = port;
             sk = socket_port_table_get(st, table, client_port, server_port);
             socket_init(ws, sk, client_ip, htons(client_port), st->server_ip, htons(server_port));
@@ -171,7 +166,7 @@ static int socket_table_init_client_rss_l3(struct work_space *ws)
 
     st = &ws->socket_table;
     sp = &st->socket_pool;
-    step = (NETWORK_PORT_NUM - 1) * st->port_num;
+    step = st->client_port_num * st->server_port_num;
 
     while (i < sp->num) {
         sk = &(sp->base[i]);
@@ -230,9 +225,14 @@ int socket_table_init(struct work_space *ws)
     struct socket_table *st = &ws->socket_table;
 
     st->server_ip = ip_range_get(&port->server_ip_range, ws->queue_id);
-    st->port_min = cfg->listen;
-    st->port_max = cfg->listen + cfg->listen_num - 1;
-    st->port_num = cfg->listen_num;
+    st->server_port_min = cfg->listen;
+    st->server_port_max = cfg->listen + cfg->listen_num - 1;
+    st->server_port_num = cfg->listen_num;
+
+    st->client_port_min = cfg->lport_min;
+    st->client_port_max = cfg->lport_max;
+    st->client_port_num = cfg->lport_max - cfg->lport_min + 1;
+
     if (cfg->client_hop) {
         st->client_hop = 1;
     }
