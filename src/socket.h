@@ -27,7 +27,7 @@
 
 enum {
     SK_CLOSED,
-    SK_LISTEN,          /* disable a socket, client only */
+    SK_LISTEN,
     SK_SYN_SENT,        /* also UDP client send */
     SK_SYN_RECEIVED,    /* also UDP client recv */
     SK_ESTABLISHED,
@@ -108,9 +108,13 @@ struct socket_pool {
 
 struct socket_table {
     uint32_t server_ip;
-    uint16_t port_num;
-    uint16_t port_min;
-    uint16_t port_max;
+    uint16_t server_port_num;
+    uint16_t server_port_min;
+    uint16_t server_port_max;
+
+    uint16_t client_port_num;
+    uint16_t client_port_min;
+    uint16_t client_port_max;
 
     uint8_t client_hop;
     uint8_t rss;
@@ -174,7 +178,7 @@ static inline struct socket *socekt_table_get_socket_rss(struct socket_table *st
             }
             continue;
         } else {
-            sp->next += NETWORK_PORT_NUM * st->port_num - st->port_num;
+            sp->next += st->client_port_num * st->server_port_num;
             if (sp->next >= sp->num) {
                 sp->next = 0;
             }
@@ -201,10 +205,6 @@ retry:
         sk = socekt_table_get_socket_rss(st);
     }
 
-    if (unlikely(sk->state == SK_LISTEN)) {
-        goto retry;
-    }
-
     if (st->client_hop) {
         sp->next += 65535;
         if (sp->next >= sp->num) {
@@ -220,7 +220,7 @@ static inline struct socket *socket_port_table_get(const struct socket_table *st
 {
     uint32_t idx = 0;
 
-    idx = (client_port_host - 1) * st->port_num + server_port_host - st->port_min;
+    idx = (client_port_host - st->client_port_min) * st->server_port_num + server_port_host - st->server_port_min;
     return &t->sockets[idx];
 }
 
@@ -233,7 +233,8 @@ static inline struct socket *socket_common_lookup(const struct socket_table *st,
     uint16_t server_port_host = ntohs(server_port);
 
     if (likely(t != NULL)  && (server_ip == st->server_ip) && (client_port != 0) &&
-        (server_port_host >= st->port_min) && (server_port_host <= st->port_max)) {
+        (client_port_host >= st->client_port_min) && (client_port_host <= st->client_port_max) &&
+        (server_port_host >= st->server_port_min) && (server_port_host <= st->server_port_max)) {
         return socket_port_table_get(st, t, client_port_host, server_port_host);
     }
 
