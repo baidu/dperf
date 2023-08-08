@@ -2325,11 +2325,11 @@ int config_parse(int argc, char **argv, struct config *cfg)
         return -1;
     }
 
+    config_check_lport_range(cfg);
+
     if (config_check_target(cfg) < 0) {
         return -1;
     }
-
-    config_check_lport_range(cfg);
 
     if (test) {
         printf("Config file OK\n");
