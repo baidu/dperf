@@ -2149,9 +2149,9 @@ static int config_check_http(struct config *cfg)
         }
     }
 
-    if (cfg->protocol == IPPROTO_UDP) {
+    if (cfg->http == false) {
         if (http_host || http_path) {
-            printf("Error: The HTTP host/path cannot be set in udp protocol.\n");
+            printf("Error: The HTTP host/path cannot be set in udp or tcp protocol.\n");
             return -1;
         }
     }
