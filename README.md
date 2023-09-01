@@ -84,9 +84,9 @@ ierrors 0                  oerrors  0                  imissed  0
     #Mellanox CX4/CX5 requires 'CONFIG_RTE_LIBRTE_MLX5_PMD=y'
     #HNS3 requires 'CONFIG_RTE_LIBRTE_HNS3_PMD=y'
     #VMXNET3 requires 'CONFIG_RTE_LIBRTE_VMXNET3_PMD=y'
-    
+
     TARGET=x86_64-native-linuxapp-gcc #or arm64-armv8a-linuxapp-gcc
-    
+
     cd /root/dpdk/dpdk-stable-19.11.10
     make install T=$TARGET -j16
 
@@ -97,7 +97,7 @@ ierrors 0                  oerrors  0                  imissed  0
 ### Bind interface
     #Mellanox NIC skip this step!
     #Suppose your PCI number is 0000:1b:00.0
-    
+
     modprobe uio
     modprobe uio_pci_generic
     /root/dpdk/dpdk-stable-19.11.10/usertools/dpdk-devbind.py -b uio_pci_generic 0000:1b:00.0
@@ -112,32 +112,20 @@ ierrors 0                  oerrors  0                  imissed  0
     curl http://6.6.241.27/
 
 ## Running the tests
-Below example will start a HTTP CPS stress test.    
+Below example will start a HTTP CPS stress test.
     #run dperf server
     ./build/dperf -c test/http/server-cps.conf
-    
+
     #from another host, run dperf client
     ./build/dperf -c test/http/client-cps.conf
 
 ## Documentation
- - [configuration](docs/configuration.md)
- - [design](docs/design.md)
- - [build](docs/build.md) 
- - [statistics](docs/statistics.md)
+See the website at [https://dperf.org/](https://dperf.org/).
 
 ## Limitation
  - dperf requires that the HTTP message is in one packet, which is not suitable for the test of layer 7 load balancer;
  - dperf requires exclusive use of the network interfaces.
  - dperf does not have routing capability. It is recommended to build a test environment with a switch.
-
-## Related Articles
-- [dperf FAQ(zh)](https://zhuanlan.zhihu.com/p/561093951)
-- [How to set up dperf](https://metonymical.hatenablog.com/entry/2022/02/11/234927)
-- [Using dperf to test network bandwidth](test/performance/bandwidth/README.md)
-- [DPVS v1.9.2 Performance Tests by dperf](https://github.com/iqiyi/dpvs/blob/master/test/release/v1.9.2/performance.md)
-- [Using dperf to test 100Gbps bandwidth(zh)](https://zhuanlan.zhihu.com/p/601137162)
-- [How to install dperf on ubuntu(zh)](https://github.com/digger-yu/blog/blob/main/how%20to%20install%20dperf%20on%20ubuntu.md)
-- [Using dperf to test the performance of DPVS(zh)](https://blog.csdn.net/yuubeka/article/details/128945241)
 
 ## Contributing
 
