@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022 Baidu.com, Inc. All Rights Reserved.
+ * Copyright (c) 2022-2022 Baidu.com, Inc. All Rights Reserved.
+ * Copyright (c) 2022-2023 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +15,7 @@
  * limitations under the License.
  *
  * Author: Jianzhang Peng (pengjianzhang@baidu.com)
+ *         Jianzhang Peng (pengjianzhang@gmail.com)
  */
 
 #include "bond.h"
