@@ -128,12 +128,10 @@ See the website at [https://dperf.org/](https://dperf.org/).
  - dperf does not have routing capability. It is recommended to build a test environment with a switch.
 
 ## Contributing
-
 dperf welcomes your contribution. See the [CONTRIBUTING](CONTRIBUTING.md) file for details.
-Welcome to the development team, please contact [Jianzhang Peng](https://github.com/pengjianzhang) to add you to the developer mailing list.
 
 ## Authors
-* Jianzhang Peng - *Initial work*
+* [Jianzhang Peng](https://github.com/pengjianzhang)
 
 ## License
 dperf is distributed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
