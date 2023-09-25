@@ -128,10 +128,9 @@ ierrors 0                  oerrors  0                  imissed  0
 
 ## 贡献
 dperf 欢迎大家贡献。详情请参阅[贡献指南](CONTRIBUTING.md)。
-欢迎加入开发团队，请联系[Jianzhang Peng](https://github.com/pengjianzhang)把你加入开发者邮件列表。
 
 ## 作者 
-* Jianzhang Peng - *项目发起人*
+* [Jianzhang Peng](https://github.com/pengjianzhang)
 
 ## 许可
 dperf基于 [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可证。
