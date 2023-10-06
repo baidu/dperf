@@ -57,6 +57,7 @@ static int config_parse_change_dip(int argc, char *argv[], void *data);
 static int config_parse_listen(int argc, char *argv[], void *data);
 static int config_parse_payload_random(int argc, char *argv[], void *data);
 static int config_parse_payload_size(int argc, char *argv[], void *data);
+static int config_parse_send_window(int argc, char *argv[], void *data);
 static int config_parse_packet_size(int argc, char *argv[], void *data);
 static int config_parse_mss(int argc, char *argv[], void *data);
 static int config_parse_flood(int argc, char *argv[], void *data);
@@ -103,6 +104,7 @@ static struct config_keyword g_config_keywords[] = {
     {"listen", config_parse_listen, "Port Number, default 80 1" },
     {"payload_random", config_parse_payload_random, ""},
     {"payload_size", config_parse_payload_size, "Number"},
+    {"send_window", config_parse_send_window, "Number["DEFAULT_STR(SEND_WINDOW_MIN) "-" DEFAULT_STR(SEND_WINDOW_MAX)"] default " DEFAULT_STR(SEND_WINDOW_DEFAULT)},
     {"packet_size", config_parse_packet_size, "Number"},
     {"mss", config_parse_mss, "Number, default 1460"},
     {"protocol", config_parse_protocol, "http/tcp/udp, default tcp"},
@@ -115,7 +117,7 @@ static struct config_keyword g_config_keywords[] = {
     {"vlan", config_parse_vlan, "vlanID[" DEFAULT_STR(VLAN_ID_MIN) "-" DEFAULT_STR(VLAN_ID_MAX) "]"},
     {"kni", config_parse_kni, "[ifName], default " KNI_NAME_DEFAULT},
     {"tos", config_parse_tos, "Number[0x00-0xff], default 0, eg 0x01 or 1"},
-    {"jumbo", config_parse_jumbo, ""},
+    {"jumbo", config_parse_jumbo, "[MTU], default " DEFAULT_STR(JUMBO_MTU_DEFAULT)},
     {"rss", config_parse_rss, "[l3/l3l4/auto [mq_rx_none|mq_rx_rss|l3|l3l4], default l3 mq_rx_rss"},
     {"quiet", config_parse_quiet, ""},
     {"tcp_rst", config_parse_tcp_rst, "Number[0-1], default 1"},
@@ -923,6 +925,24 @@ static int config_parse_payload_size(int argc, char *argv[], void *data)
     return 0;
 }
 
+static int config_parse_send_window(int argc, char *argv[], void *data)
+{
+    int send_window = 0;
+    struct config *cfg = data;
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    send_window = config_parse_number(argv[1], true, true);
+    if ((send_window < SEND_WINDOW_MIN) || (send_window > SEND_WINDOW_MAX)) {
+        return -1;
+    }
+
+    cfg->send_window = send_window;
+    return 0;
+}
+
 static int config_parse_packet_size(int argc, char *argv[], void *data)
 {
     int packet_size = 0;
@@ -1137,12 +1157,24 @@ static int config_parse_kni(int argc, char *argv[], void *data)
 
 static int config_parse_jumbo(int argc, __rte_unused char *argv[], void *data)
 {
+    int mtu = 0;
     struct config *cfg = data;
 
-    if (argc > 1) {
+    if (argc > 2) {
         return -1;
     }
 
+    if (argc == 2) {
+        mtu = atoi(argv[1]);
+        if ((mtu < JUMBO_MTU_MIN) || (mtu > JUMBO_MTU_MAX)) {
+            printf("error: bad jumbo mtu[%d - %d]\n", mtu, JUMBO_MTU_MIN, JUMBO_MTU_MAX);
+            return -1;
+        }
+    } else {
+        mtu = JUMBO_MTU_DEFAULT;
+    }
+
+    cfg->jumbo_mtu = mtu;
     cfg->jumbo = true;
     return 0;
 }
@@ -1890,14 +1922,13 @@ static int config_check_size(struct config *cfg)
     int packet_size_max = PACKET_SIZE_MAX;
     int headers_size = 0;
 
-
     if ((cfg->packet_size != 0) && (cfg->payload_size != 0)) {
         printf("Error: both payload_size and packet_size are set\n");
         return -1;
     }
 
     if (cfg->jumbo) {
-        packet_size_max = JUMBO_PKT_SIZE_MAX;
+        packet_size_max = JUMBO_PKT_SIZE(cfg->jumbo_mtu);
     }
 
     headers_size = config_packet_headers_size(cfg);
@@ -1914,7 +1945,23 @@ static int config_check_size(struct config *cfg)
         }
         payload_size = cfg->packet_size - headers_size;
     } else if (cfg->payload_size) {
-        if ((cfg->payload_size + headers_size) > packet_size_max) {
+        if (cfg->payload_size > PAYLOAD_SIZE_MAX) {
+            printf("Error: payload_size is larger than %lu\n", PAYLOAD_SIZE_MAX);
+            return -1;
+        }
+
+        if (cfg->protocol == IPPROTO_TCP) {
+            if (cfg->payload_size > cfg->mss) {
+                if (!cfg->server) {
+                    printf("Error: client payload_size is larger than mss\n");
+                    return -1;
+                }
+                cfg->payload_size = ((cfg->payload_size + cfg->mss - 1) / cfg->mss) *  cfg->mss;
+                if (cfg->send_window == 0) {
+                    cfg->send_window = SEND_WINDOW_DEFAULT;
+                }
+            }
+        } else if ((cfg->payload_size + headers_size) > packet_size_max) {
             printf("Error: big payload_size %d\n", cfg->payload_size);
             return -1;
         }
@@ -1926,13 +1973,19 @@ static int config_check_size(struct config *cfg)
         }
     }
 
+    if (cfg->payload_size <= cfg->mss) {
+        cfg->send_window = 0;
+    }
+
     if ((cfg->protocol == IPPROTO_TCP) && ((payload_size == 0) || (payload_size >= HTTP_DATA_MIN_SIZE))) {
         cfg->stats_http = true;
     }
 
-    http_set_payload(cfg, payload_size);
-    udp_set_payload(cfg, payload_size);
-
+    if (cfg->protocol == IPPROTO_TCP) {
+        http_set_payload(cfg, payload_size);
+    } else {
+        udp_set_payload(cfg, payload_size);
+    }
     return 0;
 }
 
@@ -1942,13 +1995,13 @@ static int config_check_mss(struct config *cfg)
 
     if (cfg->ipv6) {
         if (cfg->jumbo) {
-            mss_max = MSS_JUMBO_IPV6;
+            mss_max = MSS_JUMBO_IPV6(cfg->jumbo_mtu);
         } else {
             mss_max = MSS_IPV6;
         }
     } else {
         if (cfg->jumbo) {
-            mss_max = MSS_JUMBO_IPV4;
+            mss_max = MSS_JUMBO_IPV4(cfg->jumbo_mtu);
         } else {
             mss_max = MSS_IPV4;
         }

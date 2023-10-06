@@ -200,6 +200,7 @@ struct work_space *work_space_new(struct config *cfg, int id)
     ws->ipv6 = cfg->af == AF_INET6;
     ws->http = cfg->http;
     ws->flood = cfg->flood;
+    ws->send_window = (uint32_t)cfg->mss * (uint32_t)cfg->send_window;
     ws->cfg = cfg;
     ws->tos = cfg->tos;
     ws->tx_queue.tx_burst = cfg->tx_burst;

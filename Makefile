@@ -31,6 +31,10 @@ ifneq ($(shell $(PKGCONF) --exists libdpdk && echo 0),0)
 $(error "no installation of DPDK found")
 endif
 
+ifdef DPERF_DEBUG
+CFLAGS += -DDPERF_DEBUG
+endif
+
 CFLAGS += -O3 -g -I./src
 CFLAGS += -DHTTP_PARSE
 CFLAGS += -Wno-address-of-packed-member
