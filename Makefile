@@ -20,6 +20,8 @@ ifdef DPERF_DEBUG
 CFLAGS += -DDPERF_DEBUG
 endif
 
+LDLIBS += -lrte_pmd_bond
+
 include $(RTE_SDK)/mk/rte.extapp.mk
 
 #dpdk 20.11
