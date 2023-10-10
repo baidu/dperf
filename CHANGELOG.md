@@ -1,5 +1,46 @@
 # Changelog
 
+## v1.6.0 - 2023-10-10
+### Added
+
+- dperf server returns large payload
+
+- you can use the default l3 or l3l4 rss algorithm
+
+### Changed
+
+- minimun local port range(lport_range) can be set to 1
+
+- optimization: remove useless sockets outside lport_range
+
+- move docs to dperf.org
+
+- adjust jumbo MTU
+
+### Fixed
+
+- fix: negative number of udp connections
+
+- print more information when startup fails
+    - not enough ports available
+    - error message of server ip numbers
+
+- spelling errors and expression issues
+
+    thanks digger-yu, CChuancey, zrmin
+
+- fix: find port id
+
+- fix: create new connection after "duration" time
+
+    thanks zrgtester
+
+- fix: http_host or http_path can only be configured when http is enabled
+
+- fix: dperf make error on dpdk-18.11
+
+    thanks amberlipp
+
 ## v1.5.0 - 2023-03-10
 ### Added
 
