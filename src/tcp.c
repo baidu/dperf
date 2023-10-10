@@ -90,7 +90,7 @@ static inline struct rte_mbuf *tcp_new_packet(struct work_space *ws, struct sock
 {
     uint16_t csum_ip = 0;
     uint16_t csum_tcp = 0;
-    uint16_t snd_una = 0;
+    uint16_t snd_seq = 0;
     struct rte_mbuf *m = NULL;
     struct iphdr *iph = NULL;
     struct ip6_hdr *ip6h = NULL;
@@ -105,7 +105,10 @@ static inline struct rte_mbuf *tcp_new_packet(struct work_space *ws, struct sock
         p = &ws->tcp_data;
         csum_tcp = sk->csum_tcp_data;
         csum_ip = sk->csum_ip_data;
-        snd_una = p->data.data_len;
+        snd_seq = p->data.data_len;
+        if (tcp_flags & TH_URG) {
+            tcp_flags &= ~(TH_URG|TH_PUSH);
+        }
     } else {
         p = &ws->tcp;
         csum_tcp = sk->csum_tcp;
@@ -118,11 +121,11 @@ static inline struct rte_mbuf *tcp_new_packet(struct work_space *ws, struct sock
     }
 
     if (tcp_flags & (TH_FIN | TH_SYN)) {
-        snd_una++;
+        snd_seq++;
     }
 
     if (sk->snd_nxt == sk->snd_una) {
-        sk->snd_una += snd_una;
+        sk->snd_nxt += snd_seq;
     }
 
     /* update vxlan inner header */
@@ -156,7 +159,8 @@ static inline struct rte_mbuf *tcp_new_packet(struct work_space *ws, struct sock
     th->th_sport = sk->lport;
     th->th_dport = sk->fport;
     th->th_flags = tcp_flags;
-    th->th_seq = htonl(sk->snd_nxt);
+    /* we always send from <snd_una> */
+    th->th_seq = htonl(sk->snd_una);
     th->th_ack = htonl(sk->rcv_nxt);
     th->th_sum = csum_tcp;
 
@@ -222,8 +226,10 @@ static struct rte_mbuf *tcp_reply(struct work_space *ws, struct socket *sk, uint
             net_stats_tcp_req();
             net_stats_http_get();
         } else {
-            net_stats_tcp_rsp();
-            net_stats_http_2xx();
+            if (ws->send_window == 0) {
+                net_stats_tcp_rsp();
+                net_stats_http_2xx();
+            }
         }
     }
 
@@ -238,9 +244,10 @@ static struct rte_mbuf *tcp_reply(struct work_space *ws, struct socket *sk, uint
             if ((!ws->server) && (sk->keepalive != 0)) {
                 now_tsc = socket_accurate_timer_tsc(sk, now_tsc);
             }
-
-            socket_start_retransmit_timer(sk, now_tsc);
-        } else if (ws->server) {
+            if (ws->send_window == 0) {
+                socket_start_retransmit_timer(sk, now_tsc);
+            }
+        } else if (ws->server && (ws->send_window == 0)) {
             socket_start_timeout_timer(sk, now_tsc);
         }
     }
@@ -364,6 +371,7 @@ static void tcp_reply_rst(struct work_space *ws, struct rte_mbuf *m)
 
 static inline void tcp_do_retransmit(struct work_space *ws, struct socket *sk)
 {
+    uint32_t snd_nxt = 0;
     uint8_t flags = 0;
 
     if (sk->snd_nxt == sk->snd_una) {
@@ -382,7 +390,18 @@ static inline void tcp_do_retransmit(struct work_space *ws, struct socket *sk)
         flags = sk->flags;
         SOCKET_LOG_ENABLE(sk);
         SOCKET_LOG(sk, "retrans");
-        tcp_reply(ws, sk, flags);
+        if ((ws->send_window) && (sk->snd_nxt != sk->snd_una) && (flags & TH_PUSH)) {
+            snd_nxt = sk->snd_nxt;
+            sk->snd_nxt = sk->snd_una;
+            tcp_reply(ws, sk, TH_PUSH | TH_ACK);
+            sk->snd_nxt = snd_nxt;
+            sk->snd_window = 1;
+            net_stats_push_rt();
+            socket_start_retransmit_timer(sk, work_space_tsc(ws));
+            return;
+        } else {
+            tcp_reply(ws, sk, flags);
+        }
         if (flags & TH_SYN) {
             net_stats_syn_rt();
         } else if (flags & TH_PUSH) {
@@ -435,7 +454,7 @@ static inline void tcp_client_process_syn_ack(struct work_space *ws, struct sock
     uint32_t seq = htonl(th->th_seq);
 
     if (sk->state == SK_SYN_SENT) {
-        if (ack != sk->snd_una) {
+        if (ack != sk->snd_nxt) {
             SOCKET_LOG_ENABLE(sk);
             MBUF_LOG(m, "drop-syn-ack1");
             SOCKET_LOG(sk, "drop-syn-ack1");
@@ -445,13 +464,13 @@ static inline void tcp_client_process_syn_ack(struct work_space *ws, struct sock
 
         net_stats_rtt(ws, sk);
         sk->rcv_nxt = seq + 1;
-        sk->snd_nxt = ack;
+        sk->snd_una = ack;
         sk->state = SK_ESTABLISHED;
         tcp_reply(ws, sk, TH_ACK | TH_PUSH);
     } else if (sk->state == SK_ESTABLISHED) {
         /* ack lost */
         net_stats_pkt_lost();
-        if ((ack == sk->snd_una) && ((seq + 1) == sk->rcv_nxt)) {
+        if ((ack == sk->snd_nxt) && ((seq + 1) == sk->rcv_nxt)) {
             tcp_reply(ws, sk, TH_ACK);
             net_stats_ack_rt();
         }
@@ -470,19 +489,28 @@ static inline bool tcp_check_sequence(struct work_space *ws, struct socket *sk, 
 {
     uint32_t ack = ntohl(th->th_ack);
     uint32_t seq = ntohl(th->th_seq);
-    uint32_t snd_nxt_old = sk->snd_nxt;
+    uint32_t snd_last = sk->snd_una;
+    uint32_t snd_nxt = 0;
 
     if (th->th_flags & TH_FIN) {
         data_len++;
     }
 
-    if ((ack == sk->snd_una) && (seq == sk->rcv_nxt)) {
+    if ((ack == sk->snd_nxt) && (seq == sk->rcv_nxt)) {
+        sk->retrans = 0;
         if (sk->state > SK_CLOSED) {
             /* skip syn  */
-            sk->snd_nxt = ack;
+            sk->snd_una = ack;
             sk->rcv_nxt = seq + data_len;
-            if (snd_nxt_old != ack) {
-                socket_stop_retransmit_timer(sk);
+
+            if (ws->send_window == 0) {
+                if (snd_last != ack) {
+                    socket_stop_retransmit_timer(sk);
+                }
+            } else {
+                if (sk->snd_window < SEND_WINDOW_MAX) {
+                    sk->snd_window++;
+                }
             }
             return true;
         } else {
@@ -492,20 +520,55 @@ static inline bool tcp_check_sequence(struct work_space *ws, struct socket *sk, 
 
     /* CLOSING */
     if ((sk->state == SK_FIN_WAIT_1) && (th->th_flags & TH_FIN) && (data_len == 1) &&
-        (ack == snd_nxt_old) && (seq == sk->rcv_nxt)) {
+        (ack == snd_last) && (seq == sk->rcv_nxt)) {
         sk->rcv_nxt = seq + 1;
         sk->state = SK_CLOSING;
         return true;
     }
 
+    /* stale packet */
+    if (unlikely(sk->state == SK_CLOSED)) {
+        return false;
+    }
+
     SOCKET_LOG_ENABLE(sk);
     /* my data packet lost */
-    if (tcp_seq_le(ack, sk->snd_una)) {
-        /* fast retransmit : If the last transmission time is more than 1 second */
-        if ((sk->timer_tsc + TSC_PER_SEC) < work_space_tsc(ws)) {
-            tcp_do_retransmit(ws, sk);
+    if (tcp_seq_le(ack, sk->snd_nxt)) {
+        if (ws->send_window) {
+            /* new data is acked */
+            if ((tcp_seq_gt(ack, sk->snd_una))) {
+                sk->snd_una = ack;
+                if (sk->snd_window < SEND_WINDOW_MAX) {
+                    sk->snd_window++;
+                }
+                sk->retrans = 0;
+                return true;
+            } else if (ack == sk->snd_una) {
+                sk->retrans++;
+                net_stats_ack_dup();
+                /* 3 ACK means packets loss. */
+                if (sk->retrans < 3) {
+                    return false;
+                }
+
+                snd_nxt = sk->snd_nxt;
+                sk->snd_nxt = ack;
+                tcp_reply(ws, sk, TH_PUSH | TH_ACK);
+                sk->snd_nxt = snd_nxt;
+                sk->retrans = 0;
+                sk->snd_window = 1;
+                return false;
+            } else {
+                /* stale ack */
+                return false;
+            }
+        } else {
+            /* fast retransmit : If the last transmission time is more than 1 second */
+            if ((sk->timer_tsc + TSC_PER_SEC) < work_space_tsc(ws)) {
+                tcp_do_retransmit(ws, sk);
+            }
         }
-    } else if (ack == sk->snd_una) {
+    } else if (ack == sk->snd_nxt) {
         /* lost ack */
         if (tcp_seq_le(seq, sk->rcv_nxt)) {
             tcp_reply(ws, sk, TH_ACK);
@@ -586,6 +649,31 @@ static inline uint8_t tcp_process_fin(struct socket *sk, uint8_t rx_flags, uint8
     return tx_flags | flags;
 }
 
+static inline void tcp_reply_more(struct work_space *ws, struct socket *sk)
+{
+    int i = 0;
+    uint32_t snd_una = sk->snd_una;
+    uint32_t snd_max = sk->snd_max;
+    uint32_t snd_wnd = snd_una + ws->send_window;
+
+    /* wait a burst finish */
+    while (tcp_seq_lt(sk->snd_nxt, snd_wnd) && tcp_seq_lt(sk->snd_nxt, snd_max) && (i < sk->snd_window)) {
+        sk->snd_una = sk->snd_nxt;
+        tcp_reply(ws, sk, TH_PUSH | TH_ACK | TH_URG);
+        i++;
+    }
+
+    sk->snd_una = snd_una;
+    if (snd_una == snd_max) {
+        if (sk->keepalive) {
+            socket_start_timeout_timer(sk,  work_space_tsc(ws));
+        } else {
+            sk->state = SK_FIN_WAIT_1;
+            tcp_reply(ws, sk, TH_FIN | TH_ACK);
+        }
+    }
+}
+
 static inline void tcp_server_process_data(struct work_space *ws, struct socket *sk, struct rte_mbuf *m,
     struct iphdr *iph, struct tcphdr *th)
 {
@@ -610,10 +698,28 @@ static inline void tcp_server_process_data(struct work_space *ws, struct socket 
     if (sk->state == SK_ESTABLISHED) {
         if (data_len) {
             http_parse_request(data, data_len);
-            tx_flags |= TH_PUSH | TH_ACK;
-            if (sk->keepalive == 0) {
-                tx_flags |= TH_FIN;
+            if ((ws->send_window) && ((rx_flags & TH_FIN) == 0)) {
+                socket_init_http_server(sk);
+                net_stats_tcp_rsp();
+                net_stats_http_2xx();
+                if (sk->keepalive_request_num) {
+                    tcp_reply_more(ws, sk);
+                } else {
+                    /* slow start */
+                    tcp_reply(ws, sk, TH_PUSH | TH_ACK);
+                    sk->keepalive_request_num = 1;
+                }
+                socket_start_retransmit_timer(sk, work_space_tsc(ws));
+                goto out;
+            } else {
+                tx_flags |= TH_PUSH | TH_ACK;
+                if (sk->keepalive == 0) {
+                    tx_flags |= TH_FIN;
+                }
             }
+        } else if ((ws->send_window) && ((rx_flags & TH_FIN) == 0)) {
+            tcp_reply_more(ws, sk);
+            goto out;
         }
     }
 

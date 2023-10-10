@@ -146,9 +146,9 @@ int port_config(struct netif_port *port)
     if (g_config.jumbo) {
 #if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)
         g_port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_JUMBO_FRAME;
-        g_port_conf.rxmode.max_rx_pkt_len = JUMBO_FRAME_MAX_LEN;
+        g_port_conf.rxmode.max_rx_pkt_len = JUMBO_FRAME_SIZE(g_config.jumbo_mtu);
 #else
-        g_port_conf.rxmode.mtu = JUMBO_MTU;
+        g_port_conf.rxmode.mtu = g_config.jumbo_mtu;
 #endif
     }
 

@@ -62,6 +62,7 @@ struct net_stats {
     uint64_t fin_rt;
     uint64_t ack_rt;
     uint64_t push_rt;
+    uint64_t ack_dup;
 
     uint64_t http_2xx;
     uint64_t tcp_req;
@@ -120,6 +121,7 @@ extern __thread struct net_stats g_net_stats;
 #define net_stats_fin_rt()          do {g_net_stats.fin_rt++;} while (0)
 #define net_stats_ack_rt()          do {g_net_stats.ack_rt++;} while (0)
 #define net_stats_push_rt()         do {g_net_stats.push_rt++;} while (0)
+#define net_stats_ack_dup()          do {g_net_stats.ack_dup++;} while (0)
 
 #define net_stats_pkt_lost()        do {g_net_stats.pkt_lost++;} while (0)
 

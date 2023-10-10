@@ -49,16 +49,18 @@
 #define SLOW_START_MAX      600
 #define KEEPALIVE_REQ_NUM   32767  /* 15 bits */
 
-#define JUMBO_FRAME_MAX_LEN 0x2600
-#define JUMBO_PKT_SIZE_MAX  (JUMBO_FRAME_MAX_LEN - ETHER_CRC_LEN)
-#define JUMBO_MTU           (JUMBO_PKT_SIZE_MAX - 14)
+#define JUMBO_FRAME_SIZE(mtu)   ((mtu) + 14 + ETHER_CRC_LEN)
+#define JUMBO_PKT_SIZE(mtu)     ((mtu) + 14)
+#define JUMBO_MTU_MIN       9000
+#define JUMBO_MTU_MAX       9710
+#define JUMBO_MTU_DEFAULT   JUMBO_MTU_MAX
 #define JUMBO_MBUF_SIZE     (1024 * 11)
 #define MBUF_DATA_SIZE      (1024 * 10)
 
 #define MSS_IPV4            (PACKET_SIZE_MAX - 14 - 20 - 20)
 #define MSS_IPV6            (PACKET_SIZE_MAX - 14 - 40 - 20)
-#define MSS_JUMBO_IPV4      (JUMBO_PKT_SIZE_MAX - 14 - 20 - 20)
-#define MSS_JUMBO_IPV6      (JUMBO_PKT_SIZE_MAX - 14 - 40 - 20)
+#define MSS_JUMBO_IPV4(mtu) ((mtu) - 20 - 20)
+#define MSS_JUMBO_IPV6(mtu) ((mtu) - 40 - 20)
 
 #define DEFAULT_WSCALE      13
 
@@ -66,6 +68,10 @@
 
 #define HTTP_HOST_MAX       128
 #define HTTP_PATH_MAX       256
+#define PAYLOAD_SIZE_MAX    (1L * 1024 * 1024 * 1024)
+#define SEND_WINDOW_MAX     16
+#define SEND_WINDOW_MIN     2
+#define SEND_WINDOW_DEFAULT 4
 
 #define HTTP_HOST_DEFAULT   "dperf"
 #define HTTP_PATH_DEFAULT   "/"
@@ -107,8 +113,10 @@ struct config {
     uint8_t tos;
     uint8_t pipeline;
     uint8_t tx_burst;
+    uint8_t send_window;/* packets */
     uint8_t protocol;   /* TCP/UDP */
     uint16_t vlan_id;
+    uint16_t jumbo_mtu;
 
     int ticks_per_sec;
 

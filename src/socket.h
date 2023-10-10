@@ -95,6 +95,8 @@ struct socket {
     uint8_t http_parse_state;
     uint8_t http_flags;
     uint8_t http_ack;
+    uint8_t snd_window;
+    uint32_t snd_max;
 #endif
 };
 
@@ -335,6 +337,7 @@ static inline void socket_close(struct socket *sk)
 {
     if (sk->state != SK_CLOSED) {
         sk->state = SK_CLOSED;
+        sk->rcv_nxt = 0;
         socket_node_del(&sk->node);
         net_stats_socket_close();
     }
@@ -348,8 +351,19 @@ static inline void socket_init_http(struct socket *sk)
     sk->http_flags = 0;
     sk->http_ack = 0;
 }
+
+static inline void socket_init_http_server(struct socket *sk)
+{
+    sk->http_length = 0;
+    sk->http_parse_state = 0;
+    sk->http_flags = 0;
+    sk->http_ack = 0;
+    sk->snd_max = sk->snd_nxt + (uint32_t)g_config.payload_size;
+}
+
 #else
 #define socket_init_http(sk) do{}while(0)
+#define socket_init_http_server(sk) do{}while(0)
 #endif
 
 static inline void socket_server_open(__rte_unused struct socket_table *st, struct socket *sk, struct tcphdr *th)
@@ -364,8 +378,10 @@ static inline void socket_server_open(__rte_unused struct socket_table *st, stru
     sk->log = 0;
 #endif
     sk->retrans = 0;
+    sk->keepalive_request_num = 0;
     sk->snd_nxt++;
     sk->snd_una = sk->snd_nxt;
+    sk->snd_window = 1;
     sk->rcv_nxt = ntohl(th->th_seq) + 1;
 }
 
