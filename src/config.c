@@ -1167,7 +1167,7 @@ static int config_parse_jumbo(int argc, __rte_unused char *argv[], void *data)
     if (argc == 2) {
         mtu = atoi(argv[1]);
         if ((mtu < JUMBO_MTU_MIN) || (mtu > JUMBO_MTU_MAX)) {
-            printf("error: bad jumbo mtu[%d - %d]\n", mtu, JUMBO_MTU_MIN, JUMBO_MTU_MAX);
+            printf("error: bad jumbo mtu [%d - %d]\n", JUMBO_MTU_MIN, JUMBO_MTU_MAX);
             return -1;
         }
     } else {

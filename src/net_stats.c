@@ -39,7 +39,7 @@ __thread struct net_stats g_net_stats;
 #define NET_STATS_CLOUR_OFF         "\033[0m"
 #define NET_STATS_ERR_FMT           NET_STATS_CLOUR_ON"%s"NET_STATS_CLOUR_OFF
 
-#define STATS_BUF_LEN 64
+#define STATS_BUF_LEN               64
 #define NET_STATS(s, i)             (((uint64_t*)(s))[(i)])
 #define NET_STATS_ELEMENTS_NUM      (int)(sizeof(struct net_stats) / sizeof(uint64_t))
 #define NET_STATS_INC_ELEMENTS_NUM  (int)((offsetof(struct net_stats, mutable_start)) / sizeof(uint64_t))

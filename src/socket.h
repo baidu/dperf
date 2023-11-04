@@ -337,7 +337,7 @@ static inline void socket_close(struct socket *sk)
 {
     if (sk->state != SK_CLOSED) {
         sk->state = SK_CLOSED;
-        sk->rcv_nxt = 0;
+        /* don't clear sequences in TIME-WAIT */
         socket_node_del(&sk->node);
         net_stats_socket_close();
     }
