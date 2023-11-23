@@ -130,13 +130,13 @@ See the website at [https://dperf.org/](https://dperf.org/).
 ## Contributing
 dperf welcomes your contribution. See the [CONTRIBUTING](CONTRIBUTING.md) file for details.
 
-## Authors
-* [Jianzhang Peng](https://github.com/pengjianzhang)
+## Author
+* [Jianzhang Peng](https://github.com/pengjianzhang), a Ph.D. graduate in Computer Science from the University of Science and Technology of China, served as a Principal Engineer at both Huawei and Baidu. He participated in the development of 7-layer and 4-layer load balancing systems. During his tenure at Baidu, he developed the dperf project. Even after leaving Baidu, he remains dedicated to the maintenance of the dperf project. Currently, he works in Singapore, focusing on researching and implementing low-latency network systems for high-frequency crypto quantitative trading.
 
 ## Support
-Thank you for considering supporting the dperf project, which is maintained by [Jianzhang Peng](https://github.com/pengjianzhang). We are committed to providing a high-performance network load tester. Your sponsorship will help him maintain the project, address issues, and continually enhance its features. You can make donations through the [GitHub Sponsor](https://github.com/sponsors/pengjianzhang) page or via WeChat.
-
-<img src="https://dperf.org/image/wechat-donation.jpg" width="200" height="200">
+Thank you for considering supporting the dperf project, which is maintained by [Jianzhang Peng](https://github.com/pengjianzhang). We are committed to providing a high-performance network load tester. Your sponsorship will help him maintain the project, address issues, and continually enhance its features.
+ - [Github Donation](https://github.com/sponsors/pengjianzhang)
+ - ![Wechat Donation](https://dperf.org/image/wechat-donation.jpg){width=200 height=200}
 
 ## License
 dperf is distributed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
