@@ -1878,12 +1878,14 @@ static int config_check_target(struct config *cfg)
     for (i = 0; i < cfg->cpu_num; i++) {
         socket_num = config_get_total_socket_num(cfg, i);
         if (socket_num < cc) {
-            printf("Error: insufficient sockets. worker=%d sockets=%u cc=%lu\n", i, socket_num, cc);
+            printf("Error: insufficient sockets. worker=%d (sockets=%u < cc=%lu)\n", i, socket_num, cc);
+            printf("Please increase the IP number of \'client\' or port number of 'listen'\n");
             return -1;
         }
 
         if (socket_num < cps_cc) {
-            printf("Error: insufficient sockets. worker=%d sockets=%u cps's cc=%lu\n", i, socket_num, cps_cc);
+            printf("Error: insufficient sockets. worker=%d (sockets=%u < cps's cc=%lu)\n", i, socket_num, cps_cc);
+            printf("Please increase the IP number of \'client\' or port number of 'listen'\n");
             return -1;
         }
     }

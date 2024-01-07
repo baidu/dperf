@@ -36,7 +36,7 @@ static int lcore_main(__rte_unused void *arg1)
     id = rte_lcore_id();
     ws = work_space_new(&g_config, id);
     if (ws == NULL) {
-        printf("work space init error\n");
+        printf("Error: work space init error\n");
         exit(-1);
     }
     port_clear(ws->port_id, ws->queue_id);
