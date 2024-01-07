@@ -174,10 +174,15 @@ static struct work_space *work_space_alloc(struct config *cfg, int id)
 
     ws = (struct work_space *)rte_calloc("work_space", 1, size, CACHE_ALIGN_SIZE);
     if (ws != NULL) {
-        printf("socket allocation succeeded, size %0.2fGB num %u\n", size * 1.0 / (1024 * 1024 * 1024), socket_num);
+        printf("socket allocation succeeded, memory size %0.2fGB socket num %u.\n", size * 1.0 / (1024 * 1024 * 1024), socket_num);
         ws->socket_table.socket_pool.num = socket_num;
     } else {
-        printf("socket allocation failed, size %0.2fGB num %u\n", size * 1.0 / (1024 * 1024 * 1024), socket_num);
+        printf("Error: socket allocation failed, memory size %0.2fGB socket num %u.\n", size * 1.0 / (1024 * 1024 * 1024), socket_num);
+        printf("Please:\n");
+        printf("\t1. increase the huge-page memory.\n");
+        printf("\t2. reduce the number of IPs of \'client\'.\n");
+        printf("\t3. reduce the number of IPs of \'server\'.\n");
+        printf("\t4. reduce the number of ports of \'listen\'.\n");
     }
 
     return ws;
