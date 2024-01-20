@@ -136,7 +136,7 @@ dperf welcomes your contribution. See the [CONTRIBUTING](CONTRIBUTING.md) file f
 ## Support
 Thank you for considering supporting the dperf project, which is maintained by [Jianzhang Peng](https://github.com/pengjianzhang). We are committed to providing a high-performance network load tester. Your sponsorship will help him maintain the project, address issues, and continually enhance its features.
  - [Github Donation](https://github.com/sponsors/pengjianzhang)
- - ![Wechat Donation](https://dperf.org/image/wechat-donation.jpg){width=200 height=200}
+ - ![Wechat Donation](https://dperf.org/image/wechat-donation.jpg)
 
 ## License
 dperf is distributed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).

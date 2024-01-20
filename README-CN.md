@@ -135,7 +135,7 @@ dperf 欢迎大家贡献。详情请参阅[贡献指南](CONTRIBUTING.md)。
 ## 支持
 感谢您考虑支持由[Jianzhang Peng](https://github.com/pengjianzhang) 维护的dperf项目。我们致力于提供高性能的网络测试仪。您的赞助将帮助他维护项目、解决问题，并不断增强其功能。
  - [Github捐赠](https://github.com/sponsors/pengjianzhang)
- - ![微信捐赠](https://dperf.org/image/wechat-donation.jpg){width=200 height=200}
+ - ![微信捐赠](https://dperf.org/image/wechat-donation.jpg)
 
 ## 许可
 dperf基于 [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0) 许可证。
