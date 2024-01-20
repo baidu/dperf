@@ -148,7 +148,7 @@ static inline void socket_node_del(struct socket_node *sn)
     }
 }
 
-static inline struct socket *socekt_table_get_socket_rss(struct socket_table *st)
+static inline struct socket *socket_table_get_socket_rss(struct socket_table *st)
 {
     struct socket *sk = NULL;
     struct socket_pool *sp = &st->socket_pool;
@@ -157,7 +157,7 @@ static inline struct socket *socekt_table_get_socket_rss(struct socket_table *st
         sk = &(sp->base[sp->next]);
         if (st->rss == RSS_AUTO) {
             sp->next++;
-            /* 1. each worker picks socekts in port order
+            /* 1. each worker picks sockets in port order
              * 2. avoid incorrectly hashed sockets
              * */
             if (((ntohs(sk->lport) % st->rss_num) != st->rss_id) || (sk->laddr == 0)) {
@@ -193,7 +193,7 @@ static inline struct socket *socekt_table_get_socket_rss(struct socket_table *st
     return sk;
 }
 
-static inline struct socket *socekt_table_get_socket(struct socket_table *st)
+static inline struct socket *socket_table_get_socket(struct socket_table *st)
 {
     struct socket *sk = NULL;
     struct socket_pool *sp = &st->socket_pool;
@@ -206,7 +206,7 @@ retry:
             sp->next = 0;
         }
     } else {
-        sk = socekt_table_get_socket_rss(st);
+        sk = socket_table_get_socket_rss(st);
     }
 
     if (st->client_hop) {
@@ -389,7 +389,7 @@ static inline struct socket *socket_client_open(struct socket_table *st, uint64_
 {
     struct socket *sk = NULL;
 
-    sk = socekt_table_get_socket(st);
+    sk = socket_table_get_socket(st);
     if (sk->state == SK_CLOSED) {
 #ifdef DPERF_DEBUG
         sk->log = 0;
