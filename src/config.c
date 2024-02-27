@@ -77,6 +77,7 @@ static int config_parse_http_host(int argc, char *argv[], void *data);
 static int config_parse_http_path(int argc, char *argv[], void *data);
 static int config_parse_lport_range(int argc, char *argv[], void *data);
 static int config_parse_client_hop(int argc, char *argv[], void *data);
+static int config_parse_simd512(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -125,6 +126,7 @@ static struct config_keyword g_config_keywords[] = {
     {"http_path", config_parse_http_path, "String, default " HTTP_PATH_DEFAULT},
     {"lport_range", config_parse_lport_range, "Number [Number], default 1 65535"},
     {"client_hop", config_parse_client_hop, ""},
+    {"simd512", config_parse_simd512, ""},
     {NULL, NULL, NULL}
 };
 
@@ -1364,6 +1366,18 @@ static int config_parse_client_hop(int argc, __rte_unused char *argv[], void *da
     }
 
     cfg->client_hop = true;
+    return 0;
+}
+
+static int config_parse_simd512(int argc, __rte_unused char *argv[], void *data)
+{
+    struct config *cfg = data;
+
+    if (argc != 1) {
+        return -1;
+    }
+
+    cfg->simd512 = true;
     return 0;
 }
 

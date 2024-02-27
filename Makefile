@@ -39,7 +39,7 @@ endif
 
 CFLAGS += -O3 -g -I./src
 CFLAGS += -DHTTP_PARSE
-CFLAGS += -Wno-address-of-packed-member -Wformat-truncation=0
+CFLAGS += -Wno-address-of-packed-member -Wformat-truncation=0 -DALLOW_EXPERIMENTAL_API
 CFLAGS += $(shell $(PKGCONF) --cflags libdpdk)
 LDFLAGS += $(shell $(PKGCONF) --libs libdpdk) -lpthread -lrte_net_bond -lrte_bus_pci -lrte_bus_vdev
 
