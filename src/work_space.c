@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021-2022 Baidu.com, Inc. All Rights Reserved.
- * Copyright (c) 2022-2023 Jianzhang Peng. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,9 +93,11 @@ static void work_space_get_port(struct work_space *ws)
         ws->vni = VXLAN_HTON(vxlan->vni);
     }
 
+#ifdef KNI_ENABLE
     if (ws->port->kni) {
         ws->kni = true;
     }
+#endif
 }
 
 static int work_space_open_log(struct work_space *ws)
