@@ -28,6 +28,7 @@
 #include <rte_atomic.h>
 #include <rte_prefetch.h>
 #include <rte_mbuf.h>
+#include <rte_compat.h>
 
 #include "mbuf.h"
 #include "flow.h"
@@ -89,6 +90,15 @@ static int dpdk_set_socket_mem(struct config *cfg, char *socket_mem, char *file_
     return 0;
 }
 
+static void dpdk_set_simd_bitwidth(struct config *cfg)
+{
+#if RTE_VERSION >= RTE_VERSION_NUM(20, 0, 0, 0)
+    if (cfg->simd512) {
+        rte_vect_set_max_simd_bitwidth(RTE_VECT_SIMD_512);
+    }
+#endif
+}
+
 static int dpdk_eal_init(struct config *cfg, char *argv0)
 {
     int argc = 4;
@@ -110,6 +120,7 @@ static int dpdk_eal_init(struct config *cfg, char *argv0)
     dpdk_set_lcores(cfg, lcores);
     argc += dpdk_append_pci(cfg, argc, argv, flag_pci);
 
+    dpdk_set_simd_bitwidth(cfg);
     if (rte_eal_init(argc, argv) < 0) {
         printf("rte_eal_init fail\n");
         return -1;
