@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021 Baidu.com, Inc. All Rights Reserved.
+ * Copyright (c) 2021-2022 Baidu.com, Inc. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +15,7 @@
  * limitations under the License.
  *
  * Author: Jianzhang Peng (pengjianzhang@baidu.com)
+ *         Jianzhang Peng (pengjianzhang@gmail.com)
  */
 
 #ifndef __PORT_H
@@ -21,7 +23,11 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+
+#include "dpdk.h"
+#ifdef KNI_ENABLE
 #include <rte_kni.h>
+#endif
 
 #include "ip.h"
 #include "ip_range.h"
@@ -61,7 +67,9 @@ struct netif_port {
     struct ip_range client_ip_range; /* only used by client; server use all client ip range */
     struct ip_range server_ip_range;
 
+#ifdef KNI_ENABLE
     struct rte_kni *kni;
+#endif
     struct vxlan *vxlan;
 
     /* bond */

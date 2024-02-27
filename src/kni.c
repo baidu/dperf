@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022-2022 Baidu.com, Inc. All Rights Reserved.
- * Copyright (c) 2022-2023 Jianzhang Peng. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,9 @@
 #include <sys/ioctl.h>
 #include <linux/if.h>
 #include <rte_ethdev.h>
+#ifdef KNI_ENABLE
 #include <rte_kni.h>
+#endif
 #include <rte_bus_pci.h>
 
 #include "config.h"
@@ -35,6 +37,7 @@
 #include "work_space.h"
 #include "bond.h"
 
+#ifdef KNI_ENABLE
 static void kni_set_name(struct config *cfg, struct netif_port *port, char *name);
 
 #if RTE_VERSION >= RTE_VERSION_NUM(19,0,0,0)
@@ -338,3 +341,32 @@ void kni_send(struct work_space *ws)
         kni_send_mbuf(ws, mbufs[i]);
     }
 }
+#else
+int kni_start(struct config *cfg)
+{
+    return 0;
+}
+
+void kni_stop(struct config *cfg)
+{
+}
+
+void kni_recv(struct work_space *ws, struct rte_mbuf *m)
+{
+    mbuf_free2(m);
+}
+
+void kni_send(struct work_space *ws)
+{
+}
+
+void kni_broadcast(struct work_space *ws, struct rte_mbuf *m)
+{
+    mbuf_free2(m);
+}
+
+int kni_link_up(struct config *cfg)
+{
+    return 0;
+}
+#endif

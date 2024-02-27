@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021-2022 Baidu.com, Inc. All Rights Reserved.
- * Copyright (c) 2022-2023 Jianzhang Peng. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1123,13 +1123,13 @@ static int config_parse_tos(int argc, char *argv[], void *data)
 
 static int config_parse_kni(int argc, char *argv[], void *data)
 {
+#if KNI_ENABLE
     struct config *cfg = data;
     const char *ifname = NULL;
 
     if (argc > 2) {
         return -1;
     }
-
     if (cfg->kni == true) {
         printf("duplicate kni\n");
         return -1;
@@ -1155,6 +1155,10 @@ static int config_parse_kni(int argc, char *argv[], void *data)
     cfg->kni = true;
 
     return 0;
+#else
+    printf("warning: not support kni\n");
+    return 0;
+#endif
 }
 
 static int config_parse_jumbo(int argc, __rte_unused char *argv[], void *data)

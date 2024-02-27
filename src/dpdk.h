@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021-2022 Baidu.com, Inc. All Rights Reserved.
- * Copyright (c) 2022-2023 Jianzhang Peng. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,15 @@
 
 #if RTE_VERSION < RTE_VERSION_NUM(21, 11, 0, 0)
 #define RTE_MBUF_F_TX_VLAN  PKT_TX_VLAN
+#endif
+
+#if RTE_VERSION < RTE_VERSION_NUM(23, 0, 0, 0)
+#define KNI_ENABLE
+#endif
+
+#if RTE_VERSION >= RTE_VERSION_NUM(23, 0, 0, 0)
+#define rte_eth_bond_slave_add(a, b)            rte_eth_bond_member_add(a, b)
+#define rte_eth_bond_active_slaves_get(a, b, c) rte_eth_bond_active_members_get(a, b, c)
 #endif
 
 struct config;
