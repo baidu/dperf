@@ -1125,7 +1125,7 @@ static int config_parse_tos(int argc, char *argv[], void *data)
 
 static int config_parse_kni(int argc, char *argv[], void *data)
 {
-#if KNI_ENABLE
+#ifdef KNI_ENABLE
     struct config *cfg = data;
     const char *ifname = NULL;
 
