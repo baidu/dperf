@@ -841,6 +841,12 @@ static inline void tcp_client_process_data(struct work_space *ws, struct socket 
                 }
             }
         }
+
+        if ((tx_flags & TH_FIN) && ws->fast_close) {
+            tcp_reply(ws, sk, TH_RST | TH_ACK);
+            socket_close(sk);
+            goto out;
+        }
     }
 
     if ((sk->state > SK_ESTABLISHED) || ((rx_flags | tx_flags) & TH_FIN)) {

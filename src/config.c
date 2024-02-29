@@ -78,6 +78,7 @@ static int config_parse_http_path(int argc, char *argv[], void *data);
 static int config_parse_lport_range(int argc, char *argv[], void *data);
 static int config_parse_client_hop(int argc, char *argv[], void *data);
 static int config_parse_simd512(int argc, char *argv[], void *data);
+static int config_parse_fast_close(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -127,6 +128,7 @@ static struct config_keyword g_config_keywords[] = {
     {"lport_range", config_parse_lport_range, "Number [Number], default 1 65535"},
     {"client_hop", config_parse_client_hop, ""},
     {"simd512", config_parse_simd512, ""},
+    {"fast_close", config_parse_fast_close, ""},
     {NULL, NULL, NULL}
 };
 
@@ -1385,6 +1387,18 @@ static int config_parse_simd512(int argc, __rte_unused char *argv[], void *data)
     return 0;
 }
 
+static int config_parse_fast_close(int argc, char *argv[], void *data)
+{
+    struct config *cfg = data;
+
+    if (argc != 1) {
+        return -1;
+    }
+
+    cfg->fast_close = true;
+    return 0;
+}
+
 static void config_manual(void)
 {
     config_keyword_help(g_config_keywords);
@@ -2257,6 +2271,25 @@ static void config_check_lport_range(struct config *cfg)
     }
 }
 
+static int config_check_fast_close(struct config *cfg)
+{
+    if (cfg->fast_close == 0) {
+        return 0;
+    }
+
+    if (cfg->server) {
+        printf("Error: \'fast_close\' dose not support server mode\n");
+        return -1;
+    }
+
+    if (cfg->protocol == IPPROTO_UDP) {
+        printf("Error: \'fast_close\' dose not support UDP\n");
+        return -1;
+    }
+
+    return 0;
+}
+
 int config_parse(int argc, char **argv, struct config *cfg)
 {
     int conf = 0;
@@ -2403,6 +2436,10 @@ int config_parse(int argc, char **argv, struct config *cfg)
     config_check_lport_range(cfg);
 
     if (config_check_target(cfg) < 0) {
+        return -1;
+    }
+
+    if (config_check_fast_close(cfg) < 0) {
         return -1;
     }
 
