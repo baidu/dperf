@@ -79,6 +79,7 @@ struct rte_mempool *mbuf_pool_create(const char *str, uint16_t port_id, uint16_t
 
 struct mbuf_free_pool {
     int num;
+    int len;
     struct rte_mbuf *head;
 };
 
@@ -92,10 +93,14 @@ static inline void mbuf_free2(struct rte_mbuf *m)
         m->next = g_mbuf_free_pool.head;
         g_mbuf_free_pool.head = m;
         g_mbuf_free_pool.num++;
+        g_mbuf_free_pool.len += rte_pktmbuf_pkt_len(m);
         if (g_mbuf_free_pool.num >= 128) {
+            m->nb_segs = g_mbuf_free_pool.num;
+            m->pkt_len = g_mbuf_free_pool.len;
             rte_pktmbuf_free(m);
             g_mbuf_free_pool.head = NULL;
             g_mbuf_free_pool.num = 0;
+            g_mbuf_free_pool.len = 0;
         }
     }
 }
