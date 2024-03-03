@@ -178,12 +178,14 @@ static inline void work_space_tx_send(struct work_space *ws, struct rte_mbuf *mb
     }
 }
 
+// refer process_outer_cksums() in https://github.com/DPDK/dpdk/blob/v22.11/app/test-pmd/csumonly.c
+
 static inline void work_space_tx_send_tcp(struct work_space *ws, struct rte_mbuf *mbuf)
 {
     uint64_t ol_flags = RTE_MBUF_F_TX_TCP_CKSUM;
 
     if (ws->vxlan) {
-        ol_flags = RTE_MBUF_F_TX_UDP_CKSUM;
+        ol_flags |= RTE_MBUF_F_TX_OUTER_IPV4 | RTE_MBUF_F_TX_OUTER_IP_CKSUM;
     }
 
     csum_offload_ip_tcpudp(mbuf, ol_flags);
@@ -193,7 +195,13 @@ static inline void work_space_tx_send_tcp(struct work_space *ws, struct rte_mbuf
 
 static inline void work_space_tx_send_udp(struct work_space *ws, struct rte_mbuf *mbuf)
 {
-    csum_offload_ip_tcpudp(mbuf, RTE_MBUF_F_TX_UDP_CKSUM);
+    uint64_t ol_flags = RTE_MBUF_F_TX_UDP_CKSUM;
+
+    if (ws->vxlan) {
+        ol_flags |= RTE_MBUF_F_TX_OUTER_IPV4 | RTE_MBUF_F_TX_OUTER_IP_CKSUM;
+    }
+
+    csum_offload_ip_tcpudp(mbuf, ol_flags);
     net_stats_udp_tx();
     work_space_tx_send(ws, mbuf);
 }
