@@ -21,7 +21,7 @@
 #include "work_space.h"
 #include "port.h"
 
-static void vxlan_set_innter_eth_hdr(struct work_space *ws, struct mbuf_data *mdata)
+static void vxlan_set_inner_eth_hdr(struct work_space *ws, struct mbuf_data *mdata)
 {
     struct vxlan *vxlan = NULL;
     struct eth_hdr *eth = NULL;
@@ -111,7 +111,7 @@ int vxlan_encapsulate(struct mbuf_data *mdata, struct work_space *ws)
     inner_len = mdata->total_len;
     memset(&vxhs, 0, sizeof(struct vxlan_headers));
 
-    vxlan_set_innter_eth_hdr(ws, mdata);
+    vxlan_set_inner_eth_hdr(ws, mdata);
     vxlan_set_eth_hdr(ws, &vxhs.eh);
     vxlan_set_iphdr(ws, &vxhs.iph, inner_len);
     vxlan_set_udphdr(ws, &vxhs.uh, inner_len);
