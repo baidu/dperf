@@ -29,6 +29,7 @@
 #include <rte_prefetch.h>
 #include <rte_mbuf.h>
 #include <rte_compat.h>
+#include <rte_pdump.h>
 
 #include "mbuf.h"
 #include "flow.h"
@@ -136,6 +137,8 @@ int dpdk_init(struct config *cfg, char *argv0)
         return -1;
     }
 
+    rte_pdump_init();
+
     if (port_init_all(cfg) < 0) {
         printf("port init fail\n");
         return -1;
@@ -168,9 +171,11 @@ int dpdk_init(struct config *cfg, char *argv0)
 
 void dpdk_close(struct config *cfg)
 {
+    rte_pdump_uninit();
     flow_flush(cfg);
     port_stop_all(cfg);
     kni_stop(cfg);
+    rte_eal_cleanup();
 }
 
 void dpdk_run(int (*lcore_main)(void*), void* data)
