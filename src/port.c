@@ -19,6 +19,7 @@
  */
 
 #include "port.h"
+#include "flow.h"
 
 #include <rte_ethdev.h>
 #include <rte_version.h>
@@ -268,6 +269,8 @@ int port_init_all(struct config *cfg)
             return -1;
         }
     }
+
+    flow_isolate(cfg);
 
     return 0;
 }

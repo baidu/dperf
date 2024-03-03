@@ -32,6 +32,7 @@
 #include "flow.h"
 
 #include <stdint.h>
+#include <rte_ethdev.h>
 #include <rte_flow.h>
 
 #include "config.h"
@@ -263,5 +264,24 @@ void flow_flush(struct config *cfg)
         }
 
         rte_flow_flush(port->id, NULL);
+    }
+}
+
+void flow_isolate(struct config *cfg)
+{
+    struct netif_port *port = NULL;
+    struct rte_eth_dev_info dev_info;
+    struct rte_flow_error error;
+
+    config_for_each_port(cfg, port) {
+        rte_eth_dev_info_get(port->id, &dev_info);
+        // TODO: support other physical NICs in the future
+        if (strcmp(dev_info.driver_name, "mlx5") != 0) {
+            continue;
+        }
+
+        if (rte_flow_isolate(port->id, 1, &error)) {
+            rte_exit(EXIT_FAILURE, "Failed to flow isolate port %d\n", port->id);
+        }
     }
 }
