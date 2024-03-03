@@ -22,5 +22,6 @@
 struct config;
 int flow_init(struct config *cfg);
 void flow_flush(struct config *cfg);
+void flow_isolate(struct config *cfg);
 
 #endif
