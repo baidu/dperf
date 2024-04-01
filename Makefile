@@ -42,7 +42,12 @@ endif
 CFLAGS += -DHTTP_PARSE
 CFLAGS += -Wno-address-of-packed-member -Wformat-truncation=0 -DALLOW_EXPERIMENTAL_API
 CFLAGS += $(shell $(PKGCONF) --cflags libdpdk)
-LDFLAGS += $(shell $(PKGCONF) --static --libs libdpdk) -lpthread -lrte_net_bond -lrte_bus_pci -lrte_bus_vdev
+
+#fix lower version pkg-config
+LDFLAGS0 = $(shell $(PKGCONF) --static --libs libdpdk) -lpthread -lrte_net_bond -lrte_bus_pci -lrte_bus_vdev
+LDFLAGS1 = $(shell echo $(LDFLAGS0) | sed 's/-Wl,--whole-archive -Wl,--no-whole-archive -Wl,--export-dynamic/-Wl,--whole-archive/')
+LDFLAGS2 = $(shell echo $(LDFLAGS1) | sed 's/.a -latomic/.a -Wl,--no-whole-archive -Wl,--export-dynamic -latomic/')
+LDFLAGS += $(LDFLAGS2)
 
 build/$(APP): $(SRCS-y)
 	mkdir -p build
