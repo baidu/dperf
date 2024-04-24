@@ -41,15 +41,23 @@ static inline void http_parse_request(const uint8_t *data, uint16_t len)
     /*
      * GET /xxx HTTP/1.1
      * First Char is G
+     * POST /XXX HTTP/1.1
+     * Second Char is O
      * */
-    if ((len > 18) && data[0] == 'G') {
-        net_stats_http_get();
+    if (len > 18) {
+        if (data[0] == 'G') {
+            net_stats_http_get();
+        } else if (data[1] == 'O') {
+            net_stats_http_post();
+        } else {
+            net_stats_http_error();
+        }
     } else {
         net_stats_http_error();
     }
 }
 
-#define HTTP_DATA_MIN_SIZE  70
+#define HTTP_DATA_MIN_SIZE  85
 void http_set_payload(struct config *cfg, int payload_size);
 const char *http_get_request(void);
 const char *http_get_response(void);

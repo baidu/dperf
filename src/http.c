@@ -32,18 +32,28 @@
  * Mimimal HTTP/1.1 Packet Size is 128 Bytes.
  * */
 
-#define HTTP_REQ_FORMAT         \
+#define HTTP_GET_FORMAT         \
     "GET %s HTTP/1.1\r\n"       \
     "User-Agent: dperf\r\n"     \
     "Host: %s\r\n"              \
     "Accept: */*\r\n"           \
-    "P: aa\r\n"                 \
+    "Pad: aaaaaaaaaaaaaaa\r\n"  \
     "\r\n"
+
+#define HTTP_POST_FORMAT        \
+    "POST %s HTTP/1.1\r\n"      \
+    "Content-Length:%4d\r\n"    \
+    "User-Agent: dperf\r\n"     \
+    "Host: %s\r\n"              \
+    "Accept: */*\r\n"           \
+    "\r\n"                      \
+    "%s"
 
 /* don't change */
 #define HTTP_RSP_FORMAT         \
     "HTTP/1.1 200 OK\r\n"       \
-    "Content-Length:%11d\r\n"  \
+    "Content-Length:%11d\r\n"   \
+    "Server: dperf\r\n"         \
     "Connection:keep-alive\r\n" \
     "\r\n"                      \
     "%s"
@@ -65,19 +75,31 @@ const char *http_get_response(void)
 static void http_set_payload_client(struct config *cfg, char *dest, int len, int payload_size)
 {
     int pad = 0;
+    int extra_len = 0;
     char buf[MBUF_DATA_SIZE] = {0};
 
+    extra_len = strlen(cfg->http_path) + strlen(cfg->http_host) - strlen(HTTP_HOST_DEFAULT) - strlen(HTTP_PATH_DEFAULT);
     if (payload_size <= 0) {
-        snprintf(dest, len, HTTP_REQ_FORMAT, cfg->http_path, cfg->http_host);
+        if (cfg->http_method == HTTP_METH_POST) {
+            snprintf(dest, len, HTTP_POST_FORMAT, cfg->http_path, 0, cfg->http_host, "");
+        } else {
+            snprintf(dest, len, HTTP_GET_FORMAT, cfg->http_path, cfg->http_host);
+        }
     } else if (payload_size < HTTP_DATA_MIN_SIZE) {
         config_set_payload(cfg, dest, payload_size, 1);
     } else {
-        pad = payload_size - HTTP_DATA_MIN_SIZE;
+        pad = payload_size - HTTP_DATA_MIN_SIZE - extra_len;
         if (pad > 0) {
             config_set_payload(cfg, buf, pad, 0);
+        } else {
+            pad = 0;
         }
-        buf[0] = '/';
-        snprintf(dest, len, HTTP_REQ_FORMAT, buf, cfg->http_host);
+        if (cfg->http_method == HTTP_METH_POST) {
+            snprintf(dest, len, HTTP_POST_FORMAT, cfg->http_path, pad, cfg->http_host, buf);
+        } else {
+            buf[0] = '/';
+            snprintf(dest, len, HTTP_GET_FORMAT, buf, cfg->http_host);
+        }
     }
 }
 
