@@ -203,12 +203,14 @@ static int net_stats_print_http(struct net_stats *stats, char *buf, int buf_len)
     char http_error[STATS_BUF_LEN];
     char http_2xx[STATS_BUF_LEN];
     char http_get[STATS_BUF_LEN];
+    char http_post[STATS_BUF_LEN];
 
     net_stats_format_print(stats->http_2xx, http_2xx, STATS_BUF_LEN);
     net_stats_format_print(stats->http_get, http_get, STATS_BUF_LEN);
+    net_stats_format_print(stats->http_post, http_post, STATS_BUF_LEN);
     net_stats_format_print_err(stats->http_error, http_error, STATS_BUF_LEN);
 
-    SNPRINTF(p, len, "httpGet %s http2XX  %s httpErr  %s\n", http_get, http_2xx, http_error);
+    SNPRINTF(p, len, "httpGet %s httpPost %s http2XX  %s httpErr %s\n", http_get, http_post, http_2xx, http_error);
     return p - buf;
 
 err:

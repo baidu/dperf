@@ -224,7 +224,11 @@ static struct rte_mbuf *tcp_reply(struct work_space *ws, struct socket *sk, uint
     if (tcp_flags & TH_PUSH) {
         if (g_config.server == 0) {
             net_stats_tcp_req();
-            net_stats_http_get();
+            if (g_config.http_method == HTTP_METH_GET) {
+                net_stats_http_get();
+            } else {
+                net_stats_http_post();
+            }
         } else {
             if (ws->send_window == 0) {
                 net_stats_tcp_rsp();

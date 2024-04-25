@@ -67,6 +67,7 @@ struct net_stats {
     uint64_t http_2xx;
     uint64_t tcp_req;
     uint64_t http_get;
+    uint64_t http_post;
     uint64_t tcp_rsp;
     uint64_t http_error;
 
@@ -121,15 +122,16 @@ extern __thread struct net_stats g_net_stats;
 #define net_stats_fin_rt()          do {g_net_stats.fin_rt++;} while (0)
 #define net_stats_ack_rt()          do {g_net_stats.ack_rt++;} while (0)
 #define net_stats_push_rt()         do {g_net_stats.push_rt++;} while (0)
-#define net_stats_ack_dup()          do {g_net_stats.ack_dup++;} while (0)
+#define net_stats_ack_dup()         do {g_net_stats.ack_dup++;} while (0)
 
 #define net_stats_pkt_lost()        do {g_net_stats.pkt_lost++;} while (0)
 
-#define net_stats_tcp_req()        do {g_net_stats.tcp_req++;} while (0)
-#define net_stats_tcp_rsp()        do {g_net_stats.tcp_rsp++;} while (0)
+#define net_stats_tcp_req()         do {g_net_stats.tcp_req++;} while (0)
+#define net_stats_tcp_rsp()         do {g_net_stats.tcp_rsp++;} while (0)
 #define net_stats_http_2xx()        do {g_net_stats.http_2xx++;} while (0)
 #define net_stats_http_error()      do {g_net_stats.http_error++;} while (0)
 #define net_stats_http_get()        do {g_net_stats.http_get++;} while (0)
+#define net_stats_http_post()       do {g_net_stats.http_post++;} while (0)
 #define net_stats_fin_rx()          do {g_net_stats.fin_rx++;} while (0)
 #define net_stats_fin_tx()          do {g_net_stats.fin_tx++;} while (0)
 #define net_stats_syn_rx()          do {g_net_stats.syn_rx++;} while (0)

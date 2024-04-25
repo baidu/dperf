@@ -75,6 +75,7 @@ static int config_parse_quiet(int argc, char *argv[], void *data);
 static int config_parse_tcp_rst(int argc, char *argv[], void *data);
 static int config_parse_http_host(int argc, char *argv[], void *data);
 static int config_parse_http_path(int argc, char *argv[], void *data);
+static int config_parse_http_method(int argc, char *argv[], void *data);
 static int config_parse_lport_range(int argc, char *argv[], void *data);
 static int config_parse_client_hop(int argc, char *argv[], void *data);
 static int config_parse_simd512(int argc, char *argv[], void *data);
@@ -125,6 +126,7 @@ static struct config_keyword g_config_keywords[] = {
     {"tcp_rst", config_parse_tcp_rst, "Number[0-1], default 1"},
     {"http_host", config_parse_http_host, "String, default " HTTP_HOST_DEFAULT},
     {"http_path", config_parse_http_path, "String, default " HTTP_PATH_DEFAULT},
+    {"http_method", config_parse_http_method, "GET|POST, default GET"},
     {"lport_range", config_parse_lport_range, "Number [Number], default 1 65535"},
     {"client_hop", config_parse_client_hop, ""},
     {"simd512", config_parse_simd512, ""},
@@ -920,6 +922,11 @@ static int config_parse_payload_size(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->payload_size > 0) {
+        printf("Error: duplicate payload_size\n");
+        return -1;
+    }
+
     payload_size = config_parse_number(argv[1], true, true);
     if (payload_size <= 0) {
         return -1;
@@ -1324,6 +1331,25 @@ static int config_parse_http_path(int argc, char *argv[], void *data)
     }
 
     strcpy(cfg->http_path, path);
+    return 0;
+}
+
+static int config_parse_http_method(int argc, char *argv[], void *data)
+{
+    int len = 0;
+    struct config *cfg = data;
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    if (strcmp(argv[1], "GET") == 0) {
+        cfg->http_method = HTTP_METH_GET;
+    } else if (strcmp(argv[1], "POST") == 0) {
+        cfg->http_method = HTTP_METH_POST;
+    } else {
+        return -1;
+    }
     return 0;
 }
 
@@ -2224,10 +2250,12 @@ static int config_check_http(struct config *cfg)
     http_host = (cfg->http_host[0] != 0);
     http_path = (cfg->http_path[0] != 0);
 
-    if (cfg->packet_size || cfg->payload_size) {
-        if (http_host || http_path) {
-            printf("Error: The HTTP host/path cannot be set with packet_size or payload_size.\n");
-            return -1;
+    if ((cfg->packet_size || cfg->payload_size) && (cfg->server == 0) && cfg->http) {
+        if (cfg->http_method == HTTP_METH_GET) {
+            if (http_path) {
+                printf("Error: The HTTP path cannot be set with packet_size or payload_size for HTTP GET.\n");
+                return -1;
+            }
         }
     }
 

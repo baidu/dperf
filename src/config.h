@@ -76,6 +76,9 @@
 #define HTTP_HOST_DEFAULT   "dperf"
 #define HTTP_PATH_DEFAULT   "/"
 
+#define HTTP_METH_GET       0
+#define HTTP_METH_POST      1
+
 #define TCP_ACK_DELAY_MAX   1024
 
 #define RSS_NONE            0
@@ -112,6 +115,7 @@ struct config {
     bool tcp_rst;
     bool http;
     bool stats_http;    /* payload size >= HTTP_DATA_MIN_SIZE */
+    uint8_t http_method;
     uint8_t tos;
     uint8_t pipeline;
     uint8_t tx_burst;
