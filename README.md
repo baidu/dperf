@@ -6,14 +6,14 @@ dperf is a DPDK based 100Gbps network performance and load testing software.
 
 ## Advantage
 - High performance：
-  - Based on DPDK, dperf can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of concurrent connections. 
+  - Based on DPDK, dperf can generate huge traffic with a single x86 server: tens of millions of HTTP CPS，hundreds of Gbps throughput and billions of concurrent connections.
 - Detailed statistics：
   - Provides detailed statistics and identify every packet loss.
 - Support multiple scenarios：
-  - Load testing and stability testing for Layer 4 Load Balancer and other Layer 4 gateways 
-  - Network  performance testing for servers on cloud 
-  - Performance test of network package processing capability for NIC and CPU
-  - Can be used as a high performance HTTP server or client for load testing
+  - Load testing and stability testing for Layer 4 Load Balancer and other Layer 4 gateways.
+  - Network  performance testing for servers on cloud.
+  - Performance test of network package processing capability for NIC and CPU.
+  - Can be used as a high performance HTTP server or client for load testing.
 
 ## Performance
 ### HTTP Connections per Second
@@ -123,7 +123,7 @@ Below example will start a HTTP CPS stress test.
 See the website at [https://dperf.org/](https://dperf.org/).
 
 ## Limitation
- - dperf requires that the HTTP message is in one packet, which is not suitable for the test of layer 7 load balancer;
+ - dperf requires that the HTTP message is in one packet, which is not suitable for the test of layer 7 load balancer.
  - dperf requires exclusive use of the network interfaces.
  - dperf does not have routing capability. It is recommended to build a test environment with a switch.
 
