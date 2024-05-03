@@ -108,6 +108,7 @@ struct config {
     bool client_hop;
     bool simd512;
     bool fast_close;
+    bool clear_screen;
     uint8_t rss;
     bool mq_rx_rss;
     uint8_t rss_auto;

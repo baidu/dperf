@@ -80,6 +80,7 @@ static int config_parse_lport_range(int argc, char *argv[], void *data);
 static int config_parse_client_hop(int argc, char *argv[], void *data);
 static int config_parse_simd512(int argc, char *argv[], void *data);
 static int config_parse_fast_close(int argc, char *argv[], void *data);
+static int config_parse_clear_screen(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -131,6 +132,7 @@ static struct config_keyword g_config_keywords[] = {
     {"client_hop", config_parse_client_hop, ""},
     {"simd512", config_parse_simd512, ""},
     {"fast_close", config_parse_fast_close, ""},
+    {"clear_screen", config_parse_clear_screen, ""},
     {NULL, NULL, NULL}
 };
 
@@ -1422,6 +1424,18 @@ static int config_parse_fast_close(int argc, char *argv[], void *data)
     }
 
     cfg->fast_close = true;
+    return 0;
+}
+
+static int config_parse_clear_screen(int argc, char *argv[], void *data)
+{
+    struct config *cfg = data;
+
+    if (argc != 1) {
+        return -1;
+    }
+
+    cfg->clear_screen = true;
     return 0;
 }
 
