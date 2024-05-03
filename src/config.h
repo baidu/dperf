@@ -95,6 +95,12 @@
 #define PIPELINE_MAX        100
 #define PIPELINE_DEFAULT    0
 
+#define LOG_LEVEL_DEFAULT   4
+#define LOG_LEVEL_ERR       4
+#define LOG_LEVEL_WARN      5
+#define LOG_LEVEL_INFO      7
+#define LOG_LEVEL_DEBUG     8
+
 struct config {
     bool server;
     bool keepalive;
@@ -108,6 +114,8 @@ struct config {
     bool client_hop;
     bool simd512;
     bool fast_close;
+    bool clear_screen;
+    uint8_t log_level;
     uint8_t rss;
     bool mq_rx_rss;
     uint8_t rss_auto;

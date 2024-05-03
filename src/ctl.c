@@ -72,6 +72,31 @@ static void ctl_wait_1s(void)
     tick_wait_one_second(&g_last_tv);
 }
 
+static inline void ctl_clear_screen(FILE *fp)
+{
+    if (g_config.quiet || (g_config.clear_screen == false)) {
+        return;
+    }
+
+    if (fp == NULL) {
+        printf("\033[H\033[J");
+    }
+}
+
+static inline void ctl_print_speed(FILE *fp, int *sec)
+{
+    ctl_wait_1s();
+    ctl_clear_screen(fp);
+    net_stats_print_speed(fp, (*sec)++);
+}
+
+static inline void ctl_print_total(FILE *fp)
+{
+    ctl_wait_1s();
+    ctl_clear_screen(fp);
+    net_stats_print_total(fp);
+}
+
 static void ctl_slow_start(FILE *fp, int *seconds)
 {
     int i = 0;
@@ -90,8 +115,7 @@ static void ctl_slow_start(FILE *fp, int *seconds)
         cps = step * i;
         launch_interval = (g_tsc_per_second * launch_num) / cps;
         work_space_set_launch_interval(launch_interval);
-        ctl_wait_1s();
-        net_stats_print_speed(fp, (*seconds)++);
+        ctl_print_speed(fp, seconds);
         if (g_stop) {
             break;
         }
@@ -123,8 +147,7 @@ static void *ctl_thread_main(void *data)
     }
 
     for (i = 0; i < count; i++) {
-        ctl_wait_1s();
-        net_stats_print_speed(fp, seconds++);
+        ctl_print_speed(fp, &seconds);
         if (g_stop) {
             break;
         }
@@ -132,13 +155,11 @@ static void *ctl_thread_main(void *data)
 
     work_space_stop_all();
     for (i = 0; i < DELAY_SEC; i++) {
-        ctl_wait_1s();
-        net_stats_print_speed(fp, seconds++);
+        ctl_print_speed(fp, &seconds);
     }
 
     work_space_exit_all();
-    sleep(1);
-    net_stats_print_total(fp);
+    ctl_print_total(fp);
     ctl_log_close(fp);
 
     return NULL;

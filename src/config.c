@@ -80,6 +80,8 @@ static int config_parse_lport_range(int argc, char *argv[], void *data);
 static int config_parse_client_hop(int argc, char *argv[], void *data);
 static int config_parse_simd512(int argc, char *argv[], void *data);
 static int config_parse_fast_close(int argc, char *argv[], void *data);
+static int config_parse_clear_screen(int argc, char *argv[], void *data);
+static int config_parse_log_level(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -131,6 +133,8 @@ static struct config_keyword g_config_keywords[] = {
     {"client_hop", config_parse_client_hop, ""},
     {"simd512", config_parse_simd512, ""},
     {"fast_close", config_parse_fast_close, ""},
+    {"clear_screen", config_parse_clear_screen, ""},
+    {"log_level", config_parse_log_level, "error|warn|info|debug, default error"},
     {NULL, NULL, NULL}
 };
 
@@ -1425,6 +1429,44 @@ static int config_parse_fast_close(int argc, char *argv[], void *data)
     return 0;
 }
 
+static int config_parse_clear_screen(int argc, char *argv[], void *data)
+{
+    struct config *cfg = data;
+
+    if (argc != 1) {
+        return -1;
+    }
+
+    cfg->clear_screen = true;
+    return 0;
+}
+
+static int config_parse_log_level(int argc, char *argv[], void *data)
+{
+    char *level = NULL;
+    struct config *cfg = data;
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    level = argv[1];
+    if (strcmp(level, "error") == 0) {
+        cfg->log_level = LOG_LEVEL_ERR;
+    } else if (strcmp(level, "warn") == 0) {
+        cfg->log_level = LOG_LEVEL_WARN;
+    } else if (strcmp(level, "info") == 0) {
+        cfg->log_level = LOG_LEVEL_INFO;
+    } else if (strcmp(level, "debug") == 0) {
+        cfg->log_level = LOG_LEVEL_DEBUG;
+    } else {
+        printf("Error: unknown log level %s\n", level);
+        return -1;
+    }
+
+    return 0;
+}
+
 static void config_manual(void)
 {
     config_keyword_help(g_config_keywords);
@@ -2363,6 +2405,9 @@ int config_parse(int argc, char **argv, struct config *cfg)
         return -1;
     }
 
+    if (cfg->log_level == 0) {
+        cfg->log_level = LOG_LEVEL_DEFAULT;
+    }
     if (cfg->protocol == 0) {
         cfg->protocol = IPPROTO_TCP;
     }
