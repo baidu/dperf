@@ -762,17 +762,25 @@ static inline uint8_t http_client_process_data(struct work_space *ws, struct soc
 {
     int ret = 0;
     int8_t tx_flags = 0;
+    uint8_t http_frags = 0;
 
     ret = http_parse_run(sk, data, data_len);
     if (ret == HTTP_PARSE_OK) {
+        if (sk->http_frags < 4) {
+            sk->http_frags++;
+        }
         if ((rx_flags & TH_FIN) == 0) {
             tcp_ack_delay_add(ws, sk);
             return 0;
         }
     } else if (ret == HTTP_PARSE_END) {
+        http_frags = sk->http_frags;
         socket_init_http(sk);
         if (sk->keepalive && ((rx_flags & TH_FIN) == 0)) {
-            tcp_ack_delay_add(ws, sk);
+            /* At most 3 packets are not ACKed */
+            if ((http_frags >= 2) || ((g_config.keepalive_request_interval >= RETRANSMIT_TIMEOUT) && (ws->disable_ack == 0))) {
+                tcp_ack_delay_add(ws, sk);
+            }
             socket_start_keepalive_timer(sk, work_space_tsc(ws));
             return 0;
         } else {
@@ -860,7 +868,7 @@ static inline void tcp_client_process_data(struct work_space *ws, struct socket 
     if (tx_flags != 0) {
         /* delay ack */
         if ((rx_flags & TH_FIN) || (tx_flags != TH_ACK) || (sk->keepalive == 0)
-            || (sk->keepalive && (g_config.keepalive_request_interval >= RETRANSMIT_TIMEOUT))) {
+            || (sk->keepalive && (g_config.keepalive_request_interval >= RETRANSMIT_TIMEOUT) && (ws->disable_ack == 0))) {
             tcp_reply(ws, sk, tx_flags);
         }
     }

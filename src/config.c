@@ -82,6 +82,7 @@ static int config_parse_simd512(int argc, char *argv[], void *data);
 static int config_parse_fast_close(int argc, char *argv[], void *data);
 static int config_parse_clear_screen(int argc, char *argv[], void *data);
 static int config_parse_log_level(int argc, char *argv[], void *data);
+static int config_parse_disable_ack(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -135,6 +136,7 @@ static struct config_keyword g_config_keywords[] = {
     {"fast_close", config_parse_fast_close, ""},
     {"clear_screen", config_parse_clear_screen, ""},
     {"log_level", config_parse_log_level, "error|warn|info|debug, default error"},
+    {"disable_ack", config_parse_disable_ack, ""},
     {NULL, NULL, NULL}
 };
 
@@ -1464,6 +1466,17 @@ static int config_parse_log_level(int argc, char *argv[], void *data)
         return -1;
     }
 
+    return 0;
+}
+
+static int config_parse_disable_ack(int argc, char *argv[], void *data)
+{
+    struct config *cfg = data;
+
+    if (argc != 1) {
+        return -1;
+    }
+    cfg->disable_ack = true;
     return 0;
 }
 

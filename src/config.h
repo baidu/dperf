@@ -115,6 +115,7 @@ struct config {
     bool simd512;
     bool fast_close;
     bool clear_screen;
+    bool disable_ack;
     uint8_t log_level;
     uint8_t rss;
     bool mq_rx_rss;
