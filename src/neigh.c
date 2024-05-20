@@ -63,7 +63,7 @@ int neigh_check_gateway(struct work_space *ws)
     int i = 0;
     int j = 0;
 
-    for (i = 0; i < DELAY_SEC; i++) {
+    for (i = 0; i < NEIGH_SEC; i++) {
         neigh_resolve_gateway_mac_address(ws);
         for (j = 0; j < 1000; j++) {
             if (ws->vxlan) {
