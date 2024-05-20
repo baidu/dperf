@@ -43,6 +43,7 @@
 #define ND_TTL              255
 #define DEFAULT_LAUNCH      4
 #define DELAY_SEC           4
+#define NEIGH_SEC           60
 #define WAIT_DEFAULT        3
 #define SLOW_START_DEFAULT  30
 #define SLOW_START_MIN      10
