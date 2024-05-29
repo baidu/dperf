@@ -41,6 +41,6 @@ void socket_timeout_timer_expire(struct work_space *ws)
     struct socket_timer *timer = NULL;
 
     timer = &g_timeout_timer;
-    timeout_tsc = (RETRANSMIT_TIMEOUT * RETRANSMIT_NUM_MAX) + g_config.keepalive_request_interval;
+    timeout_tsc = (g_config.retransmit_timeout * RETRANSMIT_NUM_MAX) + g_config.keepalive_request_interval;
     socket_timer_run(ws, timer, timeout_tsc, socket_timeout_handler);
 }

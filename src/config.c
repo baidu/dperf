@@ -83,6 +83,7 @@ static int config_parse_fast_close(int argc, char *argv[], void *data);
 static int config_parse_clear_screen(int argc, char *argv[], void *data);
 static int config_parse_log_level(int argc, char *argv[], void *data);
 static int config_parse_disable_ack(int argc, char *argv[], void *data);
+static int config_parse_retransmit_timeout(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -137,6 +138,7 @@ static struct config_keyword g_config_keywords[] = {
     {"clear_screen", config_parse_clear_screen, ""},
     {"log_level", config_parse_log_level, "error|warn|info|debug, default error"},
     {"disable_ack", config_parse_disable_ack, ""},
+    {"retransmit_timeout", config_parse_retransmit_timeout, "Seconds[" DEFAULT_STR(RTO_MIN)"-" DEFAULT_STR(RTO_MAX)"], default " DEFAULT_STR(RTO_DEFAULT)},
     {NULL, NULL, NULL}
 };
 
@@ -1480,6 +1482,24 @@ static int config_parse_disable_ack(int argc, char *argv[], void *data)
     return 0;
 }
 
+static int config_parse_retransmit_timeout(int argc, char *argv[], void *data)
+{
+    int val = 0;
+    struct config *cfg = data;
+
+    if (argc != 2) {
+        return -1;
+    }
+
+    val = atoi(argv[1]);
+    if ((val < RTO_MIN) || (val > RTO_MAX)) {
+        return -1;
+    }
+
+    cfg->retransmit_timeout_sec = val;
+    return 0;
+}
+
 static void config_manual(void)
 {
     config_keyword_help(g_config_keywords);
@@ -1986,7 +2006,7 @@ static int config_check_target(struct config *cfg)
     }
 
     cps = cfg->cps / cfg->cpu_num;
-    cps_cc = cps * RETRANSMIT_TIMEOUT_SEC;
+    cps_cc = cps * cfg->retransmit_timeout_sec;
     cc = cfg->cc / cfg->cpu_num;
     for (i = 0; i < cfg->cpu_num; i++) {
         socket_num = config_get_total_socket_num(cfg, i);
@@ -2418,9 +2438,14 @@ int config_parse(int argc, char **argv, struct config *cfg)
         return -1;
     }
 
+    if (cfg->retransmit_timeout_sec == 0) {
+        cfg->retransmit_timeout_sec = RTO_DEFAULT;
+    }
+
     if (cfg->log_level == 0) {
         cfg->log_level = LOG_LEVEL_DEFAULT;
     }
+
     if (cfg->protocol == 0) {
         cfg->protocol = IPPROTO_TCP;
     }
@@ -2586,4 +2611,5 @@ void config_set_tsc(struct config *cfg, uint64_t hz)
     }
 
     cfg->keepalive_request_interval = tsc;
+    cfg->retransmit_timeout = hz * cfg->retransmit_timeout_sec;
 }
