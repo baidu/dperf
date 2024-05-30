@@ -762,17 +762,28 @@ static inline uint8_t http_client_process_data(struct work_space *ws, struct soc
 {
     int ret = 0;
     int8_t tx_flags = 0;
+    uint8_t http_frags = 0;
 
     ret = http_parse_run(sk, data, data_len);
     if (ret == HTTP_PARSE_OK) {
+        if (sk->http_frags < 4) {
+            sk->http_frags++;
+        }
         if ((rx_flags & TH_FIN) == 0) {
             tcp_ack_delay_add(ws, sk);
             return 0;
         }
     } else if (ret == HTTP_PARSE_END) {
+        http_frags = sk->http_frags;
         socket_init_http(sk);
         if (sk->keepalive && ((rx_flags & TH_FIN) == 0)) {
-            tcp_ack_delay_add(ws, sk);
+            /* we should ack now:
+             * 1. 3 http fragments are not ACKed
+             * 2. we want ack each data quickly(disable_ack == 0), except we will send out our next request shortly.
+             * */
+            if ((http_frags >= 2) || ((g_config.keepalive_request_interval >= g_config.retransmit_timeout) && (ws->disable_ack == 0))) {
+                tcp_ack_delay_add(ws, sk);
+            }
             socket_start_keepalive_timer(sk, work_space_tsc(ws));
             return 0;
         } else {
@@ -860,7 +871,7 @@ static inline void tcp_client_process_data(struct work_space *ws, struct socket 
     if (tx_flags != 0) {
         /* delay ack */
         if ((rx_flags & TH_FIN) || (tx_flags != TH_ACK) || (sk->keepalive == 0)
-            || (sk->keepalive && (g_config.keepalive_request_interval >= RETRANSMIT_TIMEOUT))) {
+            || (sk->keepalive && (g_config.keepalive_request_interval >= g_config.retransmit_timeout) && (ws->disable_ack == 0))) {
             tcp_reply(ws, sk, tx_flags);
         }
     }
@@ -1016,7 +1027,7 @@ static int tcp_client_socket_timer_process(struct work_space *ws)
     struct socket_timer *rt_timer = &g_retransmit_timer;
     struct socket_timer *kp_timer = &g_keepalive_timer;
 
-    socket_timer_run(ws, rt_timer, RETRANSMIT_TIMEOUT, tcp_do_retransmit);
+    socket_timer_run(ws, rt_timer, g_config.retransmit_timeout, tcp_do_retransmit);
     if (g_config.keepalive) {
         socket_timer_run(ws, kp_timer, g_config.keepalive_request_interval, tcp_do_keepalive);
     }
@@ -1026,10 +1037,12 @@ static int tcp_client_socket_timer_process(struct work_space *ws)
 
 static inline int tcp_server_socket_timer_process(struct work_space *ws)
 {
+    uint64_t timeout = 0;
     struct socket_timer *rt_timer = &g_retransmit_timer;
 
+    timeout = g_config.retransmit_timeout + (g_config.retransmit_timeout / 10);
     /* server delays sending by 0.1s to avoid simultaneous retransmission */
-    socket_timer_run(ws, rt_timer, RETRANSMIT_TIMEOUT + (RETRANSMIT_TIMEOUT / 10), tcp_do_retransmit);
+    socket_timer_run(ws, rt_timer, timeout, tcp_do_retransmit);
     return 0;
 }
 

@@ -275,7 +275,7 @@ static inline int udp_client_socket_timer_process(struct work_space *ws)
     if (g_config.keepalive) {
         socket_timer_run(ws, kp_timer, g_config.keepalive_request_interval, udp_socket_keepalive_timer_handler);
     } else {
-        socket_timer_run(ws, rt_timer, RETRANSMIT_TIMEOUT, udp_retransmit_handler);
+        socket_timer_run(ws, rt_timer, g_config.retransmit_timeout, udp_retransmit_handler);
     }
     return 0;
 }
