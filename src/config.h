@@ -102,6 +102,11 @@
 #define LOG_LEVEL_INFO      7
 #define LOG_LEVEL_DEBUG     8
 
+/* retransmit timeout */
+#define RTO_DEFAULT         2
+#define RTO_MIN             2
+#define RTO_MAX             300
+
 struct config {
     bool server;
     bool keepalive;
@@ -116,6 +121,7 @@ struct config {
     bool simd512;
     bool fast_close;
     bool clear_screen;
+    bool disable_ack;
     uint8_t log_level;
     uint8_t rss;
     bool mq_rx_rss;
@@ -141,6 +147,9 @@ struct config {
     char kni_ifname[KNI_NAMESIZE];
     int af;
 
+    uint32_t retransmit_timeout_sec;
+    /* tsc */
+    uint64_t retransmit_timeout;
     uint64_t keepalive_request_interval_us;
     /* tsc */
     uint64_t keepalive_request_interval;
