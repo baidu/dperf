@@ -1,5 +1,42 @@
 # Changelog
 
+## v1.7.0 - 2024-06-06
+### Added
+
+- trim ipv4/ipv6 options
+
+- send http post requests
+
+- dpdk pdump
+
+- fast_close: use RST to close connections
+
+- support DPDK-23.11 and DPDK-24
+
+- enable simd512
+
+- disable ack
+
+- configure retransmit timeout
+
+### Changed
+
+- config DPDK log level
+
+- clear_screen: dperf can clear screen output and make the screen cleaner
+
+- static linking
+
+### Fixed
+
+- dpdk cleanup
+
+- CFLAGS override
+
+- missspell
+
+- don't clear sequences in time-wait state
+
 ## v1.6.0 - 2023-10-10
 ### Added
 

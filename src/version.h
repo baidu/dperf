@@ -21,6 +21,6 @@
 #ifndef __VERSION_H
 #define __VERSION_H
 
-#define VERSION "1.7.0-dev"
+#define VERSION "1.7.0"
 
 #endif
