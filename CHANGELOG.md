@@ -7,7 +7,7 @@
 
 - dpdk pdump
 
-    thanks @zhangpengfei-xyz
+    thanks ZhangPengfei
 
 - fast_close: use RST to close connections
 
@@ -27,21 +27,21 @@
 
 - static linking
 
-    thanks @zhangpengfei-xyz
+    thanks ZhangPengfei
 
 ### Fixed
 
 - dpdk cleanup
 
-    thanks @zhangpengfei-xyz
+    thanks ZhangPengfei
 
 - CFLAGS override
 
-    thanks @zhangpengfei-xyz
+    thanks ZhangPengfei
 
 - missspell
 
-    thanks @zhangpengfei-xyz
+    thanks ZhangPengfei
 
 - don't clear sequences in time-wait state
 
