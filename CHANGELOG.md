@@ -3,11 +3,11 @@
 ## v1.7.0 - 2024-06-06
 ### Added
 
-- trim ipv4/ipv6 options
-
 - send http post requests
 
 - dpdk pdump
+
+    thanks @zhangpengfei-xyz
 
 - fast_close: use RST to close connections
 
@@ -27,13 +27,21 @@
 
 - static linking
 
+    thanks @zhangpengfei-xyz
+
 ### Fixed
 
 - dpdk cleanup
 
+    thanks @zhangpengfei-xyz
+
 - CFLAGS override
 
+    thanks @zhangpengfei-xyz
+
 - missspell
+
+    thanks @zhangpengfei-xyz
 
 - don't clear sequences in time-wait state
 
