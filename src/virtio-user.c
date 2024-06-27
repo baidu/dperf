@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022-2022 Baidu.com, Inc. All Rights Reserved.
- * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
+ * Copyright (c) 2022-2023 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@
 #include <linux/if.h>
 #include <rte_ethdev.h>
 #include <rte_kni.h>
+#include <rte_dev.h>
 #include <rte_bus_pci.h>
 
 #include "config.h"
@@ -35,97 +36,30 @@
 #include "work_space.h"
 #include "bond.h"
 
-static void kni_set_name(struct config *cfg, struct netif_port *port, char *name);
+#define VDEV_NAME_SIZE 256
+#define TX_DESC_PER_QUEUE 512
+#define RX_DESC_PER_QUEUE 512
+#define VDEV_NAME_FMT "virtio_user%u"
+#define VDEV_IFACE_ARGS_FMT "path=/dev/vhost-net,queues=%u,queue_size=%u,iface=%s,mac=%02X:%02X:%02X:%02X:%02X:%02X"
+#define VDEV_RING_SIZE 1024
+#define QUEUE_NUM 1
 
-#if RTE_VERSION >= RTE_VERSION_NUM(19,0,0,0)
-static int kni_set_mtu(uint16_t port_id, struct rte_kni_conf *conf)
-{
-    int ret = 0;
-    struct rte_eth_dev_info dev_info;
+#define RTE_ETHER_ADDR_BYTES(mac_addrs)	 ((mac_addrs)->addr_bytes[0]), \
+                     ((mac_addrs)->addr_bytes[1]), \
+                     ((mac_addrs)->addr_bytes[2]), \
+                     ((mac_addrs)->addr_bytes[3]), \
+                     ((mac_addrs)->addr_bytes[4]), \
+                     ((mac_addrs)->addr_bytes[5])
 
-    ret = rte_eth_dev_info_get(port_id, &dev_info);
-    if (ret != 0) {
-        return -1;
-    }
-
-    conf->min_mtu = dev_info.min_mtu;
-    conf->max_mtu = dev_info.max_mtu;
-	rte_eth_dev_get_mtu(port_id, &conf->mtu);
-    return 0;
-}
-#else
-static int kni_set_mtu(__rte_unused uint16_t port_id, __rte_unused struct rte_kni_conf *conf)
-{
-    return 0;
-}
-#endif
-
-#if RTE_VERSION >= RTE_VERSION_NUM(18,0,0,0)
-/* set mac before rte_kni_alloc */
-static int kni_set_mac(struct netif_port *port, struct rte_kni_conf *conf)
-{
-    memcpy(&(conf->mac_addr), &port->local_mac, ETH_ADDR_LEN);
-    return 0;
-}
-
-static int kni_set_pci(__rte_unused uint16_t port_id, __rte_unused struct rte_kni_conf *conf)
-{
-    return 0;
-}
-
-static int kni_set_hwaddr(__rte_unused struct config *cfg, __rte_unused struct netif_port *port)
-{
-    return 0;
-}
-#else
-static int kni_set_mac(__rte_unused struct netif_port *port, __rte_unused struct rte_kni_conf *conf)
-{
-    return 0;
-}
-
-static int kni_set_pci(uint16_t port_id, struct rte_kni_conf *conf)
-{
-    struct rte_eth_dev_info dev_info;
-
-    memset(&dev_info, 0, sizeof(dev_info));
-    rte_eth_dev_info_get(port_id, &dev_info);
-
-    if (dev_info.pci_dev) {
-        conf->addr = dev_info.pci_dev->addr;
-        conf->id = dev_info.pci_dev->id;
-    }
-
-    return 0;
-}
-
-/* DPDK-17 need to set MAC by ioctl after rte_kni_alloc */
-static int kni_set_hwaddr(struct config *cfg, struct netif_port *port)
-{
-    int fd = -1;
-    int ret = -1;
-    struct ifreq ifr;
-
-    fd = socket(PF_INET, SOCK_DGRAM, 0);
-    if (fd < 0) {
-        return -1;
-    }
-
-    memset(&ifr, 0, sizeof(struct ifreq));
-    kni_set_name(cfg, port, ifr.ifr_name);
-
-    memcpy(ifr.ifr_hwaddr.sa_data, &port->local_mac, ETH_ADDR_LEN);
-    ifr.ifr_hwaddr.sa_family = 1;    /* ARPHRD_ETHER */
-
-    if (ioctl(fd, SIOCSIFHWADDR, &ifr) < 0) {
-        printf("Error: kni set hwaddr\n");
-    } else {
-        ret = 0;
-    }
-
-    close(fd);
-    return ret;
-}
-#endif
+static const struct rte_eth_conf default_port_conf = {
+    .rxmode = {
+        .max_rx_pkt_len = ETHER_MAX_LEN,
+        .offloads = DEV_RX_OFFLOAD_TCP_LRO | DEV_RX_OFFLOAD_JUMBO_FRAME,
+    },
+    .txmode = {
+        .mq_mode = ETH_MQ_TX_NONE,
+    },
+};
 
 static void kni_set_name(struct config *cfg, struct netif_port *port, char *name)
 {
@@ -136,45 +70,98 @@ static void kni_set_name(struct config *cfg, struct netif_port *port, char *name
      * we want ifname id starting from zero.
      * */
     idx = port - &(cfg->ports[0]);
-    snprintf(name, RTE_KNI_NAMESIZE, "%s%d", cfg->kni_ifname, idx);
+    // do this because server and client could be on same machine in my env
+    // which kni hard to achieve, because in one ns can only open one kni instance
+    if (cfg->server) {
+        snprintf(name, VDEV_NAME_SIZE, "%ss%1d", cfg->kni_ifname, idx);
+    } else {
+        snprintf(name, VDEV_NAME_SIZE, "%sc%1d", cfg->kni_ifname, idx);
+    }
 }
 
-static struct rte_kni *kni_alloc(struct config *cfg, struct netif_port *port)
+
+static inline int
+configure_vdev(uint16_t port_id, struct rte_mempool *mb_pool)
 {
-    uint16_t port_id = 0;
-    struct rte_kni *kni = NULL;
-    struct rte_mempool *mbuf_pool = NULL;
-    struct rte_kni_conf conf;
+	struct rte_ether_addr addr;
+	int ret;
 
-    /* the first thread of a port process this kni */
-    mbuf_pool = port->mbuf_pool[0];
-    port_id = port->id;
-    memset(&conf, 0, sizeof(conf));
+	if (!rte_eth_dev_is_valid_port(port_id))
+		return -1;
 
-    conf.group_id = port_id;
-    conf.mbuf_size = RTE_MBUF_DEFAULT_DATAROOM;
+	ret = rte_eth_dev_configure(port_id, QUEUE_NUM, QUEUE_NUM,&default_port_conf);
+	if (ret != 0)
+		rte_exit(EXIT_FAILURE, "dev config failed\n");
 
-    kni_set_name(cfg, port, conf.name);
+    int i = 0;
+    for (; i < QUEUE_NUM; ++i) {
+        ret = rte_eth_tx_queue_setup(port_id, i, TX_DESC_PER_QUEUE,
+                rte_eth_dev_socket_id(port_id), NULL);
+        if (ret < 0)
+        {
+            rte_exit(EXIT_FAILURE, "queue setup failed\n");
+        }
+            
+        ret = rte_eth_rx_queue_setup(port_id, i, RX_DESC_PER_QUEUE,
+                rte_eth_dev_socket_id(port_id), NULL, mb_pool);
+        if (ret < 0)
+        {
+            rte_exit(EXIT_FAILURE, "queue setup failed\n");
+        }
+    }
+        
 
-    if (kni_set_mtu(port_id, &conf) < 0) {
-        return NULL;
+	ret = rte_eth_dev_start(port_id);
+	if (ret < 0)
+    {
+        rte_exit(EXIT_FAILURE, "dev start failed\n");
+    }
+		
+
+	ret = rte_eth_macaddr_get(port_id, &addr);
+	if (ret != 0) {
+        rte_exit(EXIT_FAILURE, "macaddr get failed\n");
     }
 
-    if (kni_set_mac(port, &conf) < 0) {
-        return NULL;
+	printf("Port %u MAC: %02"PRIx8" %02"PRIx8" %02"PRIx8
+			" %02"PRIx8" %02"PRIx8" %02"PRIx8"\n",
+			port_id,
+			addr.addr_bytes[0], addr.addr_bytes[1],
+			addr.addr_bytes[2], addr.addr_bytes[3],
+			addr.addr_bytes[4], addr.addr_bytes[5]);
+
+	return 0;
+}
+
+static void *kni_alloc(struct config *cfg, struct netif_port *port)
+{
+    void *kni = NULL;
+    uint16_t port_id;
+    char kernel_name[VDEV_NAME_SIZE];
+	char vdev_args[VDEV_NAME_SIZE];
+    char vdev_name[VDEV_NAME_SIZE];
+
+    kni_set_name(cfg, port, kernel_name);
+
+    snprintf(vdev_name, VDEV_NAME_SIZE, VDEV_NAME_FMT, port - &(cfg->ports[0]));
+
+    snprintf(vdev_args, sizeof(vdev_args),
+             VDEV_IFACE_ARGS_FMT, QUEUE_NUM,
+            VDEV_RING_SIZE, kernel_name, RTE_ETHER_ADDR_BYTES((struct rte_ether_addr*)&port->local_mac));
+    if (rte_eal_hotplug_add("vdev", vdev_name,
+                vdev_args) < 0) {
+        rte_exit(EXIT_FAILURE,
+            "vdev creation failed:%s:%d\n",
+            __func__, __LINE__);
     }
-
-    if (kni_set_pci(port_id, &conf) < 0) {
-        return NULL;
+    if (rte_eth_dev_get_port_by_name(vdev_name, &port_id) != 0) {
+        rte_eal_hotplug_remove("vdev", vdev_name);
+        rte_exit(EXIT_FAILURE,
+            "cannot find added vdev %s:%s:%d\n",
+            vdev_name, __func__, __LINE__);
     }
-
-    kni = rte_kni_alloc(mbuf_pool, &conf, NULL);
-
-    if (kni_set_hwaddr(cfg, port) < 0) {
-        rte_kni_release(kni);
-        return NULL;
-    }
-
+    configure_vdev(port_id, port->mbuf_pool[0]);
+    kni = (void *)(uintptr_t)port_id;
     return kni;
 }
 
@@ -241,11 +228,13 @@ static void kni_free(struct config *cfg)
         if (port->kni == NULL) {
             continue;
         }
+        char vdev_name[VDEV_NAME_SIZE];
+        if (rte_eth_dev_get_name_by_port((uintptr_t)port->kni, vdev_name))
+            continue;
 
-        if (rte_kni_release(port->kni)) {
-            printf("failed to free kni\n");
-        }
+        rte_eal_hotplug_remove("vdev", vdev_name);
         port->kni = NULL;
+
         if (!port->kni_ring) {
             continue;
         }
@@ -259,11 +248,11 @@ static void kni_free(struct config *cfg)
  */
 static int kni_create(struct config *cfg)
 {
-    struct rte_kni *kni = NULL;
+    void *kni = NULL;
     struct netif_port *port = NULL;
     char ring_name[RTE_RING_NAMESIZE];
 
-    rte_kni_init(NETIF_PORT_MAX);
+    // rte_kni_init(NETIF_PORT_MAX);
     config_for_each_port(cfg, port) {
         kni = kni_alloc(cfg, port);
         if (kni == NULL) {
@@ -299,7 +288,7 @@ void kni_stop(struct config *cfg)
 void kni_recv(struct work_space *ws, struct rte_mbuf *m)
 {
     struct netif_port *port = NULL;
-    struct rte_kni *kni = NULL;
+    void *kni = NULL;
     struct rte_mbuf *mbufs[NB_RXD];
     struct rte_ring *kr = NULL;
     int i, cnt, n = 0;
@@ -331,10 +320,9 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
     }
     int send_n = 0;
     if (kni && n) {
-        send_n = rte_kni_tx_burst(kni, mbufs, n);
+        send_n = rte_eth_tx_burst((uint16_t)(uintptr_t)kni, 0, mbufs, n);
         net_stats_kni_rx(send_n);
     }
-
     for (i = send_n; i < n; ++i) {
         mbuf_free2(mbufs[i]);
     }
@@ -366,15 +354,16 @@ void kni_send(struct work_space *ws)
     int num = 0;
     struct rte_mbuf *mbufs[NB_RXD];
     struct netif_port *port = NULL;
-    struct rte_kni *kni = NULL;
+    void *kni = NULL;
 
     port = ws->port;
-    kni = port->kni;
+    kni = port->kni;    
     if(ws->queue_id == 0) {
-        rte_kni_handle_request(kni);
-        num = rte_kni_rx_burst(kni, mbufs, NB_RXD);
+    // rte_kni_handle_request(kni);
+        num = rte_eth_rx_burst((uint16_t)(uintptr_t)kni, 0, mbufs, NB_RXD);
         for (i = 0; i < num; i++) {
             kni_send_mbuf(ws, mbufs[i]);
         }
     }
 }
+
