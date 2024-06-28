@@ -82,10 +82,6 @@
 #define RTE_MBUF_F_TX_VLAN  PKT_TX_VLAN
 #endif
 
-#if RTE_VERSION < RTE_VERSION_NUM(23, 0, 0, 0)
-#define KNI_ENABLE
-#endif
-
 #if RTE_VERSION >= RTE_VERSION_NUM(23, 0, 0, 0)
 #define rte_eth_bond_slave_add(a, b)            rte_eth_bond_member_add(a, b)
 #define rte_eth_bond_active_slaves_get(a, b, c) rte_eth_bond_active_members_get(a, b, c)
