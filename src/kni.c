@@ -302,24 +302,29 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
     struct rte_kni *kni = NULL;
     struct rte_mbuf *mbufs[NB_RXD];
     struct rte_ring *kr = NULL;
-    int i, cnt, n = 0;
+    int i, cnt, n = 0, send_n=0;
 
     port = ws->port;
     kni = port->kni;
     kr = port->kni_ring;
-    // core that holds queue 0 is in charge of this port's kni work
-    // other cores send mbuf to q0 core by kni_ring
+    /**
+     * core that holds queue 0 is in charge of this port's kni work
+     * other cores send mbuf to q0 core by kni_ring
+     * */ 
     if (likely(ws->queue_id != 0)) {
         if (m) {
-            if (likely(kr)) {
-                rte_ring_enqueue(kr, (void*)m);
-            } else {
-                mbuf_free2(m); // drop kni 
+            /***
+             * 1. send to kni_ring 
+             * 2. drop packets in other situations
+            */
+            if (likely(kr && rte_ring_enqueue(kr, (void*)m) == 0)) {
+                return;
             }
+            mbuf_free2(m); 
         }
         return;
     }
-    // core holds q0
+    /* core holds q0 */
     if(m) {
         mbufs[n++] = m;
     }
@@ -329,7 +334,6 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
             n += rte_ring_dequeue_bulk(kr, (void**)&mbufs[n], cnt, NULL);
         }
     }
-    int send_n = 0;
     if (kni && n) {
         send_n = rte_kni_tx_burst(kni, mbufs, n);
         net_stats_kni_rx(send_n);

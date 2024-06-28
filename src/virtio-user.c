@@ -26,7 +26,6 @@
 #include <sys/ioctl.h>
 #include <linux/if.h>
 #include <rte_ethdev.h>
-#include <rte_kni.h>
 #include <rte_dev.h>
 #include <rte_bus_pci.h>
 
@@ -70,8 +69,10 @@ static void kni_set_name(struct config *cfg, struct netif_port *port, char *name
      * we want ifname id starting from zero.
      * */
     idx = port - &(cfg->ports[0]);
-    // do this because server and client could be on same machine in my env
-    // which kni hard to achieve, because in one ns can only open one kni instance
+    /* 
+     * do this because server and client could be on same machine in my env
+     * which kni hard to achieve, because in one ns can only open one kni instance
+     * */
     if (cfg->server) {
         snprintf(name, VDEV_NAME_SIZE, "%ss%1d", cfg->kni_ifname, idx);
     } else {
@@ -252,7 +253,6 @@ static int kni_create(struct config *cfg)
     struct netif_port *port = NULL;
     char ring_name[RTE_RING_NAMESIZE];
 
-    // rte_kni_init(NETIF_PORT_MAX);
     config_for_each_port(cfg, port) {
         kni = kni_alloc(cfg, port);
         if (kni == NULL) {
@@ -291,24 +291,29 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
     void *kni = NULL;
     struct rte_mbuf *mbufs[NB_RXD];
     struct rte_ring *kr = NULL;
-    int i, cnt, n = 0;
+    int i, cnt, n = 0, send_n=0;
 
     port = ws->port;
     kni = port->kni;
     kr = port->kni_ring;
-    // core that holds queue 0 is in charge of this port's kni work
-    // other cores send mbuf to q0 core by kni_ring
+    /**
+     * core that holds queue 0 is in charge of this port's kni work
+     * other cores send mbuf to q0 core by kni_ring
+     * */ 
     if (likely(ws->queue_id != 0)) {
         if (m) {
-            if (likely(kr)) {
-                rte_ring_enqueue(kr, (void*)m);
-            } else {
-                mbuf_free2(m); // drop kni 
+            /***
+             * 1. send to kni_ring 
+             * 2. drop packets in other situations
+            */
+            if (likely(kr && rte_ring_enqueue(kr, (void*)m) == 0)) {
+                return;
             }
+            mbuf_free2(m); 
         }
         return;
     }
-    // core holds q0
+    /* core holds q0 */
     if(m) {
         mbufs[n++] = m;
     }
@@ -318,7 +323,6 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
             n += rte_ring_dequeue_bulk(kr, (void**)&mbufs[n], cnt, NULL);
         }
     }
-    int send_n = 0;
     if (kni && n) {
         send_n = rte_eth_tx_burst((uint16_t)(uintptr_t)kni, 0, mbufs, n);
         net_stats_kni_rx(send_n);
@@ -359,7 +363,6 @@ void kni_send(struct work_space *ws)
     port = ws->port;
     kni = port->kni;    
     if(ws->queue_id == 0) {
-    // rte_kni_handle_request(kni);
         num = rte_eth_rx_burst((uint16_t)(uintptr_t)kni, 0, mbufs, NB_RXD);
         for (i = 0; i < num; i++) {
             kni_send_mbuf(ws, mbufs[i]);
