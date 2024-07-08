@@ -30,6 +30,9 @@
 #include <rte_mbuf.h>
 #include <rte_compat.h>
 #include <rte_pdump.h>
+#if RTE_VERSION >= RTE_VERSION_NUM(20, 0, 0, 0)
+#include <rte_vect.h>
+#endif
 
 #include "mbuf.h"
 #include "flow.h"
