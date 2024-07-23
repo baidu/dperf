@@ -14,7 +14,7 @@ RTE_TARGET ?= x86_64-native-linuxapp-gcc
 include $(RTE_SDK)/mk/rte.vars.mk
 CFLAGS += -O3 -g -I./src
 CFLAGS += -DHTTP_PARSE
-CFLAGS += $(WERROR_FLAGS) -Wno-address-of-packed-member -Wformat-truncation=0
+CFLAGS += $(WERROR_FLAGS) -Wno-address-of-packed-member
 
 ifdef DPERF_DEBUG
 CFLAGS += -DDPERF_DEBUG
@@ -40,7 +40,7 @@ CFLAGS += -DDPERF_DEBUG
 endif
 
 CFLAGS += -DHTTP_PARSE
-CFLAGS += -Wno-address-of-packed-member -Wformat-truncation=0 -DALLOW_EXPERIMENTAL_API
+CFLAGS += -Wno-address-of-packed-member -DALLOW_EXPERIMENTAL_API
 CFLAGS += $(shell $(PKGCONF) --cflags libdpdk)
 
 #fix lower version pkg-config
