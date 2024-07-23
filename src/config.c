@@ -77,6 +77,7 @@ static int config_parse_http_host(int argc, char *argv[], void *data);
 static int config_parse_http_path(int argc, char *argv[], void *data);
 static int config_parse_http_method(int argc, char *argv[], void *data);
 static int config_parse_lport_range(int argc, char *argv[], void *data);
+static int config_parse_client_port_range(int argc, char *argv[], void *data);
 static int config_parse_client_hop(int argc, char *argv[], void *data);
 static int config_parse_simd512(int argc, char *argv[], void *data);
 static int config_parse_fast_close(int argc, char *argv[], void *data);
@@ -132,6 +133,7 @@ static struct config_keyword g_config_keywords[] = {
     {"http_path", config_parse_http_path, "String, default " HTTP_PATH_DEFAULT},
     {"http_method", config_parse_http_method, "GET|POST, default GET"},
     {"lport_range", config_parse_lport_range, "Number [Number], default 1 65535"},
+    {"client_port_range", config_parse_client_port_range, "Number [Number], default 1 65535"},
     {"client_hop", config_parse_client_hop, ""},
     {"simd512", config_parse_simd512, ""},
     {"fast_close", config_parse_fast_close, ""},
@@ -1362,6 +1364,12 @@ static int config_parse_http_method(int argc, char *argv[], void *data)
 }
 
 static int config_parse_lport_range(int argc, char *argv[], void *data)
+{
+    printf("Warning: 'lport_range' is deprecated. Please use 'client_port_range'.\n");
+    return config_parse_client_port_range(argc, argv, data);
+}
+
+static int config_parse_client_port_range(int argc, char *argv[], void *data)
 {
     int lport_min = 1;
     int lport_max = NETWORK_PORT_NUM - 1;
