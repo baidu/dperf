@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021-2022 Baidu.com, Inc. All Rights Reserved.
- * Copyright (c) 2022-2023 Jianzhang Peng. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,6 @@
 #ifndef __VERSION_H
 #define __VERSION_H
 
-#define VERSION "1.7.0"
+#define VERSION "1.8.0-dev"
 
 #endif
