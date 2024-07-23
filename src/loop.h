@@ -102,6 +102,32 @@ out:
     mbuf_free(m);
 }
 
+/*
+ * return:
+ *    0 success
+ *  < 0 fail
+ * */
+static inline int ipv4_trim_options(struct rte_mbuf *m)
+{
+    uint16_t skip = 0;
+    struct eth_hdr *eth = NULL;
+    struct iphdr *iph = NULL;
+
+    eth = mbuf_eth_hdr(m);
+    iph = mbuf_ip_hdr(m);
+
+    if (unlikely(iph->ihl < 5)) {
+        return -1;
+    }
+
+    skip = (iph->ihl * 4) - 20;
+    rte_pktmbuf_adj(m, skip);
+    iph->ihl = 5;
+    iph->tot_len = htons(ntohs(iph->tot_len) - skip);
+    memmove(eth + skip, eth, sizeof(struct eth_hdr) + sizeof(struct iphdr));
+    return 0;
+}
+
 /* ipv4 packets entry */
 static inline void ipv4_input(struct work_space *ws, struct rte_mbuf *m,
     l4_input_t tcp_input, l4_input_t udp_input)
@@ -112,24 +138,27 @@ static inline void ipv4_input(struct work_space *ws, struct rte_mbuf *m,
 
     net_stats_rx(m);
     eth = mbuf_eth_hdr(m);
-    iph = mbuf_ip_hdr(m);
     if (likely(eth->type == htons(ETHER_TYPE_IPv4))) {
         if (unlikely(m->ol_flags & (RTE_MBUF_F_RX_IP_CKSUM_BAD | RTE_MBUF_F_RX_L4_CKSUM_BAD))) {
             net_stats_rx_bad();
-            mbuf_free(m);
-            return;
+            goto drop;
         }
 
         iph = mbuf_ip_hdr(m);
         proto = iph->protocol;
         /* don't process ip options */
-        if (unlikely((iph->ihl != 5) || rte_ipv4_frag_pkt_is_fragmented((const struct rte_ipv4_hdr *)iph))) {
+        if (unlikely(rte_ipv4_frag_pkt_is_fragmented((const struct rte_ipv4_hdr *)iph))) {
             net_stats_rx_bad();
-            mbuf_free(m);
-            return;
+            goto drop;
         }
 
         net_stats_tos_ipv4_rx(ws, iph);
+        if (unlikely(iph->ihl != 5)) {
+            if (unlikely(ipv4_trim_options(m) < 0)) {
+                goto drop;
+            }
+        }
+
         if (likely(proto == IPPROTO_TCP)) {
             net_stats_tcp_rx();
             return tcp_input(ws, m);
@@ -148,7 +177,39 @@ static inline void ipv4_input(struct work_space *ws, struct rte_mbuf *m,
     }
 
     net_stats_other_rx();
+drop:
     mbuf_free(m);
+}
+
+/*
+ * return:
+ *  next protocol
+ * */
+static inline uint8_t ipv6_trim_options(struct rte_mbuf *m)
+{
+    uint8_t proto = 0;
+    uint8_t *opt = NULL;
+    uint16_t opt_len = 0;
+    uint16_t plen = 0;
+    struct eth_hdr *eth = NULL;
+    struct ip6_hdr *ip6h = NULL;
+
+    eth = mbuf_eth_hdr(m);
+    ip6h = mbuf_ip6_hdr(m);
+    plen = ntohs(ip6h->ip6_plen);
+    opt = ((uint8_t*)ip6h) + sizeof(struct ip6_hdr);
+
+    proto = opt[0];
+    if (unlikely(proto == IPPROTO_DSTOPTS)) {
+        return 0;
+    }
+    opt_len = (opt[1] + 1) * 8;
+
+    ip6h->ip6_plen = htons(plen - opt_len);
+    ip6h->ip6_nxt = proto;
+    rte_pktmbuf_adj(m, opt_len);
+    memmove((uint8_t *)eth + opt_len, eth, sizeof(struct eth_hdr) + sizeof(struct ip6_hdr));
+    return proto;
 }
 
 /* ipv6 packets entry */
@@ -168,11 +229,11 @@ static inline void ipv6_input(struct work_space *ws, struct rte_mbuf *m,
 
         if (unlikely(m->ol_flags & (RTE_MBUF_F_RX_L4_CKSUM_BAD))) {
             net_stats_rx_bad();
-            mbuf_free(m);
-            return;
+            goto drop;
         }
 
         net_stats_tos_ipv6_rx(ip6h);
+repeat:
         if (likely(proto == IPPROTO_TCP)) {
             net_stats_tcp_rx();
             return tcp_input(ws, m);
@@ -181,6 +242,9 @@ static inline void ipv6_input(struct work_space *ws, struct rte_mbuf *m,
             return udp_input(ws, m);
         } else if (proto == IPPROTO_ICMPV6) {
             return icmp6_process(ws, m);
+        } else if (proto == IPPROTO_DSTOPTS) {
+            proto = ipv6_trim_options(m);
+            goto repeat;
         }
     }
 
@@ -189,6 +253,7 @@ static inline void ipv6_input(struct work_space *ws, struct rte_mbuf *m,
     }
 
     net_stats_other_rx();
+drop:
     mbuf_free(m);
 }
 
