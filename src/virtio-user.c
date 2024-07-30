@@ -50,16 +50,6 @@
                      ((mac_addrs)->addr_bytes[4]), \
                      ((mac_addrs)->addr_bytes[5])
 
-static const struct rte_eth_conf default_port_conf = {
-    .rxmode = {
-        .max_rx_pkt_len = ETHER_MAX_LEN,
-        .offloads = DEV_RX_OFFLOAD_TCP_LRO | DEV_RX_OFFLOAD_JUMBO_FRAME,
-    },
-    .txmode = {
-        .mq_mode = ETH_MQ_TX_NONE,
-    },
-};
-
 static void kni_set_name(struct config *cfg, struct netif_port *port, char *name)
 {
     int idx = 0;
@@ -84,37 +74,38 @@ static void kni_set_name(struct config *cfg, struct netif_port *port, char *name
 static inline int
 configure_vdev(uint16_t port_id, struct rte_mempool *mb_pool)
 {
-	struct rte_ether_addr addr;
-	int ret;
-
-	if (!rte_eth_dev_is_valid_port(port_id))
-		return -1;
-
-	ret = rte_eth_dev_configure(port_id, QUEUE_NUM, QUEUE_NUM,&default_port_conf);
-	if (ret != 0)
-		rte_exit(EXIT_FAILURE, "dev config failed\n");
 
     int i = 0;
+	int ret = 0;
+	struct rte_ether_addr addr;
+    struct rte_eth_conf default_port_conf = {0};
+
+	if (!rte_eth_dev_is_valid_port(port_id)) {
+		return -1;
+    }
+
+	ret = rte_eth_dev_configure(port_id, QUEUE_NUM, QUEUE_NUM, &default_port_conf);
+	if (ret != 0) {
+        rte_exit(EXIT_FAILURE, "dev config failed\n");
+    }
+
     for (; i < QUEUE_NUM; ++i) {
         ret = rte_eth_tx_queue_setup(port_id, i, TX_DESC_PER_QUEUE,
                 rte_eth_dev_socket_id(port_id), NULL);
-        if (ret < 0)
-        {
+        if (ret < 0) {
             rte_exit(EXIT_FAILURE, "queue setup failed\n");
         }
             
         ret = rte_eth_rx_queue_setup(port_id, i, RX_DESC_PER_QUEUE,
                 rte_eth_dev_socket_id(port_id), NULL, mb_pool);
-        if (ret < 0)
-        {
+        if (ret < 0) {
             rte_exit(EXIT_FAILURE, "queue setup failed\n");
         }
     }
         
 
 	ret = rte_eth_dev_start(port_id);
-	if (ret < 0)
-    {
+	if (ret < 0) {
         rte_exit(EXIT_FAILURE, "dev start failed\n");
     }
 		
@@ -123,24 +114,15 @@ configure_vdev(uint16_t port_id, struct rte_mempool *mb_pool)
 	if (ret != 0) {
         rte_exit(EXIT_FAILURE, "macaddr get failed\n");
     }
-
-	printf("Port %u MAC: %02"PRIx8" %02"PRIx8" %02"PRIx8
-			" %02"PRIx8" %02"PRIx8" %02"PRIx8"\n",
-			port_id,
-			addr.addr_bytes[0], addr.addr_bytes[1],
-			addr.addr_bytes[2], addr.addr_bytes[3],
-			addr.addr_bytes[4], addr.addr_bytes[5]);
-
 	return 0;
 }
 
-static void *kni_alloc(struct config *cfg, struct netif_port *port)
+static uint16_t kni_alloc(struct config *cfg, struct netif_port *port)
 {
-    void *kni = NULL;
     uint16_t port_id;
-    char kernel_name[VDEV_NAME_SIZE];
 	char vdev_args[VDEV_NAME_SIZE];
     char vdev_name[VDEV_NAME_SIZE];
+    char kernel_name[VDEV_NAME_SIZE];
 
     kni_set_name(cfg, port, kernel_name);
 
@@ -162,8 +144,7 @@ static void *kni_alloc(struct config *cfg, struct netif_port *port)
             vdev_name, __func__, __LINE__);
     }
     configure_vdev(port_id, port->mbuf_pool[0]);
-    kni = (void *)(uintptr_t)port_id;
-    return kni;
+    return port_id;
 }
 
 static int kni_set_link_up(struct config *cfg, struct netif_port *port)
@@ -172,7 +153,7 @@ static int kni_set_link_up(struct config *cfg, struct netif_port *port)
     int ret = -1;
     struct ifreq ifr;
 
-    if (!port->kni) {
+    if (!port->virtio_user_id) {
         return 0;
     }
 
@@ -226,21 +207,21 @@ static void kni_free(struct config *cfg)
     struct netif_port *port = NULL;
 
     config_for_each_port(cfg, port) {
-        if (port->kni == NULL) {
+        if (port->virtio_user_id == 0) {
             continue;
         }
         char vdev_name[VDEV_NAME_SIZE];
-        if (rte_eth_dev_get_name_by_port((uintptr_t)port->kni, vdev_name))
+        if (rte_eth_dev_get_name_by_port((uintptr_t)port->virtio_user_id, vdev_name))
             continue;
 
         rte_eal_hotplug_remove("vdev", vdev_name);
-        port->kni = NULL;
+        port->virtio_user_id = 0;
 
-        if (!port->kni_ring) {
+        if (!port->kni_mbuf_queue) {
             continue;
         }
-        rte_ring_free(port->kni_ring);
-        port->kni_ring = NULL;
+        rte_ring_free(port->kni_mbuf_queue);
+        port->kni_mbuf_queue = NULL;
     }
 }
 
@@ -249,19 +230,19 @@ static void kni_free(struct config *cfg)
  */
 static int kni_create(struct config *cfg)
 {
-    void *kni = NULL;
+    uint16_t port_id = 0;
     struct netif_port *port = NULL;
     char ring_name[RTE_RING_NAMESIZE];
 
     config_for_each_port(cfg, port) {
-        kni = kni_alloc(cfg, port);
-        if (kni == NULL) {
+        port_id = kni_alloc(cfg, port);
+        if (port_id == 0) {
             return -1;
         }
-        port->kni = kni;
+        port->virtio_user_id = port_id;
         snprintf(ring_name, sizeof(ring_name), "kr_%d", port->id);
-        port->kni_ring = rte_ring_create(ring_name, KNI_RING_SIZE, rte_socket_id(), RING_F_SC_DEQ);
-        if (!port->kni_ring) {
+        port->kni_mbuf_queue = rte_ring_create(ring_name, KNI_RING_SIZE, rte_socket_id(), RING_F_SC_DEQ);
+        if (!port->kni_mbuf_queue) {
             return -2;
         }
     }
@@ -287,25 +268,28 @@ void kni_stop(struct config *cfg)
 
 void kni_recv(struct work_space *ws, struct rte_mbuf *m)
 {
-    struct netif_port *port = NULL;
-    void *kni = NULL;
-    struct rte_mbuf *mbufs[NB_RXD];
+    uint16_t port_id = 0;
+    int i = 0;
+    int n = 0;
+    int cnt = 0;
+    int send_n = 0;
     struct rte_ring *kr = NULL;
-    int i, cnt, n = 0, send_n=0;
+    struct netif_port *port = NULL;
+    struct rte_mbuf *mbufs[NB_RXD];
 
     port = ws->port;
-    kni = port->kni;
-    kr = port->kni_ring;
-    /**
+    port_id = port->virtio_user_id;
+    kr = port->kni_mbuf_queue;
+    /*
      * core that holds queue 0 is in charge of this port's kni work
      * other cores send mbuf to q0 core by kni_ring
      * */ 
     if (likely(ws->queue_id != 0)) {
         if (m) {
-            /***
+            /*
              * 1. send to kni_ring 
              * 2. drop packets in other situations
-            */
+             * */
             if (likely(kr && rte_ring_enqueue(kr, (void*)m) == 0)) {
                 return;
             }
@@ -323,8 +307,8 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
             n += rte_ring_dequeue_bulk(kr, (void**)&mbufs[n], cnt, NULL);
         }
     }
-    if (kni && n) {
-        send_n = rte_eth_tx_burst((uint16_t)(uintptr_t)kni, 0, mbufs, n);
+    if (port_id && n) {
+        send_n = rte_eth_tx_burst(port_id, 0, mbufs, n);
         net_stats_kni_rx(send_n);
     }
     for (i = send_n; i < n; ++i) {
@@ -354,19 +338,18 @@ static void kni_send_mbuf(struct work_space *ws, struct rte_mbuf *m)
 
 void kni_send(struct work_space *ws)
 {
+    uint16_t kni = 0;
     int i = 0;
     int num = 0;
-    struct rte_mbuf *mbufs[NB_RXD];
     struct netif_port *port = NULL;
-    void *kni = NULL;
+    struct rte_mbuf *mbufs[NB_RXD];
 
     port = ws->port;
-    kni = port->kni;    
+    kni = port->virtio_user_id;    
     if(ws->queue_id == 0) {
-        num = rte_eth_rx_burst((uint16_t)(uintptr_t)kni, 0, mbufs, NB_RXD);
+        num = rte_eth_rx_burst(kni, 0, mbufs, NB_RXD);
         for (i = 0; i < num; i++) {
             kni_send_mbuf(ws, mbufs[i]);
         }
     }
 }
-

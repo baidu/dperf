@@ -66,8 +66,11 @@ struct netif_port {
     struct ip_range client_ip_range; /* only used by client; server use all client ip range */
     struct ip_range server_ip_range;
 
-    void *kni;
-    struct rte_ring *kni_ring;
+    union {
+        void *kni;
+        uint16_t virtio_user_id; /* can't be 0, 0 is nic itself*/
+    };
+    struct rte_ring *kni_mbuf_queue;
     struct vxlan *vxlan;
 
     /* bond */

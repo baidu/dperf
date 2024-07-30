@@ -246,11 +246,11 @@ static void kni_free(struct config *cfg)
             printf("failed to free kni\n");
         }
         port->kni = NULL;
-        if (!port->kni_ring) {
+        if (!port->kni_mbuf_queue) {
             continue;
         }
-        rte_ring_free(port->kni_ring);
-        port->kni_ring = NULL;
+        rte_ring_free(port->kni_mbuf_queue);
+        port->kni_mbuf_queue = NULL;
     }
 }
 
@@ -271,8 +271,8 @@ static int kni_create(struct config *cfg)
         }
         port->kni = kni;
         snprintf(ring_name, sizeof(ring_name), "kr_%d", port->id);
-        port->kni_ring = rte_ring_create(ring_name, KNI_RING_SIZE, rte_socket_id(), RING_F_SC_DEQ);
-        if (!port->kni_ring) {
+        port->kni_mbuf_queue = rte_ring_create(ring_name, KNI_RING_SIZE, rte_socket_id(), RING_F_SC_DEQ);
+        if (!port->kni_mbuf_queue) {
             return -2;
         }
     }
@@ -306,7 +306,7 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
 
     port = ws->port;
     kni = port->kni;
-    kr = port->kni_ring;
+    kr = port->kni_mbuf_queue;
     /**
      * core that holds queue 0 is in charge of this port's kni work
      * other cores send mbuf to q0 core by kni_ring
