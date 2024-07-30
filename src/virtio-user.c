@@ -53,7 +53,6 @@
 static void kni_set_name(struct config *cfg, struct netif_port *port, char *name)
 {
     int idx = 0;
-
     /*
      * do not use 'port->id'.
      * we want ifname id starting from zero.
@@ -74,7 +73,6 @@ static void kni_set_name(struct config *cfg, struct netif_port *port, char *name
 static inline int
 configure_vdev(uint16_t port_id, struct rte_mempool *mb_pool)
 {
-
     int i = 0;
 	int ret = 0;
 	struct rte_ether_addr addr;
@@ -95,20 +93,17 @@ configure_vdev(uint16_t port_id, struct rte_mempool *mb_pool)
         if (ret < 0) {
             rte_exit(EXIT_FAILURE, "queue setup failed\n");
         }
-            
         ret = rte_eth_rx_queue_setup(port_id, i, RX_DESC_PER_QUEUE,
                 rte_eth_dev_socket_id(port_id), NULL, mb_pool);
         if (ret < 0) {
             rte_exit(EXIT_FAILURE, "queue setup failed\n");
         }
     }
-        
 
 	ret = rte_eth_dev_start(port_id);
 	if (ret < 0) {
         rte_exit(EXIT_FAILURE, "dev start failed\n");
     }
-		
 
 	ret = rte_eth_macaddr_get(port_id, &addr);
 	if (ret != 0) {
@@ -205,12 +200,12 @@ int kni_link_up(struct config *cfg)
 static void kni_free(struct config *cfg)
 {
     struct netif_port *port = NULL;
+    char vdev_name[VDEV_NAME_SIZE];
 
     config_for_each_port(cfg, port) {
         if (port->virtio_user_id == 0) {
             continue;
         }
-        char vdev_name[VDEV_NAME_SIZE];
         if (rte_eth_dev_get_name_by_port((uintptr_t)port->virtio_user_id, vdev_name))
             continue;
 
@@ -224,7 +219,6 @@ static void kni_free(struct config *cfg)
         port->kni_mbuf_queue = NULL;
     }
 }
-
 /*
  * kni address cannot in client or server range
  */
