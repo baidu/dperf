@@ -1206,55 +1206,12 @@ static int config_parse_jumbo(int argc, __rte_unused char *argv[], void *data)
 
 static int config_parse_rss(int argc, __rte_unused char *argv[], void *data)
 {
-    bool mq_rx_rss = true;
     struct config *cfg = data;
 
-    if ((argc < 2) || (argc > 3)) {
-        return -1;
-    }
-
-    if (cfg->rss != RSS_NONE) {
-        printf("Error: duplicate rss\n");
-        return -1;
-    }
-
+    cfg->rss = true;
     if (argc >= 2) {
-        if (strcmp(argv[1], "l3") == 0) {
-            cfg->rss = RSS_L3;
-        } else if (strcmp(argv[1], "l3l4") == 0) {
-            cfg->rss = RSS_L3L4;
-        } else if (strcmp(argv[1], "auto") == 0) {
-            cfg->rss = RSS_AUTO;
-        } else {
-            printf("Error: unknown rss type \'%s\'\n", argv[1]);
-            return -1;
-        }
-
-        if (argc == 3) {
-            if (strcmp(argv[2], "mq_rx_rss") == 0) {
-                mq_rx_rss = true;
-            } else if (strcmp(argv[2], "mq_rx_none") == 0) {
-                if (cfg->rss != RSS_AUTO) {
-                    printf("Error: rss type \'%s\' dose not support \'mq_rx_none\'\n", argv[1]);
-                    return -1;
-                }
-                mq_rx_rss = false;
-            } else if ((cfg->rss == RSS_AUTO) && ((strcmp(argv[2], "l3") == 0))) {
-                cfg->rss_auto = RSS_L3;
-                mq_rx_rss = true;
-            } else if ((cfg->rss == RSS_AUTO) && ((strcmp(argv[2], "l3l4") == 0))) {
-                cfg->rss_auto = RSS_L3L4;
-                mq_rx_rss = true;
-            } else {
-                printf("Error: unknown rss config \'%s\'\n", argv[2]);
-                return -1;
-            }
-        }
-    } else {
-        cfg->rss = RSS_L3;
+        printf("Warning: The 'rss' parameters are deprecated.\n");
     }
-
-    cfg->mq_rx_rss = mq_rx_rss;
 
     return 0;
 }
@@ -1592,21 +1549,7 @@ static int config_set_port_ip_range(struct config *cfg)
                 return -1;
             }
 
-            if (port->queue_num < port->server_ip_range.num) {
-                printf("Error: cpu num less than server ip num\n");
-                return -1;
-            }
-
-            if (cfg->flood) {
-                if (cfg->dip_list.num) {
-                    continue;
-                }
-
-                if (cfg->rss != RSS_L3L4) {
-                    cfg->rss = RSS_L3L4;
-                    printf("Warning: 'rss l3l4' is enabled\n");
-                }
-            } else if (cfg->rss == RSS_NONE) {
+            if (cfg->rss == false) {
                 printf("Error: 'rss' is required if cpu num is not equal to server ip num\n");
                 return -1;
             }
@@ -2177,13 +2120,14 @@ static int config_server_addr_check_num(struct config *cfg, int num)
 
 static int config_check_rss(struct config *cfg)
 {
-    if (cfg->rss == RSS_NONE) {
+    if (!cfg->rss) {
         return 0;
     }
 
     if (cfg->cpu_num == cfg->port_num) {
         printf("Warnning: rss is disabled\n");
-        cfg->rss = RSS_NONE;
+        cfg->rss = false;
+        return 0;
     }
 
     if (cfg->vxlan) {
@@ -2191,17 +2135,10 @@ static int config_check_rss(struct config *cfg)
         return -1;
     }
 
-    if (cfg->flood) {
-        if ((cfg->rss == RSS_AUTO) || (cfg->rss == RSS_L3)) {
-            printf("Error: \'rss auto|l3\' conflicts with \'flood\'\n");
-            return -1;
-        }
-    }
-
     /* must be 1 server ip */
-    if (cfg->rss == RSS_AUTO) {
+    if (cfg->rss) {
         if (config_server_addr_check_num(cfg, 1) != 0) {
-            printf("Error: rss \'auto\' requires one server address.\n");
+            printf("Error: rss requires one server address.\n");
             return -1;
         }
     }

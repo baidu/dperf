@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021-2022 Baidu.com, Inc. All Rights Reserved.
- * Copyright (c) 2022-2023 Jianzhang Peng. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,11 +82,6 @@
 
 #define TCP_ACK_DELAY_MAX   1024
 
-#define RSS_NONE            0
-#define RSS_L3              1
-#define RSS_L3L4            2
-#define RSS_AUTO            3
-
 #define KNI_NAMESIZE        10
 
 #define VLAN_ID_MIN         1
@@ -123,9 +118,7 @@ struct config {
     bool clear_screen;
     bool disable_ack;
     uint8_t log_level;
-    uint8_t rss;
-    bool mq_rx_rss;
-    uint8_t rss_auto;
+    bool rss;
     bool quiet;
     bool tcp_rst;
     bool http;

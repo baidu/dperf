@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021-2022 Baidu.com, Inc. All Rights Reserved.
- * Copyright (c) 2022-2023 Jianzhang Peng. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,21 +165,20 @@ int port_config(struct netif_port *port)
         return -1;
     }
 
-rss_retry:
     if (g_config.rss) {
-        if (rss_config_port(&g_port_conf, &dev_info) < 0) {
-            printf("Error: rss config port error\n");
+        rss_config_port(&g_port_conf, &dev_info, 1);
+        if (rte_eth_dev_configure(port_id, queue_num, queue_num, &g_port_conf) < 0) {
+            rss_config_port(&g_port_conf, &dev_info, 0);
+            if (rte_eth_dev_configure(port_id, queue_num, queue_num, &g_port_conf) < 0) {
+                printf("dev configure fail\n");
+                return -1;
+            }
+        }
+    } else {
+        if (rte_eth_dev_configure(port_id, queue_num, queue_num, &g_port_conf) < 0) {
+            printf("dev configure fail\n");
             return -1;
         }
-    }
-
-    if (rte_eth_dev_configure(port_id, queue_num, queue_num, &g_port_conf) < 0) {
-        if ((g_config.rss == RSS_AUTO) && (g_config.mq_rx_rss == 1)) {
-            g_config.mq_rx_rss = 0;
-            goto rss_retry;
-        }
-        printf("dev configure fail\n");
-        return -1;
     }
 
     for (i = 0; i < queue_num; i++) {

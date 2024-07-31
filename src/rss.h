@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022 Baidu.com, Inc. All Rights Reserved.
+ * Copyright (c) 2022-2022 Baidu.com, Inc. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +15,7 @@
  * limitations under the License.
  *
  * Author: Jianzhang Peng (pengjianzhang@baidu.com)
+ *         Jianzhang Peng (pengjianzhang@gmail.com)
  */
 
 #ifndef __RSS_H
@@ -24,8 +26,6 @@
 
 struct socket;
 struct work_space;
-int rss_config_port(struct rte_eth_conf *conf, struct rte_eth_dev_info *dev_info);
-bool rss_check_socket(struct work_space *ws, struct socket *sk);
-void rss_init(void);
+void rss_config_port(struct rte_eth_conf *conf, struct rte_eth_dev_info *dev_info, int mq_mode);
 
 #endif

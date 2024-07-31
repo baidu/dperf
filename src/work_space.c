@@ -414,11 +414,7 @@ static void work_space_init_rss(struct work_space *ws)
         }
 
         st2 = &ws2->socket_table;
-        if (st->rss == RSS_L3) {
-            idx = ntohl(st2->server_ip) & 0xff;
-        } else {
-            idx = ws2->queue_id;
-        }
+        idx = ws2->queue_id;
         st->socket_table_hash[idx] = st2;
     }
 }
