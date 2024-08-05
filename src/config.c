@@ -126,7 +126,7 @@ static struct config_keyword g_config_keywords[] = {
     {"kni", config_parse_kni, "[ifName], default " KNI_NAME_DEFAULT},
     {"tos", config_parse_tos, "Number[0x00-0xff], default 0, eg 0x01 or 1"},
     {"jumbo", config_parse_jumbo, "[MTU], default " DEFAULT_STR(JUMBO_MTU_DEFAULT)},
-    {"rss", config_parse_rss, "[l3/l3l4/auto [mq_rx_none|mq_rx_rss|l3|l3l4], default l3 mq_rx_rss"},
+    {"rss", config_parse_rss, ""},
     {"quiet", config_parse_quiet, ""},
     {"tcp_rst", config_parse_tcp_rst, "Number[0-1], default 1"},
     {"http_host", config_parse_http_host, "String, default " HTTP_HOST_DEFAULT},
@@ -1208,7 +1208,7 @@ static int config_parse_rss(int argc, __rte_unused char *argv[], void *data)
 {
     struct config *cfg = data;
 
-    cfg->rss = true;
+    cfg->flow = FLOW_RSS;
     if (argc >= 2) {
         printf("Warning: The 'rss' parameters are deprecated.\n");
     }
@@ -1543,17 +1543,6 @@ static int config_set_port_ip_range(struct config *cfg)
 
         port->client_ip_range = cfg->client_ip_group.ip_range[i];
         port->server_ip_range = cfg->server_ip_group.ip_range[i];
-        if (port->queue_num != port->server_ip_range.num) {
-            if (cfg->vxlan) {
-                printf("Error: 'vxlan' requires cpu num to be equal to server ip num\n");
-                return -1;
-            }
-
-            if (cfg->rss == false) {
-                printf("Error: 'rss' is required if cpu num is not equal to server ip num\n");
-                return -1;
-            }
-        }
         i++;
     }
 
@@ -2118,31 +2107,37 @@ static int config_server_addr_check_num(struct config *cfg, int num)
     return 0;
 }
 
-static int config_check_rss(struct config *cfg)
+static int config_check_flow(struct config *cfg)
 {
-    if (!cfg->rss) {
-        return 0;
-    }
+    int rss = 0;
+    struct netif_port *port = NULL;
 
     if (cfg->cpu_num == cfg->port_num) {
-        printf("Warnning: rss is disabled\n");
-        cfg->rss = false;
+        cfg->flow = FLOW_NONE;
         return 0;
     }
 
-    if (cfg->vxlan) {
+    if ((cfg->flow == FLOW_RSS) && cfg->vxlan) {
         printf("Error: rss is not supported for vxlan.\n");
         return -1;
     }
 
-    /* must be 1 server ip */
-    if (cfg->rss) {
-        if (config_server_addr_check_num(cfg, 1) != 0) {
-            printf("Error: rss requires one server address.\n");
-            return -1;
+    config_for_each_port(cfg, port) {
+        if (port->queue_num != port->server_ip_range.num) {
+            rss = 1;
         }
     }
 
+    if (rss) {
+        if (cfg->flow != FLOW_RSS) {
+            printf("Error: 'rss' is required if cpu num is not equal to server ip num\n");
+            return -1;
+        }
+    } else {
+        if (cfg->flow != FLOW_RSS) {
+            cfg->flow = FLOW_FDIR;
+        }
+    }
     return 0;
 }
 
@@ -2469,11 +2464,11 @@ int config_parse(int argc, char **argv, struct config *cfg)
         return -1;
     }
 
-    if (config_check_rss(cfg) < 0) {
+    if (config_set_port_ip_range(cfg) != 0) {
         return -1;
     }
 
-    if (config_set_port_ip_range(cfg) != 0) {
+    if (config_check_flow(cfg) < 0) {
         return -1;
     }
 
@@ -2536,7 +2531,11 @@ uint32_t config_get_total_socket_num(struct config *cfg, int id)
         num = config_client_ip_range_socket_num(cfg, client_ip_range);
     }
 
-    return num;
+    if (cfg->flow == FLOW_FDIR) {
+        return num;
+    } else {
+        return num * port->server_ip_range.num;
+    }
 }
 
 void config_set_tsc(struct config *cfg, uint64_t hz)

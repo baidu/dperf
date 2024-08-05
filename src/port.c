@@ -165,7 +165,7 @@ int port_config(struct netif_port *port)
         return -1;
     }
 
-    if (g_config.rss) {
+    if (g_config.flow == FLOW_RSS) {
         rss_config_port(&g_port_conf, &dev_info, 1);
         if (rte_eth_dev_configure(port_id, queue_num, queue_num, &g_port_conf) < 0) {
             rss_config_port(&g_port_conf, &dev_info, 0);

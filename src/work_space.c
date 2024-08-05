@@ -403,7 +403,7 @@ static void work_space_init_rss(struct work_space *ws)
     struct socket_table *st2 = NULL;
 
     st = &ws->socket_table;
-    st->rss = ws->cfg->rss;
+    st->rss = (ws->cfg->flow == FLOW_RSS);
     st->rss_id = ws->queue_id;
     st->rss_num = ws->port->queue_num;
 
