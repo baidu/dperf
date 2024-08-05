@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021-2022 Baidu.com, Inc. All Rights Reserved.
- * Copyright (c) 2022-2023 Jianzhang Peng. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,68 +156,9 @@ static void socket_port_table_init_ip_group(struct work_space *ws, struct socket
     }
 }
 
-static int socket_table_init_client_rss_l3(struct work_space *ws)
-{
-    int ret = -1;
-    unsigned int i = 0;
-    unsigned int j = 0;
-    unsigned int step = 0;
-    struct socket *sk = NULL;
-    struct socket_table *st = NULL;
-    struct socket_pool *sp = NULL;
-
-    st = &ws->socket_table;
-    sp = &st->socket_pool;
-    step = st->client_port_num * st->server_port_num;
-
-    while (i < sp->num) {
-        sk = &(sp->base[i]);
-        if (!rss_check_socket(ws, sk)) {
-            for (j = 0; j < step; j++) {
-                sk = &(sp->base[i + j]);
-                sk->laddr = 0;
-                sk->faddr = 0;
-            }
-        } else {
-            ret = 0;
-        }
-        i += step;
-    }
-
-    return ret;
-}
-
-static int socket_table_init_client_rss_l3l4(struct work_space *ws)
-{
-    unsigned int i = 0;
-    struct socket *sk = NULL;
-    struct socket_table *st = NULL;
-    struct socket_pool *sp = NULL;
-
-    st = &ws->socket_table;
-    sp = &st->socket_pool;
-    for (i = 0; i < sp->num; i++) {
-        sk = &(sp->base[i]);
-        if (!rss_check_socket(ws, sk)) {
-            sk->laddr = 0;
-            sk->faddr = 0;
-        }
-    }
-
-    return 0;
-}
-
 static int socket_table_init_client_rss(struct work_space *ws)
 {
-    if (ws->cfg->rss == RSS_L3) {
-        return socket_table_init_client_rss_l3(ws);
-    } else if (ws->cfg->rss == RSS_L3L4) {
-        return socket_table_init_client_rss_l3l4(ws);
-    }  else if (ws->cfg->rss == RSS_AUTO) {
-        return 0;
-    } else {
-        return -1;
-    }
+    return 0;
 }
 
 int socket_table_init(struct work_space *ws)
@@ -243,10 +184,6 @@ int socket_table_init(struct work_space *ws)
         socket_port_table_init_ip_group(ws, st, &cfg->client_ip_group);
     } else {
         socket_port_table_init_ip_range(ws, st, &(port->client_ip_range));
-        if ((cfg->rss != RSS_NONE) && (socket_table_init_client_rss(ws) < 0)) {
-            printf("Error: worker %d has no client address, please increase the number of client address\n", ws->id);
-            return -1;
-        }
     }
 
     st->socket_pool.next = 0;

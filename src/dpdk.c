@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021-2022 Baidu.com, Inc. All Rights Reserved.
- * Copyright (c) 2022-2023 Jianzhang Peng. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,9 +166,8 @@ int dpdk_init(struct config *cfg, char *argv0)
         return -1;
     }
 
-    rss_init();
     /* One-way traffic does not require RSS and FDIR */
-    if ((cfg->rss == RSS_NONE) && (!cfg->flood)) {
+    if ((cfg->rss == false) && (!cfg->flood)) {
         if (flow_init(cfg) < 0) {
             printf("flow init fail\n");
             return -1;

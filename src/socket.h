@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021-2022 Baidu.com, Inc. All Rights Reserved.
- * Copyright (c) 2022-2023 Jianzhang Peng. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,39 +154,17 @@ static inline struct socket *socket_table_get_socket_rss(struct socket_table *st
 
     while (1) {
         sk = &(sp->base[sp->next]);
-        if (st->rss == RSS_AUTO) {
-            sp->next++;
-            /* 1. each worker picks sockets in port order
-             * 2. avoid incorrectly hashed sockets
-             * */
-            if (((ntohs(sk->lport) % st->rss_num) != st->rss_id) || (sk->laddr == 0)) {
-                if (sp->next >= sp->num) {
-                    sp->next = 0;
-                }
-                continue;
-            }
-            break;
-        }
-
-        if (sk->laddr != 0) {
-            sp->next++;
-            if (sp->next >= sp->num) {
-                sp->next = 0;
-            }
-            break;
-        } else if (st->rss == RSS_L3L4) {
-            sp->next++;
-            if (sp->next >= sp->num) {
-                sp->next = 0;
-            }
-            continue;
-        } else {
-            sp->next += st->client_port_num * st->server_port_num;
+        sp->next++;
+        /* 1. each worker picks sockets in port order
+         * 2. avoid incorrectly hashed sockets
+         * */
+        if (((ntohs(sk->lport) % st->rss_num) != st->rss_id) || (sk->laddr == 0)) {
             if (sp->next >= sp->num) {
                 sp->next = 0;
             }
             continue;
         }
+        break;
     }
 
     return sk;
@@ -198,7 +176,7 @@ static inline struct socket *socket_table_get_socket(struct socket_table *st)
     struct socket_pool *sp = &st->socket_pool;
 
 retry:
-    if (st->rss == RSS_NONE) {
+    if (st->rss == false) {
         sk = &(sp->base[sp->next]);
         sp->next++;
         if (sp->next >= sp->num) {
@@ -264,7 +242,7 @@ static inline void socket_dup(struct socket *dst, struct socket *src)
     net_stats_socket_dup();
 }
 
-static inline void socket_client_check_rss_auto(const struct socket_table *st,
+static inline void socket_client_check_rss(const struct socket_table *st,
     uint32_t daddr, uint32_t saddr, uint16_t dport, uint16_t sport, struct socket *sk)
 {
     uint32_t idx = 0;
@@ -297,8 +275,8 @@ static inline struct socket *socket_client_lookup(const struct socket_table *st,
     ip_hdr_get_addr_low32(iph, saddr, daddr);
     sk = socket_common_lookup(st, daddr, saddr, th->th_dport, th->th_sport);
     if (sk && (sk->laddr == daddr) && (sk->faddr == saddr)) {
-        if (unlikely(st->rss == RSS_AUTO)) {
-            socket_client_check_rss_auto(st, daddr, saddr, th->th_dport, th->th_sport, sk);
+        if (st->rss) {
+            socket_client_check_rss(st, daddr, saddr, th->th_dport, th->th_sport, sk);
         }
         return sk;
     }
@@ -315,15 +293,6 @@ static inline struct socket *socket_server_lookup(const struct socket_table *st,
     struct socket *sk = NULL;
 
     ip_hdr_get_addr_low32(iph, saddr, daddr);
-
-    if (unlikely(st->rss == RSS_L3)) {
-        idx = ntohl(daddr) & 0xff;
-        st = st->socket_table_hash[idx];
-        if (unlikely(st == NULL)) {
-            return NULL;
-        }
-    }
-
     sk = socket_common_lookup(st, saddr, daddr, th->th_sport, th->th_dport);
     if (sk && (sk->laddr == daddr) && (sk->faddr == saddr)) {
         return sk;
