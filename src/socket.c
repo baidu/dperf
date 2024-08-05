@@ -110,6 +110,7 @@ static struct socket_port_table *socket_port_table_new(struct work_space *ws, st
     uint32_t client_ip)
 {
     int port = 0;
+    uint32_t server_ip = 0;
     uint16_t client_port = 0;
     uint16_t server_port = 0;
     struct socket *sk = NULL;
@@ -121,9 +122,11 @@ static struct socket_port_table *socket_port_table_new(struct work_space *ws, st
     for (port = st->client_port_min; port <= st->client_port_max; port++) {
         for (server_port = st->server_port_min; server_port <= st->server_port_max; server_port++) {
             client_port = port;
-            sk = socket_port_table_get(st, table, client_port, server_port);
-            socket_init(ws, sk, client_ip, htons(client_port), st->server_ip, htons(server_port));
-            sp->next++;
+            for (server_ip = st->server_ip_min; server_ip <= st->server_ip_max; server_ip++) {
+                sk = socket_port_table_get(st, table, client_port, server_port, server_ip);
+                socket_init(ws, sk, client_ip, htons(client_port), htonl(server_ip), htons(server_port));
+                sp->next++;
+            }
         }
     }
 
@@ -163,11 +166,25 @@ static int socket_table_init_client_rss(struct work_space *ws)
 
 int socket_table_init(struct work_space *ws)
 {
+    uint32_t server_ip_host = 0;
     struct config *cfg = ws->cfg;
     struct netif_port *port = ws->port;
     struct socket_table *st = &ws->socket_table;
 
-    st->server_ip = ip_range_get(&port->server_ip_range, ws->queue_id);
+    if (cfg->flow == FLOW_FDIR) {
+        server_ip_host = ntohl(ip_range_get(&port->server_ip_range, ws->queue_id));
+        st->server_ip_num = 1;
+        st->server_ip_min = server_ip_host;
+        st->server_ip_max = server_ip_host;
+    } else {
+        server_ip_host = ntohl(ip_range_get(&port->server_ip_range, 0));
+        st->server_ip_num = port->server_ip_range.num;
+        st->server_ip_min = server_ip_host;
+        st->server_ip_max = server_ip_host + st->server_ip_num - 1;
+    }
+
+    st->server_ip_port_num = st->server_ip_num * cfg->listen_num;
+
     st->server_port_min = cfg->listen;
     st->server_port_max = cfg->listen + cfg->listen_num - 1;
     st->server_port_num = cfg->listen_num;

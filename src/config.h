@@ -102,6 +102,10 @@
 #define RTO_MIN             2
 #define RTO_MAX             300
 
+#define FLOW_NONE   0
+#define FLOW_FDIR   1
+#define FLOW_RSS    2
+
 struct config {
     bool server;
     bool keepalive;
@@ -118,7 +122,7 @@ struct config {
     bool clear_screen;
     bool disable_ack;
     uint8_t log_level;
-    bool rss;
+    uint8_t flow;
     bool quiet;
     bool tcp_rst;
     bool http;
