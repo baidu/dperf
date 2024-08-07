@@ -93,11 +93,9 @@ static void work_space_get_port(struct work_space *ws)
         ws->vni = VXLAN_HTON(vxlan->vni);
     }
 
-#ifdef KNI_ENABLE
     if (ws->port->kni) {
         ws->kni = true;
     }
-#endif
 }
 
 static int work_space_open_log(struct work_space *ws)

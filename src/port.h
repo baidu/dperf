@@ -25,9 +25,6 @@
 #include <stdlib.h>
 
 #include "dpdk.h"
-#ifdef KNI_ENABLE
-#include <rte_kni.h>
-#endif
 
 #include "ip.h"
 #include "ip_range.h"
@@ -43,6 +40,8 @@
 
 #define RX_BURST_MAX        NB_RXD
 #define TX_QUEUE_SIZE       NB_TXD
+
+#define KNI_RING_SIZE       NB_RXD
 
 #define TX_BURST_MAX        1024
 #define TX_BURST_DEFAULT    8
@@ -67,9 +66,11 @@ struct netif_port {
     struct ip_range client_ip_range; /* only used by client; server use all client ip range */
     struct ip_range server_ip_range;
 
-#ifdef KNI_ENABLE
-    struct rte_kni *kni;
-#endif
+    union {
+        void *kni;
+        uint16_t virtio_user_id; /* can't be 0, 0 is nic itself*/
+    };
+    struct rte_ring *kni_mbuf_queue;
     struct vxlan *vxlan;
 
     /* bond */

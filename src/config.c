@@ -1142,7 +1142,6 @@ static int config_parse_tos(int argc, char *argv[], void *data)
 
 static int config_parse_kni(int argc, char *argv[], void *data)
 {
-#ifdef KNI_ENABLE
     struct config *cfg = data;
     const char *ifname = NULL;
 
@@ -1174,10 +1173,6 @@ static int config_parse_kni(int argc, char *argv[], void *data)
     cfg->kni = true;
 
     return 0;
-#else
-    printf("warning: not support kni\n");
-    return 0;
-#endif
 }
 
 static int config_parse_jumbo(int argc, __rte_unused char *argv[], void *data)
