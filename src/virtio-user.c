@@ -79,7 +79,7 @@ configure_vdev(uint16_t port_id, struct rte_mempool *mb_pool)
     struct rte_eth_conf default_port_conf = {0};
 
     if (!rte_eth_dev_is_valid_port(port_id)) {
-		return -1;
+        return -1;
     }
 
     ret = rte_eth_dev_configure(port_id, QUEUE_NUM, QUEUE_NUM, &default_port_conf);
