@@ -83,7 +83,7 @@ configure_vdev(uint16_t port_id, struct rte_mempool *mb_pool)
     }
 
     ret = rte_eth_dev_configure(port_id, QUEUE_NUM, QUEUE_NUM, &default_port_conf);
-	if (ret != 0) {
+    if (ret != 0) {
         rte_exit(EXIT_FAILURE, "dev config failed\n");
     }
 
@@ -101,12 +101,12 @@ configure_vdev(uint16_t port_id, struct rte_mempool *mb_pool)
     }
 
     ret = rte_eth_dev_start(port_id);
-	if (ret < 0) {
+    if (ret < 0) {
         rte_exit(EXIT_FAILURE, "dev start failed\n");
     }
 
     ret = rte_eth_macaddr_get(port_id, &addr);
-	if (ret != 0) {
+    if (ret != 0) {
         rte_exit(EXIT_FAILURE, "macaddr get failed\n");
     }
     return 0;
