@@ -74,15 +74,15 @@ static inline int
 configure_vdev(uint16_t port_id, struct rte_mempool *mb_pool)
 {
     int i = 0;
-	int ret = 0;
-	struct rte_ether_addr addr;
+    int ret = 0;
+    struct rte_ether_addr addr;
     struct rte_eth_conf default_port_conf = {0};
 
-	if (!rte_eth_dev_is_valid_port(port_id)) {
+    if (!rte_eth_dev_is_valid_port(port_id)) {
 		return -1;
     }
 
-	ret = rte_eth_dev_configure(port_id, QUEUE_NUM, QUEUE_NUM, &default_port_conf);
+    ret = rte_eth_dev_configure(port_id, QUEUE_NUM, QUEUE_NUM, &default_port_conf);
 	if (ret != 0) {
         rte_exit(EXIT_FAILURE, "dev config failed\n");
     }
@@ -100,22 +100,22 @@ configure_vdev(uint16_t port_id, struct rte_mempool *mb_pool)
         }
     }
 
-	ret = rte_eth_dev_start(port_id);
+    ret = rte_eth_dev_start(port_id);
 	if (ret < 0) {
         rte_exit(EXIT_FAILURE, "dev start failed\n");
     }
 
-	ret = rte_eth_macaddr_get(port_id, &addr);
+    ret = rte_eth_macaddr_get(port_id, &addr);
 	if (ret != 0) {
         rte_exit(EXIT_FAILURE, "macaddr get failed\n");
     }
-	return 0;
+    return 0;
 }
 
 static uint16_t kni_alloc(struct config *cfg, struct netif_port *port)
 {
     uint16_t port_id;
-	char vdev_args[VDEV_NAME_SIZE];
+    char vdev_args[VDEV_NAME_SIZE];
     char vdev_name[VDEV_NAME_SIZE];
     char kernel_name[VDEV_NAME_SIZE];
 
