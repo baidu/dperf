@@ -94,14 +94,18 @@ static int dpdk_set_socket_mem(struct config *cfg, char *socket_mem, char *file_
     return 0;
 }
 
+#if RTE_VERSION >= RTE_VERSION_NUM(20, 0, 0, 0)
 static void dpdk_set_simd_bitwidth(struct config *cfg)
 {
-#if RTE_VERSION >= RTE_VERSION_NUM(20, 0, 0, 0)
     if (cfg->simd512) {
         rte_vect_set_max_simd_bitwidth(RTE_VECT_SIMD_512);
     }
-#endif
 }
+#else
+static void dpdk_set_simd_bitwidth(__rte_unused struct config *cfg)
+{
+}
+#endif
 
 static int dpdk_eal_init(struct config *cfg, char *argv0)
 {

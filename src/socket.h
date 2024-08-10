@@ -180,7 +180,6 @@ static inline struct socket *socket_table_get_socket(struct socket_table *st)
     struct socket *sk = NULL;
     struct socket_pool *sp = &st->socket_pool;
 
-retry:
     if (st->rss == false) {
         sk = &(sp->base[sp->next]);
         sp->next++;
@@ -295,7 +294,6 @@ static inline struct socket *socket_client_lookup(const struct socket_table *st,
 static inline struct socket *socket_server_lookup(const struct socket_table *st, const struct iphdr *iph,
     const struct tcphdr *th)
 {
-    uint32_t idx = 0;
     uint32_t saddr = 0;
     uint32_t daddr = 0;
     struct socket *sk = NULL;

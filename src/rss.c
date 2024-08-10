@@ -63,7 +63,3 @@ void rss_config_port(struct rte_eth_conf *conf, struct rte_eth_dev_info *dev_inf
         rss_conf->rss_hf = 0;
     }
 }
-
-void rss_init(void)
-{
-}

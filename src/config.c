@@ -1303,7 +1303,6 @@ static int config_parse_http_path(int argc, char *argv[], void *data)
 
 static int config_parse_http_method(int argc, char *argv[], void *data)
 {
-    int len = 0;
     struct config *cfg = data;
 
     if (argc != 2) {
@@ -1386,7 +1385,7 @@ static int config_parse_simd512(int argc, __rte_unused char *argv[], void *data)
     return 0;
 }
 
-static int config_parse_fast_close(int argc, char *argv[], void *data)
+static int config_parse_fast_close(int argc, __rte_unused char *argv[], void *data)
 {
     struct config *cfg = data;
 
@@ -1398,7 +1397,7 @@ static int config_parse_fast_close(int argc, char *argv[], void *data)
     return 0;
 }
 
-static int config_parse_clear_screen(int argc, char *argv[], void *data)
+static int config_parse_clear_screen(int argc, __rte_unused char *argv[], void *data)
 {
     struct config *cfg = data;
 
@@ -1436,7 +1435,7 @@ static int config_parse_log_level(int argc, char *argv[], void *data)
     return 0;
 }
 
-static int config_parse_disable_ack(int argc, char *argv[], void *data)
+static int config_parse_disable_ack(int argc, __rte_unused char *argv[], void *data)
 {
     struct config *cfg = data;
 
@@ -2089,19 +2088,6 @@ static int config_check_mss(struct config *cfg)
 
     if (cfg->mss == 0) {
         cfg->mss = mss_max;
-    }
-
-    return 0;
-}
-
-static int config_server_addr_check_num(struct config *cfg, int num)
-{
-    const struct ip_range *ipr = NULL;
-
-    for_each_ip_range(&(cfg->server_ip_group), ipr) {
-        if (ipr->num != num) {
-            return -1;
-        }
     }
 
     return 0;
