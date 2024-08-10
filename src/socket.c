@@ -81,9 +81,7 @@ static void socket_init(struct work_space *ws, struct socket *sk, uint32_t clien
      uint32_t server_ip, uint16_t server_port)
 {
     uint32_t seed = 0;
-    struct config *cfg = NULL;
 
-    cfg = ws->cfg;
     sk->state = 0; /* TCP_CLOSED; */
     sk->keepalive = ws->cfg->keepalive;
 
@@ -157,11 +155,6 @@ static void socket_port_table_init_ip_group(struct work_space *ws, struct socket
     for_each_ip_range(ip_group, ip_range) {
         socket_port_table_init_ip_range(ws, st, ip_range);
     }
-}
-
-static int socket_table_init_client_rss(struct work_space *ws)
-{
-    return 0;
 }
 
 int socket_table_init(struct work_space *ws)
