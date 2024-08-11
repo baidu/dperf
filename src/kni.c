@@ -134,7 +134,7 @@ static void kni_set_name(struct config *cfg, struct netif_port *port, char *name
     /*
      * do not use 'port->id'.
      * we want ifname id starting from zero.
-     * */
+     */
     idx = port - &(cfg->ports[0]);
     snprintf(name, RTE_KNI_NAMESIZE, "%s%d", cfg->kni_ifname, idx);
 }
@@ -307,16 +307,16 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
     port = ws->port;
     kni = port->kni;
     kr = port->kni_mbuf_queue;
-    /**
+    /*
      * core that holds queue 0 is in charge of this port's kni work
      * other cores send mbuf to q0 core by kni_ring
-     * */ 
+     */ 
     if (likely(ws->queue_id != 0)) {
         if (m) {
-            /***
+            /*
              * 1. send to kni_ring 
              * 2. drop packets in other situations
-            */
+             */
             if (likely(kr && rte_ring_enqueue(kr, (void*)m) == 0)) {
                 return;
             }

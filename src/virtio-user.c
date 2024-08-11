@@ -56,12 +56,12 @@ static void kni_set_name(struct config *cfg, struct netif_port *port, char *name
     /*
      * do not use 'port->id'.
      * we want ifname id starting from zero.
-     * */
+     */
     idx = port - &(cfg->ports[0]);
     /* 
      * do this because server and client could be on same machine in my env
      * which kni hard to achieve, because in one ns can only open one kni instance
-     * */
+     */
     if (cfg->server) {
         snprintf(name, VDEV_NAME_SIZE, "%ss%1d", cfg->kni_ifname, idx);
     } else {
@@ -283,7 +283,7 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
             /*
              * 1. send to kni_ring 
              * 2. drop packets in other situations
-             * */
+             */
             if (likely(kr && rte_ring_enqueue(kr, (void*)m) == 0)) {
                 return;
             }
