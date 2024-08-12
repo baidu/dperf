@@ -264,6 +264,7 @@ static inline int slow_timer_run(struct work_space *ws)
     uint64_t seconds = 0;
 
     if (ws->kni) {
+        kni_recv(ws, NULL);
         kni_send(ws);
     }
 
