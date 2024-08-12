@@ -38,7 +38,7 @@
 #define VDEV_NAME_SIZE 256
 #define TX_DESC_PER_QUEUE 512
 #define RX_DESC_PER_QUEUE 512
-#define VDEV_NAME_FMT "virtio_user%u"
+#define VDEV_NAME_FMT "virtio_user%ld"
 #define VDEV_IFACE_ARGS_FMT "path=/dev/vhost-net,queues=%u,queue_size=%u,iface=%s,mac=%02X:%02X:%02X:%02X:%02X:%02X"
 #define VDEV_RING_SIZE 1024
 #define QUEUE_NUM 1
@@ -263,10 +263,10 @@ void kni_stop(struct config *cfg)
 void kni_recv(struct work_space *ws, struct rte_mbuf *m)
 {
     uint16_t port_id = 0;
-    int i = 0;
-    int n = 0;
-    int cnt = 0;
-    int send_n = 0;
+    unsigned int i = 0;
+    unsigned int n = 0;
+    unsigned int cnt = 0;
+    unsigned int send_n = 0;
     struct rte_ring *kr = NULL;
     struct netif_port *port = NULL;
     struct rte_mbuf *mbufs[NB_RXD];
@@ -292,11 +292,11 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
         return;
     }
     /* core holds q0 */
-    if(m) {
+    if (m) {
         mbufs[n++] = m;
     }
     if (kr) {
-        cnt = RTE_MIN(rte_ring_count(kr), NB_RXD-n);
+        cnt = RTE_MIN(rte_ring_count(kr), NB_RXD - n);
         if (cnt) {
             n += rte_ring_dequeue_bulk(kr, (void**)&mbufs[n], cnt, NULL);
         }

@@ -14,7 +14,7 @@ SRCS-y += src/kni.c
 
 RTE_TARGET ?= x86_64-native-linuxapp-gcc
 include $(RTE_SDK)/mk/rte.vars.mk
-CFLAGS += -O3 -g -I./src
+CFLAGS += -O3 -g -I./src -Wall
 CFLAGS += -DHTTP_PARSE
 CFLAGS += $(WERROR_FLAGS) -Wno-address-of-packed-member
 
@@ -37,7 +37,7 @@ ifneq ($(shell $(PKGCONF) --exists libdpdk && echo 0),0)
 $(error "no installation of DPDK found")
 endif
 
-CFLAGS := -O3 -g $(CFLAGS) -I./src
+CFLAGS := -O3 -g $(CFLAGS) -I./src -Wall
 
 ifdef DPERF_DEBUG
 CFLAGS += -DDPERF_DEBUG
