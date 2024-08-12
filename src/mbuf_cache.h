@@ -45,7 +45,8 @@ struct mbuf_cache {
 static inline void mbuf_set_userdata(struct rte_mbuf *m, void *data)
 {
 #if RTE_VERSION >= RTE_VERSION_NUM(20, 0, 0, 0)
-        ((uint64_t*)(m->dynfield1))[0] = (uint64_t)data;
+    uint64_t *p = (uint64_t *)(m->dynfield1);
+    *p = (uint64_t)data;
 #else
         m->userdata = data;
 #endif
@@ -54,7 +55,8 @@ static inline void mbuf_set_userdata(struct rte_mbuf *m, void *data)
 static inline void *mbuf_get_userdata(struct rte_mbuf *m)
 {
 #if RTE_VERSION >= RTE_VERSION_NUM(20, 0, 0, 0)
-    return (void*)(((uint64_t*)(m->dynfield1))[0]);
+    uint64_t *p = (uint64_t *)(m->dynfield1);
+    return (void *)(*p);
 #else
     return m->userdata;
 #endif

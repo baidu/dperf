@@ -298,11 +298,14 @@ void kni_stop(struct config *cfg)
 
 void kni_recv(struct work_space *ws, struct rte_mbuf *m)
 {
+    unsigned int i = 0;
+    unsigned int n = 0;
+    unsigned int cnt = 0;
+    unsigned int send_n = 0;
     struct netif_port *port = NULL;
     struct rte_kni *kni = NULL;
     struct rte_mbuf *mbufs[NB_RXD];
     struct rte_ring *kr = NULL;
-    int i, cnt, n = 0, send_n=0;
 
     port = ws->port;
     kni = port->kni;
@@ -325,11 +328,11 @@ void kni_recv(struct work_space *ws, struct rte_mbuf *m)
         return;
     }
     /* core holds q0 */
-    if(m) {
+    if (m) {
         mbufs[n++] = m;
     }
     if (kr) {
-        cnt = RTE_MIN(rte_ring_count(kr), NB_RXD-n);
+        cnt = RTE_MIN(rte_ring_count(kr), NB_RXD - n);
         if (cnt) {
             n += rte_ring_dequeue_bulk(kr, (void**)&mbufs[n], cnt, NULL);
         }
