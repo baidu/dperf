@@ -84,7 +84,10 @@ static void net_stats_format_print3(uint64_t val, char *buf, int len, int space,
     if ((err == 0) || (val == 0)) {
         snprintf(buf, len, "%s", str);
     } else {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
         snprintf(buf, len, NET_STATS_ERR_FMT, str);
+#pragma GCC diagnostic pop
     }
 
     n = space - str_len;
@@ -139,7 +142,10 @@ static void net_stats_print_rtt(struct net_stats *stats, char rtt_str[], int len
     }
 
     net_stats_format_print2(rtt_us, rtt, STATS_BUF_LEN);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
     snprintf(rtt2, STATS_BUF_LEN, "%s.%lu", rtt, rtt_us_minor);
+#pragma GCC diagnostic pop
     snprintf(rtt_str, len, "%-10s", rtt2);
 }
 
