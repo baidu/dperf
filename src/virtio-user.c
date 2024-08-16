@@ -122,21 +122,18 @@ static uint16_t kni_alloc(struct config *cfg, struct netif_port *port)
     kni_set_name(cfg, port, kernel_name);
 
     snprintf(vdev_name, VDEV_NAME_SIZE, VDEV_NAME_FMT, port - &(cfg->ports[0]));
-
-    snprintf(vdev_args, sizeof(vdev_args),
-             VDEV_IFACE_ARGS_FMT, QUEUE_NUM,
-            VDEV_RING_SIZE, kernel_name, RTE_ETHER_ADDR_BYTES((struct rte_ether_addr*)&port->local_mac));
-    if (rte_eal_hotplug_add("vdev", vdev_name,
-                vdev_args) < 0) {
-        rte_exit(EXIT_FAILURE,
-            "vdev creation failed:%s:%d\n",
-            __func__, __LINE__);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+    snprintf(vdev_args, VDEV_NAME_SIZE, VDEV_IFACE_ARGS_FMT, QUEUE_NUM,
+        VDEV_RING_SIZE, kernel_name, RTE_ETHER_ADDR_BYTES((struct rte_ether_addr*)&port->local_mac));
+#pragma GCC diagnostic pop
+    if (rte_eal_hotplug_add("vdev", vdev_name, vdev_args) < 0) {
+        rte_exit(EXIT_FAILURE, "vdev creation failed:%s:%d\n", __func__, __LINE__);
     }
+
     if (rte_eth_dev_get_port_by_name(vdev_name, &port_id) != 0) {
         rte_eal_hotplug_remove("vdev", vdev_name);
-        rte_exit(EXIT_FAILURE,
-            "cannot find added vdev %s:%s:%d\n",
-            vdev_name, __func__, __LINE__);
+        rte_exit(EXIT_FAILURE, "cannot find added vdev %s:%s:%d\n", vdev_name, __func__, __LINE__);
     }
     configure_vdev(port_id, port->mbuf_pool[0]);
     return port_id;
