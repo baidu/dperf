@@ -130,11 +130,19 @@ static void http_set_payload_server(struct config *cfg, char *dest, int len, int
     }
 }
 
-void http_set_payload(struct config *cfg, int payload_size)
+void http_set_payload(struct config *cfg, char *payload, int payload_size)
 {
-    if (cfg->server) {
-        http_set_payload_server(cfg, http_rsp, MBUF_DATA_SIZE, payload_size);
+    if (payload) {
+        if (cfg->server) {
+            strcpy(http_rsp, payload);
+        } else {
+            strcpy(http_rsp, payload);
+        }
     } else {
-        http_set_payload_client(cfg, http_req, MBUF_DATA_SIZE, payload_size);
+        if (cfg->server) {
+            http_set_payload_server(cfg, http_rsp, MBUF_DATA_SIZE, payload_size);
+        } else {
+            http_set_payload_client(cfg, http_req, MBUF_DATA_SIZE, payload_size);
+        }
     }
 }
