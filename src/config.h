@@ -70,6 +70,7 @@
 #define HTTP_HOST_MAX       128
 #define HTTP_PATH_MAX       256
 #define PAYLOAD_SIZE_MAX    (1L * 1024 * 1024 * 1024)
+#define PAYLOAD_PATH_MAX    256
 #define SEND_WINDOW_MAX     16
 #define SEND_WINDOW_MIN     2
 #define SEND_WINDOW_DEFAULT 4
@@ -155,8 +156,8 @@ struct config {
     char http_host[HTTP_HOST_MAX];
     char http_path[HTTP_PATH_MAX];
 
+    char payload_path[PAYLOAD_PATH_MAX];
     int payload_size;
-    int packet_size;
     int mss;
 
     int wait;
