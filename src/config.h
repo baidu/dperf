@@ -41,6 +41,8 @@
 #define DEFAULT_DURATION    60
 #define DEFAULT_TTL         64
 #define ND_TTL              255
+#define DEFAULT_LAUNCH_MAX  10
+#define DEFAULT_LAUNCH_MIN  4
 #define DEFAULT_LAUNCH      4
 #define DELAY_SEC           4
 #define NEIGH_SEC           60

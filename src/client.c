@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021 Baidu.com, Inc. All Rights Reserved.
+ * Copyright (c) 2021-2022 Baidu.com, Inc. All Rights Reserved.
+ * Copyright (c) 2022-2024 Jianzhang Peng. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +15,7 @@
  * limitations under the License.
  *
  * Author: Jianzhang Peng (pengjianzhang@baidu.com)
+ *         Jianzhang Peng (pengjianzhang@gmail.com)
  */
 
 #include "client.h"
@@ -49,6 +51,7 @@ static uint64_t client_assign_task(struct work_space *ws, uint64_t target)
 
 int client_init(struct work_space *ws)
 {
+    uint32_t launch_num = 0;
     uint64_t cps = 0;
     uint64_t cc = 0;
     struct client_launch *cl = &ws->client_launch;
@@ -60,6 +63,22 @@ int client_init(struct work_space *ws)
     /* This is an idle CPU */
     if (cps == 0) {
         return 0;
+    }
+
+    if (cfg->launch_num == 0) {
+        for (launch_num = DEFAULT_LAUNCH_MAX; launch_num >= DEFAULT_LAUNCH_MIN; launch_num--) {
+            if ((cps % launch_num) == 0) {
+                cfg->launch_num = launch_num;
+            }
+        }
+
+        if (cfg->launch_num == 0) {
+            cfg->launch_num = DEFAULT_LAUNCH;
+        }
+    }
+
+    if ((cps > cfg->launch_num) && ((cps % cfg->launch_num) != 0)) {
+        printf("Warning: launch_num(%u) is not divisible by cps(%lu)\n", cfg->launch_num, cps);
     }
 
     cl->cc = cc;
