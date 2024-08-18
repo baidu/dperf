@@ -106,7 +106,7 @@ static struct config_keyword g_config_keywords[] = {
     {"cps", config_parse_cps, "Number, eg 1m, 1.5m, 2k, 100"},
     {"cc", config_parse_cc, "Number, eg 100m, 1.5m, 2k, 100"},
     {"flood", config_parse_flood, ""},
-    {"launch_num", config_parse_launch_num, "Number, default " DEFAULT_STR(DEFAULT_LAUNCH)},
+    {"launch_num", config_parse_launch_num, "Number, default " DEFAULT_STR(DEFAULT_LAUNCH_MIN) "-" DEFAULT_STR(DEFAULT_LAUNCH_MAX)},
     {"client", config_parse_client, "IPAddress Number"},
     {"server", config_parse_server, "IPAddress Number"},
     {"change_dip", config_parse_change_dip, "IPAddress Step Number"},
@@ -2447,10 +2447,6 @@ int config_parse(int argc, char **argv, struct config *cfg)
     /* called before config_check_payload() */
     if (config_check_http(cfg) < 0) {
         return -1;
-    }
-
-    if (cfg->launch_num == 0) {
-        cfg->launch_num = DEFAULT_LAUNCH;
     }
 
     if (config_check_wait(cfg) < 0) {
