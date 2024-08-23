@@ -86,7 +86,7 @@ static int dpdk_set_socket_mem(struct config *cfg, char *socket_mem, char *file_
         return -1;
     }
 
-    size = snprintf(file_prefix, RTE_ARG_LEN, "--file-prefix=%d", getpid());
+    size = snprintf(file_prefix, RTE_ARG_LEN, "--file-prefix=dperf-%d", getpid());
     if (size >= RTE_ARG_LEN) {
         return -1;
     }
