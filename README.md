@@ -131,6 +131,9 @@ See the website at [https://dperf.org/](https://dperf.org/).
 ## Contributing
 dperf welcomes your contribution. See the [CONTRIBUTING](CONTRIBUTING.md) file for details.
 
+## Patent
+ - Jianzhang Peng(2024). Testing Method and Apparatus for Network Devices. CN114205274B. Issued June 11, 2024.
+
 ## Author
 * [Jianzhang Peng](https://github.com/pengjianzhang), a Ph.D. graduate in Computer Science from the University of Science and Technology of China, served as a Principal Engineer at both Huawei and Baidu. He participated in the development of 7-layer and 4-layer load balancing systems. During his tenure at Baidu, he developed the dperf project. Even after leaving Baidu, he remains dedicated to the maintenance of the dperf project. Currently, he works in Singapore, focusing on researching and implementing low-latency network systems for high-frequency crypto quantitative trading.
 
