@@ -57,6 +57,7 @@ struct client_launch {
     uint64_t launch_next;
     uint64_t launch_interval;
     uint64_t launch_interval_default;
+    uint64_t launch_reduce;
     uint32_t launch_num;
 };
 
@@ -215,7 +216,13 @@ static inline uint64_t work_space_client_launch_num(struct work_space *ws)
                 if (gap < launch_num) {
                     num = gap;
                 }
+            } else if (g_net_stats.socket_current == cc) {
+                num = 0;
             } else {
+                if (ws->socket_table.rss && (ws->client_launch.launch_reduce != tt->second.count)) {
+                    socket_disable_keepalive_random();
+                    ws->client_launch.launch_reduce = tt->second.count;
+                }
                 num = 0;
             }
         }

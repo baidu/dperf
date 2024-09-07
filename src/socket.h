@@ -388,6 +388,7 @@ static inline struct socket *socket_client_open(struct socket_table *st, uint64_
 void socket_log(struct socket *sk, const char *tag);
 void socket_print(struct socket *sk, const char *tag);
 int socket_table_init(struct work_space *ws);
+void socket_disable_keepalive_random(void);
 #ifdef DPERF_DEBUG
 #define SOCKET_LOG(sk, tag) socket_log(sk, tag)
 #else
