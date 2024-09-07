@@ -986,6 +986,9 @@ static inline void tcp_do_keepalive(struct work_space *ws, struct socket *sk)
             } else {
                 socket_close(sk);
             }
+        } else if ((sk->keepalive == 0) && (sk->state == SK_ESTABLISHED)) {
+            sk->state = SK_FIN_WAIT_1;
+            tcp_reply(ws, sk, TH_ACK | TH_FIN);
         }
         return;
     }

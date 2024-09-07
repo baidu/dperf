@@ -28,6 +28,7 @@
 #include "net_stats.h"
 #include "csum.h"
 #include "rss.h"
+#include "socket_timer.h"
 #include <rte_malloc.h>
 
 const char* g_sk_states[] = {
@@ -198,4 +199,16 @@ int socket_table_init(struct work_space *ws)
 
     st->socket_pool.next = 0;
     return 0;
+}
+
+void socket_disable_keepalive_random(void)
+{
+    struct socket_queue *sq = NULL;
+    struct socket *sk = NULL;
+
+    sq = &g_keepalive_timer.queue;
+    sk = socket_queue_first(sq);
+    if (sk) {
+        sk->keepalive = 0;
+    }
 }
