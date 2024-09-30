@@ -96,6 +96,7 @@ static inline struct rte_mbuf *tcp_new_packet(struct work_space *ws, struct sock
     struct ip6_hdr *ip6h = NULL;
     struct tcphdr *th = NULL;
     struct mbuf_cache *p = NULL;
+    struct vxlan_headers *vxhs = NULL;
 
     if (tcp_flags & TH_SYN) {
         p = &ws->tcp_opt;
@@ -130,6 +131,9 @@ static inline struct rte_mbuf *tcp_new_packet(struct work_space *ws, struct sock
 
     /* update vxlan inner header */
     if (ws->vxlan) {
+        vxhs = (struct vxlan_headers *)mbuf_eth_hdr(m);
+        vxhs->uh.source = (sk->fport + sk->lport + sk->csum_ip) | htons(VXLAN_SPORT_MASK);
+
         iph = (struct iphdr *)((uint8_t *)mbuf_eth_hdr(m) + VXLAN_HEADERS_SIZE + sizeof(struct eth_hdr));
         if (ws->ipv6) {
             ip6h = (struct ip6_hdr *)iph;

@@ -97,7 +97,7 @@ static void vxlan_set_udphdr(struct work_space *ws, struct udphdr *uh, uint16_t 
 
     len = sizeof(struct udphdr) + sizeof(struct vxlan_header) + inner_len;
     uh->dest = htons(VXLAN_PORT);
-    uh->source = htons(VXLAN_SPORT + ws->id);
+    uh->source = 0;
     uh->len = htons(len);
 }
 
