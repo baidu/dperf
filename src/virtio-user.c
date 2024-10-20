@@ -50,7 +50,7 @@
                      ((mac_addrs)->addr_bytes[4]), \
                      ((mac_addrs)->addr_bytes[5])
 
-static void kni_set_name(struct config *cfg, struct netif_port *port, char *name)
+static void kni_set_name(struct config *cfg, struct netif_port *port, char *name, size_t name_len)
 {
     int idx = 0;
     /*
@@ -63,9 +63,9 @@ static void kni_set_name(struct config *cfg, struct netif_port *port, char *name
      * which kni hard to achieve, because in one ns can only open one kni instance
      */
     if (cfg->server) {
-        snprintf(name, VDEV_NAME_SIZE, "%ss%1d", cfg->kni_ifname, idx);
+        snprintf(name, name_len, "%ss%1d", cfg->kni_ifname, idx);
     } else {
-        snprintf(name, VDEV_NAME_SIZE, "%sc%1d", cfg->kni_ifname, idx);
+        snprintf(name, name_len, "%sc%1d", cfg->kni_ifname, idx);
     }
 }
 
@@ -119,7 +119,7 @@ static uint16_t kni_alloc(struct config *cfg, struct netif_port *port)
     char vdev_name[VDEV_NAME_SIZE];
     char kernel_name[VDEV_NAME_SIZE];
 
-    kni_set_name(cfg, port, kernel_name);
+    kni_set_name(cfg, port, kernel_name, VDEV_NAME_SIZE);
 
     snprintf(vdev_name, VDEV_NAME_SIZE, VDEV_NAME_FMT, port - &(cfg->ports[0]));
 #pragma GCC diagnostic push
@@ -155,7 +155,7 @@ static int kni_set_link_up(struct config *cfg, struct netif_port *port)
     }
 
     memset(&ifr, 0, sizeof(struct ifreq));
-    kni_set_name(cfg, port, ifr.ifr_name);
+    kni_set_name(cfg, port, ifr.ifr_name, IFNAMSIZ);
 
     if (ioctl(fd, SIOCGIFFLAGS, (void *) &ifr) < 0) {
         printf("kni get flags error\n");
