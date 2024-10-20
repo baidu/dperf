@@ -78,6 +78,8 @@ static void http_set_payload_client(struct config *cfg, char *dest, int len, int
     int extra_len = 0;
     char buf[MBUF_DATA_SIZE] = {0};
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
     extra_len = strlen(cfg->http_path) + strlen(cfg->http_host) - strlen(HTTP_HOST_DEFAULT) - strlen(HTTP_PATH_DEFAULT);
     if (payload_size <= 0) {
         if (cfg->http_method == HTTP_METH_POST) {
@@ -101,6 +103,7 @@ static void http_set_payload_client(struct config *cfg, char *dest, int len, int
             snprintf(dest, len, HTTP_GET_FORMAT, buf, cfg->http_host);
         }
     }
+#pragma GCC diagnostic pop
 }
 
 static void http_set_payload_server(struct config *cfg, char *dest, int len, int payload_size)
@@ -110,6 +113,8 @@ static void http_set_payload_server(struct config *cfg, char *dest, int len, int
     char buf[MBUF_DATA_SIZE] = {0};
     const char *data = NULL;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
     if (payload_size <= 0) {
         data = http_rsp_body_default;
         snprintf(dest, len, HTTP_RSP_FORMAT, (int)strlen(data), data);
@@ -128,6 +133,7 @@ static void http_set_payload_server(struct config *cfg, char *dest, int len, int
         }
         snprintf(dest, len, HTTP_RSP_FORMAT, content_length, buf);
     }
+#pragma GCC diagnostic pop
 }
 
 void http_set_payload(struct config *cfg, char *payload, int payload_size)

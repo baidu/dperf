@@ -7,6 +7,13 @@ SRCS-y := src/main.c src/socket.c src/config.c src/client.c src/mbuf_cache.c src
           src/icmp6.c src/neigh.c src/vxlan.c src/csum.c src/bond.c src/lldp.c\
           src/rss.c src/ip_list.c src/http_parse.c src/trace.c
 
+GCC_VERSION := $(shell gcc -dumpversion | cut -f1 -d.)
+
+CFLAGS_OPT :=
+ifeq ($(shell [ $(GCC_VERSION) -ge 9 ] && echo yes),yes)
+    CFLAGS_OPT += -Wno-address-of-packed-member
+endif
+
 #dpdk 17.11, 18.11, 19.11
 ifdef RTE_SDK
 
@@ -16,7 +23,7 @@ RTE_TARGET ?= x86_64-native-linuxapp-gcc
 include $(RTE_SDK)/mk/rte.vars.mk
 CFLAGS += -O3 -g -I./src -Wall
 CFLAGS += -DHTTP_PARSE
-CFLAGS += $(WERROR_FLAGS) -Wno-address-of-packed-member
+CFLAGS += $(WERROR_FLAGS) $(CFLAGS_OPT)
 
 ifdef DPERF_DEBUG
 CFLAGS += -DDPERF_DEBUG
@@ -44,7 +51,7 @@ CFLAGS += -DDPERF_DEBUG
 endif
 
 CFLAGS += -DHTTP_PARSE
-CFLAGS += -Wno-address-of-packed-member -DALLOW_EXPERIMENTAL_API
+CFLAGS += $(CFLGAS_OPT) -DALLOW_EXPERIMENTAL_API
 CFLAGS += $(shell $(PKGCONF) --cflags libdpdk)
 
 #fix lower version pkg-config
