@@ -205,6 +205,7 @@ struct work_space *work_space_new(struct config *cfg, int id)
     ws->ipv6 = cfg->af == AF_INET6;
     ws->http = cfg->http;
     ws->flood = cfg->flood;
+    ws->neigh_ignore = cfg->neigh_ignore;
     ws->fast_close = cfg->fast_close;
     ws->disable_ack = cfg->disable_ack;
     ws->send_window = (uint32_t)cfg->mss * (uint32_t)cfg->send_window;

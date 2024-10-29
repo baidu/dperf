@@ -54,6 +54,7 @@ static void icmp6_nd_na_set(struct nd_neighbor_advert *na, const struct eth_addr
 
 static void icmp6_ns_process(struct work_space *ws, struct rte_mbuf *m)
 {
+    ipaddr_t *addr = NULL;
     struct eth_hdr *eth = mbuf_eth_hdr(m);
     struct ip6_hdr *ip6h = mbuf_ip6_hdr(m);
     struct icmp6_hdr *icmp6h = mbuf_icmp6_hdr(m);
@@ -61,13 +62,21 @@ static void icmp6_ns_process(struct work_space *ws, struct rte_mbuf *m)
     struct nd_neighbor_solicit *ns = (struct nd_neighbor_solicit *)icmp6h;
 
     net_stats_icmp_rx();
-    if ((!work_space_ip6_exist(ws, (ipaddr_t *)&(ns->nd_ns_target)))
+    addr = (ipaddr_t *)&(ns->nd_ns_target);
+    if ((!work_space_ip6_exist(ws, addr))
             || (ip6h->ip6_hops != ND_TTL)) {
         mbuf_free(m);
         return;
     }
 
     kni_broadcast(ws, m);
+    if (ws->neigh_ignore) {
+        if (ipaddr_eq(&ws->port->local_ip, addr)) {
+            mbuf_free(m);
+            return;
+        }
+     }
+
     eth_addr_copy(&eth->d_addr, &eth->s_addr);
     eth_addr_copy(&eth->s_addr, smac);
 
