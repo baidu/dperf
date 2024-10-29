@@ -128,6 +128,7 @@ struct config {
     uint8_t flow;
     bool quiet;
     bool tcp_rst;
+    bool neigh_ignore;
     bool http;
     bool stats_http;    /* payload size >= HTTP_DATA_MIN_SIZE */
     uint8_t http_method;
