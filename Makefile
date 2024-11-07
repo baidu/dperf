@@ -53,6 +53,7 @@ endif
 CFLAGS += -DHTTP_PARSE
 CFLAGS += $(CFLGAS_OPT) -DALLOW_EXPERIMENTAL_API
 CFLAGS += $(shell $(PKGCONF) --cflags libdpdk)
+CFLAGS += $(CFLAGS_OPT)
 
 #fix lower version pkg-config
 LDFLAGS0 = $(shell $(PKGCONF) --static --libs libdpdk) -lpthread -lrte_net_bond -lrte_bus_pci -lrte_bus_vdev
