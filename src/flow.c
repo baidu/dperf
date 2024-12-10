@@ -97,12 +97,22 @@ static void flow_pattern_init_ipv6(struct rte_flow_item *pattern, struct rte_flo
     }
 
     memset(spec, 0, sizeof(struct rte_flow_item_ipv6));
+#if RTE_VERSION < RTE_VERSION_NUM(24, 11, 0, 0)
     memcpy(spec->hdr.dst_addr, &dip, sizeof(struct in6_addr));
     memcpy(spec->hdr.src_addr, &sip, sizeof(struct in6_addr));
+#else
+    memcpy(&(spec->hdr.dst_addr), &dip, sizeof(struct in6_addr));
+    memcpy(&(spec->hdr.src_addr), &sip, sizeof(struct in6_addr));
+#endif
 
     memset(mask, 0, sizeof(struct rte_flow_item_ipv6));
+#if RTE_VERSION < RTE_VERSION_NUM(24, 11, 0, 0)
     memcpy(mask->hdr.dst_addr, dmask, sizeof(struct in6_addr));
     memcpy(mask->hdr.src_addr, smask, sizeof(struct in6_addr));
+#else
+    memcpy(&(mask->hdr.dst_addr), dmask, sizeof(struct in6_addr));
+    memcpy(&(mask->hdr.src_addr), smask, sizeof(struct in6_addr));
+#endif
 
     memset(pattern, 0, sizeof(struct rte_flow_item));
     pattern->type = RTE_FLOW_ITEM_TYPE_IPV6;
