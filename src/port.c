@@ -120,7 +120,9 @@ int port_config(struct netif_port *port)
     port_id = port->id;
     queue_num = port->queue_num;
     memset(&dev_info, 0, sizeof(dev_info));
-    rte_eth_dev_info_get(port_id, &dev_info);
+    if (rte_eth_dev_info_get(port_id, &dev_info) < 0) {
+        return -1;
+    }
 
     if (nb_rxd > dev_info.rx_desc_lim.nb_max) {
         nb_rxd = dev_info.rx_desc_lim.nb_max;
