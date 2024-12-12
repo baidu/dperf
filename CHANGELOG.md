@@ -1,5 +1,34 @@
 # Changelog
 
+## v1.8.0 - 2024-12-12
+### Added
+
+- support DPDK-24.11
+
+- neigh_ignore: for LVS DR mode
+
+- random vxlan source port
+
+- support multi processes
+
+- payload_file: set payload from file
+
+- vhost-net support
+
+- more server ips
+
+### Changed
+
+- auto adjust default luanch_num
+
+- simplify RSS configuration
+
+### Fixed
+
+- fix: compilation warning
+
+- the accurate number of concurrent connections for rss
+
 ## v1.7.0 - 2024-06-06
 ### Added
 
