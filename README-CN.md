@@ -19,10 +19,10 @@ dperf 是一个100Gbps的网络性能与压力测试软件。
 ### HTTP每秒新建连接数
 |Client Cores|Server Cores|HTTP CPS|
 |------------|------------|--------|
-|1|1|2,101,044|
-|2|2|4,000,423|
-|4|4|7,010,743|
-|6|6|10,027,172|
+|1|1|210,1044|
+|2|2|400,0423|
+|4|4|701,0743|
+|6|6|1002,7172|
 
 ### HTTP吞吐
 |Client Cores|Server Cores|RX(Gbps)|TX(Gbps)|Client CPU Usage(%)|Server CPU Usage(%)|
@@ -34,9 +34,9 @@ dperf 是一个100Gbps的网络性能与压力测试软件。
 ### HTTP并发连接数
 |Client Cores|Server Cores|Current Connections|Client CPU Usage(%)|Server CPU Usage(%)|
 |------------|------------|-------------------|-------------------|-------------------|
-|1|1|100,000,000|34|39|
-|2|2|200,000,000|36|39|
-|4|4|400,000,000|40|41|
+|1|1|1,0000,0000|34|39|
+|2|2|2,0000,0000|36|39|
+|4|4|4,0000,0000|40|41|
 
 ### UDP TX PPS
 |Client Cores|TX MPPS|Client CPU Usage(%)|
