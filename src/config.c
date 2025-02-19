@@ -87,6 +87,7 @@ static int config_parse_log_level(int argc, char *argv[], void *data);
 static int config_parse_disable_ack(int argc, char *argv[], void *data);
 static int config_parse_retransmit_timeout(int argc, char *argv[], void *data);
 static int config_parse_neigh_ignore(int argc, char *argv[], void *data);
+static int config_parse_flow_isolate(int argc, char *argv[], void *data);
 
 #define _DEFAULT_STR(s) #s
 #define DEFAULT_STR(s)  _DEFAULT_STR(s)
@@ -145,6 +146,7 @@ static struct config_keyword g_config_keywords[] = {
     {"disable_ack", config_parse_disable_ack, ""},
     {"retransmit_timeout", config_parse_retransmit_timeout, "Seconds[" DEFAULT_STR(RTO_MIN)"-" DEFAULT_STR(RTO_MAX)"], default " DEFAULT_STR(RTO_DEFAULT)},
     {"neigh_ignore", config_parse_neigh_ignore, ""},
+    {"flow_isolate", config_parse_flow_isolate, ""},
     {NULL, NULL, NULL}
 };
 
@@ -1508,6 +1510,18 @@ static int config_parse_neigh_ignore(int argc, char *argv[], void *data)
     return 0;
 }
 
+static int config_parse_flow_isolate(int argc, char *argv[], void *data)
+{
+    struct config *cfg = data;
+
+    if (argc != 1) {
+        return -1;
+    }
+
+    cfg->flow_isolate = true;
+    return 0;
+}
+
 static void config_manual(void)
 {
     config_keyword_help(g_config_keywords);
@@ -2159,7 +2173,7 @@ static int config_check_flow(struct config *cfg)
     int rss = 0;
     struct netif_port *port = NULL;
 
-    if (cfg->cpu_num == cfg->port_num) {
+    if ((cfg->cpu_num == cfg->port_num) && (!cfg->flow_isolate)) {
         cfg->flow = FLOW_NONE;
         return 0;
     }
@@ -2380,6 +2394,29 @@ static int config_check_fast_close(struct config *cfg)
     return 0;
 }
 
+static int config_check_flow_isolate(struct config *cfg)
+{
+    struct netif_port *port = NULL;
+
+    if (!cfg->flow_isolate) {
+        return 0;
+    }
+
+    if (cfg->flow == FLOW_RSS) {
+        printf("Error: \'flow_isolate\' cannot be set with \'rss\'.\n");
+        return -1;
+    }
+
+    config_for_each_port(cfg, port) {
+        if (eth_addr_is_zero(&port->gateway_mac)) {
+            printf("Error: using 'flow_isolate' requires setting the gateway's MAC address.\n");
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 int config_parse(int argc, char **argv, struct config *cfg)
 {
     int conf = 0;
@@ -2534,6 +2571,10 @@ int config_parse(int argc, char **argv, struct config *cfg)
     }
 
     if (config_check_fast_close(cfg) < 0) {
+        return -1;
+    }
+
+    if (config_check_flow_isolate(cfg) < 0) {
         return -1;
     }
 
