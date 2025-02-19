@@ -132,6 +132,12 @@ int port_config(struct netif_port *port)
         nb_txd = dev_info.tx_desc_lim.nb_max;
     }
 
+    if (g_config.flow_isolate) {
+        if (rte_flow_isolate(port->id, 1, NULL) < 0) {
+            printf("Warning: flow_solate is not supported at port %d.\n", port->id);
+        }
+    }
+
     if (g_config.vlan_id) {
         if (port_config_vlan(&g_port_conf, &dev_info) < 0) {
             return -1;
