@@ -58,18 +58,18 @@
     "\r\n"                      \
     "%s"
 
-static char http_rsp[MBUF_DATA_SIZE];
-static char http_req[MBUF_DATA_SIZE];
+static char http_rsp[THREAD_NUM_MAX][MBUF_DATA_SIZE];
+static char http_req[THREAD_NUM_MAX][MBUF_DATA_SIZE];
 static const char *http_rsp_body_default = "hello dperf!\r\n";
 
-const char *http_get_request(void)
+const char *http_get_request(int id)
 {
-    return http_req;
+    return http_req[id];
 }
 
-const char *http_get_response(void)
+const char *http_get_response(int id)
 {
-    return http_rsp;
+    return http_rsp[id];
 }
 
 static void http_set_payload_client(struct config *cfg, char *dest, int len, int payload_size)
@@ -136,19 +136,23 @@ static void http_set_payload_server(struct config *cfg, char *dest, int len, int
 #pragma GCC diagnostic pop
 }
 
-void http_set_payload(struct config *cfg, char *payload, int payload_size)
+void http_set_payload(struct config *cfg, char *payload)
 {
-    if (payload) {
-        if (cfg->server) {
-            strcpy(http_rsp, payload);
+    int i = 0;
+
+    for (i = 0; i < cfg->cpu_num; i++) {
+        if (payload) {
+            if (cfg->server) {
+                strcpy(http_rsp[i], payload);
+            } else {
+                strcpy(http_rsp[i], payload);
+            }
         } else {
-            strcpy(http_rsp, payload);
-        }
-    } else {
-        if (cfg->server) {
-            http_set_payload_server(cfg, http_rsp, MBUF_DATA_SIZE, payload_size);
-        } else {
-            http_set_payload_client(cfg, http_req, MBUF_DATA_SIZE, payload_size);
+            if (cfg->server) {
+                http_set_payload_server(cfg, http_rsp[i], MBUF_DATA_SIZE, cfg->payload_size[i]);
+            } else {
+                http_set_payload_client(cfg, http_req[i], MBUF_DATA_SIZE, cfg->payload_size[i]);
+            }
         }
     }
 }

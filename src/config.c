@@ -114,7 +114,7 @@ static struct config_keyword g_config_keywords[] = {
     {"change_dip", config_parse_change_dip, "IPAddress Step Number"},
     {"listen", config_parse_listen, "Port Number, default 80 1" },
     {"payload_random", config_parse_payload_random, ""},
-    {"payload_size", config_parse_payload_size, "Number"},
+    {"payload_size", config_parse_payload_size, "Number [Number Number ...]"},
     {"payload_file", config_parse_payload_file, "Path"},
     {"send_window", config_parse_send_window, "Number["DEFAULT_STR(SEND_WINDOW_MIN) "-" DEFAULT_STR(SEND_WINDOW_MAX)"] default " DEFAULT_STR(SEND_WINDOW_DEFAULT)},
     {"packet_size", config_parse_packet_size, "Number"},
@@ -948,24 +948,31 @@ static int config_parse_payload_random(int argc, __rte_unused char *argv[], void
 
 static int config_parse_payload_size(int argc, char *argv[], void *data)
 {
-    int payload_size = 0;
+    int i = 0;
+    int size = 0;
     struct config *cfg = data;
 
-    if (argc != 2) {
+    if (argc < 2) {
         return -1;
     }
 
-    if (cfg->payload_size > 0) {
+    if (cfg->payload_size[0]) {
         printf("Error: duplicate payload_size\n");
         return -1;
     }
 
-    payload_size = config_parse_number(argv[1], true, true);
-    if (payload_size <= 0) {
-        return -1;
-    }
+    for (i = 1; i < argc; i++) {
+        if ((size = config_parse_number(argv[i], true, true)) < 0) {
+            return -1;
+        }
 
-    cfg->payload_size = payload_size;
+        if (size > PAYLOAD_SIZE_MAX) {
+            printf("Error: 'payload_size' is larger than %lu\n", PAYLOAD_SIZE_MAX);
+            return -1;
+        }
+
+        cfg->payload_size[i - 1] = size;
+    }
     return 0;
 }
 
@@ -2061,79 +2068,163 @@ static int config_packet_payload_size(struct config *cfg)
     return packet_size_max - header_size;
 }
 
-static int config_check_payload(struct config *cfg)
+static void config_set_payload_size(struct config *cfg, int size)
 {
-    int payload_file_size = 0;
-    int packet_payload_size = 0;
-    char payload_buf[MBUF_DATA_SIZE] = {0};
-    char *payload = NULL;
-    char *payload_path = NULL;
+    int i = 0;
 
-    packet_payload_size = config_packet_payload_size(cfg);
-
-    payload_path = cfg->payload_path;
-    if (*payload_path) {
-        if (cfg->payload_size) {
-            printf("Error: both 'payload_size' and 'payload_file' are set\n");
-            return -1;
-        }
-
-        payload_file_size = config_read_payload_file(cfg, payload_buf, MBUF_DATA_SIZE);
-        if (payload_file_size < 0) {
-            return -1;
-        }
-
-        if (payload_file_size > packet_payload_size) {
-            printf("Error: large payload file, please use 'jumbo' to increase the MTU.\n");
-            return -1;
-        }
-        payload = payload_buf;
-        cfg->payload_size = payload_file_size;
+    for (i = 0; i < cfg->cpu_num; i++) {
+        cfg->payload_size[i] = size;
     }
+}
 
-    if (cfg->payload_size > PAYLOAD_SIZE_MAX) {
-        printf("Error: 'payload_size' is larger than %lu\n", PAYLOAD_SIZE_MAX);
-        return -1;
-    }
+static int config_check_payload_size(struct config *cfg)
+{
+    int i = 0;
+    int large = 0;
+    int packet_size = 0;
+    int payload_size = 0;
 
-    if ((cfg->protocol == IPPROTO_UDP) || (!cfg->server)) {
-        if (cfg->payload_size > packet_payload_size) {
-            printf("Error: large 'payload_size', please use 'jumbo' to increase the MTU.\n");
-            return -1;
+    packet_size = config_packet_payload_size(cfg);
+    for (i = 0; i < cfg->cpu_num; i++) {
+        payload_size = cfg->payload_size[i];
+        if ((cfg->protocol == IPPROTO_TCP) && (cfg->server)) {
+            if (payload_size > cfg->mss) {
+                payload_size = ((payload_size + cfg->mss - 1) / cfg->mss) * cfg->mss;
+                cfg->payload_size[i] = payload_size;
+                if (cfg->send_window == 0) {
+                    cfg->send_window = SEND_WINDOW_DEFAULT;
+                }
+                large = 1;
+            }
+        } else {
+            if (cfg->payload_size[i] > packet_size) {
+                return -1;
+            }
         }
     }
 
-    if ((cfg->protocol == IPPROTO_TCP) && (cfg->server) && (cfg->payload_size > cfg->mss)) {
-        cfg->payload_size = ((cfg->payload_size + cfg->mss - 1) / cfg->mss) * cfg->mss;
-        if (cfg->send_window == 0) {
-            cfg->send_window = SEND_WINDOW_DEFAULT;
-        }
-    }
-
-    if (cfg->payload_size <= cfg->mss) {
+    if (large == 0) {
         cfg->send_window = 0;
     }
 
-    if (cfg->protocol == IPPROTO_TCP) {
-        if ((cfg->payload_size == 0) || (cfg->payload_size >= HTTP_DATA_MIN_SIZE)) {
+    return 0;
+}
+
+static int config_check_payload_file(struct config *cfg, char **payload, char *buf, int len)
+{
+    int size = 0;
+
+    if (cfg->payload_path[0] == 0) {
+        return 0;
+    }
+
+    if (cfg->payload_size[0]) {
+        printf("Error: both 'payload_size' and 'payload_file' are set\n");
+        return -1;
+    }
+
+    if ((size = config_read_payload_file(cfg, buf, len)) < 0) {
+        return -1;
+    }
+
+    if (size > config_packet_payload_size(cfg)) {
+        printf("Error: large 'payload_size', please use 'jumbo' to increase the MTU.\n");
+        return -1;
+    }
+
+    config_set_payload_size(cfg, size);
+    *payload = buf;
+    return 0;
+}
+
+static int config_check_payload_size_num(struct config *cfg)
+{
+    int i = 0;
+    int num = 0;
+
+    for (i = 0; i < THREAD_NUM_MAX; i++) {
+        if (cfg->payload_size[i]) {
+            num++;
+        } else {
+            break;
+        }
+    }
+
+    if (num > 1) {
+        if (cfg->server == 0) {
+            printf("Error: too much 'payload_size' for client mode\n");
+            return -1;
+        }
+
+        if (num != cfg->cpu_num) {
+            printf("Error: The number of payload_size is not equal to the number of cpus\n");
+            return -1;
+        }
+    } else {
+        config_set_payload_size(cfg, cfg->payload_size[0]);
+    }
+
+    return 0;
+}
+
+static int config_check_stats_http(struct config *cfg, char *payload)
+{
+    int i = 0;
+    bool stats = false;
+
+    for (i = 0; i < cfg->cpu_num; i++) {
+        stats = false;
+        if ((cfg->payload_size[i] == 0) || (cfg->payload_size[i] >= HTTP_DATA_MIN_SIZE)) {
             if (payload) {
                 if (cfg->server) {
                     if (payload[9] == '2') {
-                        cfg->stats_http = true;
+                        stats = true;
                     }
                 } else {
                     if ((payload[0] == 'G') || (payload[1] == 'O')) {
-                        cfg->stats_http = true;
+                        stats = true;
                     }
                 }
             } else {
-                cfg->stats_http = true;
+                stats = true;
             }
         }
 
-        http_set_payload(cfg, payload, cfg->payload_size);
+        if ((i > 1) && (cfg->stats_http != stats)) {
+            return -1;
+        }
+        cfg->stats_http = stats;
+    }
+
+    return 0;
+}
+
+static int config_check_payload(struct config *cfg)
+{
+    char payload_buf[MBUF_DATA_SIZE] = {0};
+    char *payload = NULL;
+
+    if (config_check_payload_size_num(cfg) < 0) {
+        return -1;
+    }
+
+    if (config_check_payload_file(cfg, &payload, payload_buf, MBUF_DATA_SIZE) < 0) {
+        return -1;
+    }
+
+    if (config_check_payload_size(cfg) < 0) {
+        printf("Error: large 'payload_size'.\n");
+        return -1;
+    }
+
+    if (cfg->protocol == IPPROTO_TCP) {
+        if (config_check_stats_http(cfg, payload) < 0) {
+            printf("Error: 'payload_size' is inconsistent.\n");
+            return -1;
+        }
+        http_set_payload(cfg, payload);
     } else {
-        udp_set_payload(cfg, payload, cfg->payload_size);
+        udp_set_payload(cfg, payload);
     }
     return 0;
 }

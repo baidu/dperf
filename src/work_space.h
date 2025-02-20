@@ -90,6 +90,7 @@ struct work_space {
     uint32_t vni:24;
     uint32_t vxlan:8;
     uint32_t vtep_ip; /* each queue has a vtep ip */
+    uint32_t payload_size;
     struct tick_time time;
     struct cpuload load;
     struct client_launch client_launch;
