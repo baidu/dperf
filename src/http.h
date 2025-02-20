@@ -58,8 +58,8 @@ static inline void http_parse_request(const uint8_t *data, uint16_t len)
 }
 
 #define HTTP_DATA_MIN_SIZE  85
-void http_set_payload(struct config *cfg, char *payload, int payload_size);
-const char *http_get_request(void);
-const char *http_get_response(void);
+void http_set_payload(struct config *cfg, char *payload);
+const char *http_get_request(int id);
+const char *http_get_response(int id);
 
 #endif

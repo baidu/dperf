@@ -327,13 +327,13 @@ static inline void socket_init_http(struct socket *sk)
     sk->http_frags = 0;
 }
 
-static inline void socket_init_http_server(struct socket *sk)
+static inline void socket_init_http_server(struct socket *sk, uint32_t payload_size)
 {
     sk->http_length = 0;
     sk->http_parse_state = 0;
     sk->http_flags = 0;
     sk->http_ack = 0;
-    sk->snd_max = sk->snd_nxt + (uint32_t)g_config.payload_size;
+    sk->snd_max = sk->snd_nxt + payload_size;
 }
 
 #else

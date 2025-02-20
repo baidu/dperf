@@ -31,14 +31,18 @@
 #include "socket_timer.h"
 #include "csum.h"
 
-static char g_udp_data[MBUF_DATA_SIZE] = "hello dperf!!\n";
+static char g_udp_data[THREAD_NUM_MAX][MBUF_DATA_SIZE];
 
-void udp_set_payload(struct config *cfg, char *payload, int payload_size)
+void udp_set_payload(struct config *cfg, char *payload)
 {
-    if (payload) {
-        strcpy(g_udp_data, payload);
-    } else {
-        config_set_payload(cfg, g_udp_data, payload_size, 1);
+    int i = 0;
+
+    for (i = 0; i < cfg->cpu_num; i++) {
+        if (payload) {
+            strcpy(g_udp_data[i], payload);
+        } else {
+            config_set_payload(cfg, g_udp_data[i], cfg->payload_size[i], 1);
+        }
     }
 }
 
@@ -347,7 +351,7 @@ int udp_init(struct work_space *ws)
         }
     }
 
-    return mbuf_cache_init_udp(&ws->udp, ws, "udp", g_udp_data);
+    return mbuf_cache_init_udp(&ws->udp, ws, "udp", g_udp_data[ws->id]);
 }
 
 void udp_drop(__rte_unused struct work_space *ws, struct rte_mbuf *m)

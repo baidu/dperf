@@ -161,7 +161,7 @@ struct config {
     char http_path[HTTP_PATH_MAX];
 
     char payload_path[PAYLOAD_PATH_MAX];
-    int payload_size;
+    uint32_t payload_size[THREAD_NUM_MAX];
     int mss;
 
     int wait;

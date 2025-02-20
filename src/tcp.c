@@ -707,7 +707,7 @@ static inline void tcp_server_process_data(struct work_space *ws, struct socket 
         if (data_len) {
             http_parse_request(data, data_len);
             if ((ws->send_window) && ((rx_flags & TH_FIN) == 0)) {
-                socket_init_http_server(sk);
+                socket_init_http_server(sk, ws->payload_size);
                 net_stats_tcp_rsp();
                 net_stats_http_2xx();
                 if (sk->keepalive_request_num) {
@@ -1092,7 +1092,7 @@ int tcp_init(struct work_space *ws)
     }
 
     if (g_config.server) {
-        data = http_get_response();
+        data = http_get_response(ws->id);
         if (ws->vxlan) {
             ws->run_loop = tcp_server_run_loop_vxlan;
         } else if (ws->ipv6) {
@@ -1101,7 +1101,7 @@ int tcp_init(struct work_space *ws)
             ws->run_loop = tcp_server_run_loop_ipv4;
         }
     } else {
-        data = http_get_request();
+        data = http_get_request(ws->id);
         if (ws->vxlan) {
             ws->run_loop = tcp_client_run_loop_vxlan;
         } else if (ws->ipv6) {
