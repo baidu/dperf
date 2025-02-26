@@ -338,7 +338,7 @@ static inline void socket_init_http_server(struct socket *sk, uint32_t payload_s
 
 #else
 #define socket_init_http(sk) do{}while(0)
-#define socket_init_http_server(sk) do{}while(0)
+#define socket_init_http_server(sk, payload_size) do{}while(0)
 #endif
 
 static inline void socket_server_open(__rte_unused struct socket_table *st, struct socket *sk, struct tcphdr *th)
@@ -356,7 +356,9 @@ static inline void socket_server_open(__rte_unused struct socket_table *st, stru
     sk->keepalive_request_num = 0;
     sk->snd_nxt++;
     sk->snd_una = sk->snd_nxt;
+#ifdef HTTP_PARSE
     sk->snd_window = 1;
+#endif
     sk->rcv_nxt = ntohl(th->th_seq) + 1;
 }
 

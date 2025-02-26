@@ -2417,7 +2417,7 @@ static int config_check_http(struct config *cfg)
     http_host = (cfg->http_host[0] != 0);
     http_path = (cfg->http_path[0] != 0);
 
-    if ((cfg->payload_size || cfg->payload_path[0]) && (cfg->server == 0) && cfg->http) {
+    if ((cfg->payload_size[0] || cfg->payload_path[0]) && (cfg->server == 0) && cfg->http) {
         if (cfg->http_method == HTTP_METH_GET) {
             if (http_path) {
                 printf("Error: The HTTP path cannot be set with payload_path or payload_size for HTTP GET.\n");
