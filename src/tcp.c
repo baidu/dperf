@@ -403,7 +403,9 @@ static inline void tcp_do_retransmit(struct work_space *ws, struct socket *sk)
             sk->snd_nxt = sk->snd_una;
             tcp_reply(ws, sk, TH_PUSH | TH_ACK);
             sk->snd_nxt = snd_nxt;
+#ifdef HTTP_PARSE
             sk->snd_window = 1;
+#endif
             net_stats_push_rt();
             socket_start_retransmit_timer(sk, work_space_tsc(ws));
             return;
@@ -498,7 +500,9 @@ static inline bool tcp_check_sequence(struct work_space *ws, struct socket *sk, 
     uint32_t ack = ntohl(th->th_ack);
     uint32_t seq = ntohl(th->th_seq);
     uint32_t snd_last = sk->snd_una;
+#ifdef HTTP_PARSE
     uint32_t snd_nxt = 0;
+#endif
 
     if (th->th_flags & TH_FIN) {
         data_len++;
@@ -516,9 +520,11 @@ static inline bool tcp_check_sequence(struct work_space *ws, struct socket *sk, 
                     socket_stop_retransmit_timer(sk);
                 }
             } else {
+#ifdef HTTP_PARSE
                 if (sk->snd_window < SEND_WINDOW_MAX) {
                     sk->snd_window++;
                 }
+#endif
             }
             return true;
         } else {
@@ -543,6 +549,7 @@ static inline bool tcp_check_sequence(struct work_space *ws, struct socket *sk, 
     /* my data packet lost */
     if (tcp_seq_le(ack, sk->snd_nxt)) {
         if (ws->send_window) {
+#ifdef HTTP_PARSE
             /* new data is acked */
             if ((tcp_seq_gt(ack, sk->snd_una))) {
                 sk->snd_una = ack;
@@ -570,6 +577,7 @@ static inline bool tcp_check_sequence(struct work_space *ws, struct socket *sk, 
                 /* stale ack */
                 return false;
             }
+#endif
         } else {
             /* fast retransmit : If the last transmission time is more than 1 second */
             if ((sk->timer_tsc + TSC_PER_SEC) < work_space_tsc(ws)) {
@@ -657,6 +665,7 @@ static inline uint8_t tcp_process_fin(struct socket *sk, uint8_t rx_flags, uint8
     return tx_flags | flags;
 }
 
+#ifdef HTTP_PARSE
 static inline void tcp_reply_more(struct work_space *ws, struct socket *sk)
 {
     int i = 0;
@@ -681,6 +690,7 @@ static inline void tcp_reply_more(struct work_space *ws, struct socket *sk)
         }
     }
 }
+#endif
 
 static inline void tcp_server_process_data(struct work_space *ws, struct socket *sk, struct rte_mbuf *m,
     struct iphdr *iph, struct tcphdr *th)
@@ -704,6 +714,7 @@ static inline void tcp_server_process_data(struct work_space *ws, struct socket 
     }
 
     if (sk->state == SK_ESTABLISHED) {
+#ifdef HTTP_PARSE
         if (data_len) {
             http_parse_request(data, data_len);
             if ((ws->send_window) && ((rx_flags & TH_FIN) == 0)) {
@@ -729,6 +740,15 @@ static inline void tcp_server_process_data(struct work_space *ws, struct socket 
             tcp_reply_more(ws, sk);
             goto out;
         }
+#else
+        if (data_len) {
+            http_parse_request(data, data_len);
+            tx_flags |= TH_PUSH | TH_ACK;
+            if (sk->keepalive == 0) {
+                tx_flags |= TH_FIN;
+            }
+        }
+#endif
     }
 
     if ((sk->state > SK_ESTABLISHED) || ((rx_flags | tx_flags) & TH_FIN)) {
