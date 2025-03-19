@@ -34,6 +34,16 @@
 #include <rte_malloc.h>
 #include <pthread.h>
 
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#ifndef MAP_HUGE_1GB
+#define MAP_HUGE_1GB (30 << 26)
+#endif
+
 __thread struct work_space *g_work_space;
 static struct work_space *g_work_space_all[THREAD_NUM_MAX];
 static rte_atomic32_t g_wait_count;
@@ -168,11 +178,20 @@ static struct work_space *work_space_alloc(struct config *cfg, int id)
     size_t size = 0;
     uint32_t socket_num = 0;
     struct work_space *ws = NULL;
+    void *p = NULL;
 
     socket_num = config_get_total_socket_num(cfg, id);
     size = sizeof(struct work_space) + socket_num * sizeof(struct socket);
 
     ws = (struct work_space *)rte_calloc("work_space", 1, size, CACHE_ALIGN_SIZE);
+    if (ws == NULL) {
+        p = mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB|MAP_HUGE_1GB, -1, 0);
+        if (p != MAP_FAILED) {
+            ws = (struct work_space *)p;
+            memset(p, 0, size);
+            ws->mmap = 1;
+        }
+    }
     if (ws != NULL) {
         printf("socket allocation succeeded, memory size %0.2fGB socket num %u.\n", size * 1.0 / (1024 * 1024 * 1024), socket_num);
         ws->socket_table.socket_pool.num = socket_num;

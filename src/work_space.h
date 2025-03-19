@@ -73,6 +73,7 @@ struct work_space {
     uint8_t fast_close:1;
     uint8_t disable_ack:1;
     uint8_t neigh_ignore:1;
+    uint8_t mmap:1;
 
     /* bytes */
     uint32_t send_window;
