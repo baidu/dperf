@@ -228,6 +228,10 @@ static int config_parse_daemon(__rte_unused int argc, __rte_unused char *argv[],
 {
     struct config *cfg = data;
 
+    if (cfg->daemon) {
+        printf("Error: duplicate daemon\n");
+        return -1;
+    }
     cfg->daemon = 1;
     return 0;
 }
@@ -304,7 +308,7 @@ static int config_parse_keepalive(int argc, char *argv[], void *data)
     }
 
     if (cfg->keepalive) {
-        printf("duplicate \'keepalive\'\n");
+        printf("Error: duplicate \'keepalive\'\n");
         return -1;
     }
 
@@ -335,6 +339,12 @@ static int config_parse_pipeline(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->pipeline) {
+        printf("Error: duplicate pipeline\n");
+        return -1;
+    }
+
+
     if ((val = atoi(argv[1])) < 0) {
         return -1;
     }
@@ -352,6 +362,11 @@ static int config_parse_mode(int argc, char *argv[], void *data)
     struct config *cfg = data;
 
     if (argc != 2) {
+        return -1;
+    }
+
+    if (cfg->server) {
+        printf("Error: duplicate mode\n");
         return -1;
     }
 
@@ -379,6 +394,11 @@ static int config_parse_cpu(int argc, char *argv[], void *data)
     struct config *cfg = data;
 
     if (argc <= 1) {
+        return -1;
+    }
+
+    if (cfg->cpu_num) {
+        printf("Error: duplicate cpu\n");
         return -1;
     }
 
@@ -430,12 +450,16 @@ static int config_parse_socket_mem(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->socket_mem[0]) {
+        printf("Error: duplicate socket_mem\n");
+        return -1;
+    }
+
     if (strlen(argv[1]) >= RTE_ARG_LEN) {
         return -1;
     }
 
     strcpy(cfg->socket_mem, argv[1]);
-
     return 0;
 }
 
@@ -615,6 +639,11 @@ static int config_parse_listen(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->listen_num) {
+        printf("Error: duplicate listen\n");
+        return -1;
+    }
+
     listen = config_parse_number(argv[1], false, false);
     listen_num = config_parse_number(argv[2], false, false);
     if ((listen <= 0) || (listen_num <= 0)) {
@@ -749,6 +778,11 @@ static int config_parse_duration(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if(cfg->duration) {
+        printf("Error: duplicate duration\n");
+        return -1;
+    }
+
     len = strlen(argv[1]);
     c = argv[1][len -1];
     if (c == 'm') {
@@ -781,6 +815,11 @@ static int config_parse_cps(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->cps) {
+        printf("Error: duplicate cps\n");
+        return -1;
+    }
+
     cps = config_parse_number(argv[1], true, true);
     if (cps < 0) {
         return -1;
@@ -796,6 +835,11 @@ static int config_parse_cc(int argc, char *argv[], void *data)
     struct config *cfg = data;
 
     if (argc != 2) {
+        return -1;
+    }
+
+    if (cfg->cc) {
+        printf("Error: duplicate cc\n");
         return -1;
     }
 
@@ -816,6 +860,11 @@ static int config_parse_flood(int argc, __rte_unused char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->flood) {
+        printf("Error: duplicate flood\n");
+        return -1;
+    }
+
     cfg->flood = true;
     return 0;
 }
@@ -826,6 +875,11 @@ static int config_parse_launch_num(int argc, char *argv[], void *data)
     struct config *cfg = data;
 
     if (argc != 2) {
+        return -1;
+    }
+
+    if (cfg->launch_num) {
+        printf("Error: duplicate launch_num\n");
         return -1;
     }
 
@@ -846,6 +900,11 @@ static inline int config_parse_tx_burst(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->tx_burst) {
+        printf("Error: duplicate tx_burst\n");
+        return -1;
+    }
+
     val = config_parse_number(argv[1], false, false);
     if ((val < 1) || (val > TX_BURST_MAX)) {
         return -1;
@@ -863,6 +922,11 @@ static int config_parse_slow_start(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->slow_start) {
+        printf("Error: duplicate slow_start\n");
+        return -1;
+    }
+
     val = config_parse_number(argv[1], false, false);
     if ((val < SLOW_START_MIN) || (val > SLOW_START_MAX)) {
         return -1;
@@ -877,6 +941,11 @@ static int config_parse_wait(int argc, char *argv[], void *data)
     struct config *cfg = data;
 
     if (argc != 2) {
+        return -1;
+    }
+
+    if (cfg->wait) {
+        printf("Error: duplicate wait\n");
         return -1;
     }
 
@@ -922,6 +991,11 @@ static int config_read_payload_file(struct config *cfg, char *buf, int buf_size)
     FILE *fp = NULL;
     int ret = 0;
 
+    if (cfg->payload_path[0]) {
+        printf("Error: duplicate payload_path\n");
+        return -1;
+    }
+
     fp = fopen(cfg->payload_path, "r");
     if (fp == NULL) {
         printf("Error: cannot open file: %s\n", cfg->payload_path);
@@ -939,6 +1013,11 @@ static int config_parse_payload_random(int argc, __rte_unused char *argv[], void
     struct config *cfg = data;
 
     if (argc != 1) {
+        return -1;
+    }
+
+    if (cfg->payload_random) {
+        printf("Error: duplicate payload_random\n");
         return -1;
     }
 
@@ -1009,6 +1088,11 @@ static int config_parse_send_window(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->send_window) {
+        printf("Error: duplicate send_window\n");
+        return -1;
+    }
+
     send_window = config_parse_number(argv[1], true, true);
     if ((send_window < SEND_WINDOW_MIN) || (send_window > SEND_WINDOW_MAX)) {
         return -1;
@@ -1037,6 +1121,11 @@ static int config_parse_mss(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->mss) {
+        printf("Error: duplicate mss\n");
+        return -1;
+    }
+
     mss = config_parse_number(argv[1], false, false);
     if (mss <= 0) {
         return -1;
@@ -1051,6 +1140,11 @@ static int config_parse_protocol(int argc, char *argv[], void *data)
     struct config *cfg = data;
 
     if (argc != 2) {
+        return -1;
+    }
+
+    if (cfg->protocol) {
+        printf("Error: duplicate protocol\n");
         return -1;
     }
 
@@ -1174,7 +1268,7 @@ static int config_parse_tos(int argc, char *argv[], void *data)
     }
 
     if (cfg->tos != 0) {
-        printf("duplicate tos\n");
+        printf("Error: duplicate tos\n");
         return -1;
     }
 
@@ -1195,7 +1289,7 @@ static int config_parse_kni(int argc, char *argv[], void *data)
         return -1;
     }
     if (cfg->kni == true) {
-        printf("duplicate kni\n");
+        printf("Error: duplicate kni\n");
         return -1;
     }
 
@@ -1233,11 +1327,16 @@ static int config_parse_jumbo(int argc, __rte_unused char *argv[], void *data)
     if (argc == 2) {
         mtu = atoi(argv[1]);
         if ((mtu < JUMBO_MTU_MIN) || (mtu > JUMBO_MTU_MAX)) {
-            printf("error: bad jumbo mtu [%d - %d]\n", JUMBO_MTU_MIN, JUMBO_MTU_MAX);
+            printf("Error: bad jumbo mtu [%d - %d]\n", JUMBO_MTU_MIN, JUMBO_MTU_MAX);
             return -1;
         }
     } else {
         mtu = JUMBO_MTU_DEFAULT;
+    }
+
+    if (cfg->jumbo) {
+        printf("Error: duplicate jumbo\n");
+        return -1;
     }
 
     cfg->jumbo_mtu = mtu;
@@ -1282,6 +1381,11 @@ static int config_parse_tcp_rst(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->tcp_rst) {
+        printf("Error: duplicate tcp_rst\n");
+        return -1;
+    }
+
     val = atoi(argv[1]);
     if ((val == 0) || (val == 1)) {
         cfg->tcp_rst = val;
@@ -1302,6 +1406,7 @@ static int config_parse_http_host(int argc, char *argv[], void *data)
     }
 
     if (cfg->http_host[0] != 0) {
+        printf("Error: duplicate http_host\n");
         return -1;
     }
 
@@ -1325,6 +1430,7 @@ static int config_parse_http_path(int argc, char *argv[], void *data)
     }
 
     if (cfg->http_path[0] != 0) {
+        printf("Error: duplicate http_path\n");
         return -1;
     }
 
@@ -1347,6 +1453,11 @@ static int config_parse_http_method(int argc, char *argv[], void *data)
     struct config *cfg = data;
 
     if (argc != 2) {
+        return -1;
+    }
+
+    if (cfg->http_method) {
+        printf("Error: duplicate http_method\n");
         return -1;
     }
 
@@ -1377,6 +1488,7 @@ static int config_parse_client_port_range(int argc, char *argv[], void *data)
     }
 
     if ((cfg->lport_min != 0) || (cfg->lport_max != 0)) {
+        printf("Error: duplicate client_port_range\n");
         return -1;
     }
 
@@ -1410,6 +1522,11 @@ static int config_parse_client_hop(int argc, __rte_unused char *argv[], void *da
         return -1;
     }
 
+    if (cfg->client_hop) {
+        printf("Error: duplicate client_hop\n");
+        return -1;
+    }
+
     cfg->client_hop = true;
     return 0;
 }
@@ -1419,6 +1536,11 @@ static int config_parse_simd512(int argc, __rte_unused char *argv[], void *data)
     struct config *cfg = data;
 
     if (argc != 1) {
+        return -1;
+    }
+
+    if (cfg->simd512) {
+        printf("Error: duplicate simd512\n");
         return -1;
     }
 
@@ -1434,6 +1556,10 @@ static int config_parse_fast_close(int argc, __rte_unused char *argv[], void *da
         return -1;
     }
 
+    if (cfg->fast_close) {
+        printf("Error: duplicate fast_close\n");
+        return -1;
+    }
     cfg->fast_close = true;
     return 0;
 }
@@ -1443,6 +1569,11 @@ static int config_parse_clear_screen(int argc, __rte_unused char *argv[], void *
     struct config *cfg = data;
 
     if (argc != 1) {
+        return -1;
+    }
+
+    if (cfg->clear_screen) {
+        printf("Error: duplicate clear_screen\n");
         return -1;
     }
 
@@ -1456,6 +1587,11 @@ static int config_parse_log_level(int argc, char *argv[], void *data)
     struct config *cfg = data;
 
     if (argc != 2) {
+        return -1;
+    }
+
+    if (cfg->log_level) {
+        printf("Error: duplicate log_level\n");
         return -1;
     }
 
@@ -1483,6 +1619,12 @@ static int config_parse_disable_ack(int argc, __rte_unused char *argv[], void *d
     if (argc != 1) {
         return -1;
     }
+
+    if (cfg->disable_ack) {
+        printf("Error: duplicate disable_ack\n");
+        return -1;
+    }
+
     cfg->disable_ack = true;
     return 0;
 }
@@ -1493,6 +1635,11 @@ static int config_parse_retransmit_timeout(int argc, char *argv[], void *data)
     struct config *cfg = data;
 
     if (argc != 2) {
+        return -1;
+    }
+
+    if (cfg->retransmit_timeout_sec) {
+        printf("Error: duplicate retransmit_timeout\n");
         return -1;
     }
 
@@ -1513,6 +1660,11 @@ static int config_parse_neigh_ignore(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->neigh_ignore) {
+        printf("Error: duplicate neigh_ignore\n");
+        return -1;
+    }
+
     cfg->neigh_ignore = true;
     return 0;
 }
@@ -1525,6 +1677,10 @@ static int config_parse_flow_isolate(int argc, char *argv[], void *data)
         return -1;
     }
 
+    if (cfg->flow_isolate) {
+        printf("Error: duplicate flow_isolate\n");
+        return -1;
+    }
     cfg->flow_isolate = true;
     return 0;
 }
