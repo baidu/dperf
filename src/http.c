@@ -145,7 +145,7 @@ void http_set_payload(struct config *cfg, char *payload)
             if (cfg->server) {
                 strcpy(http_rsp[i], payload);
             } else {
-                strcpy(http_rsp[i], payload);
+                strcpy(http_req[i], payload);
             }
         } else {
             if (cfg->server) {
