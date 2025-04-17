@@ -1,4 +1,4 @@
-# dperf [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/baidu/dperf/blob/main/LICENSE) <a href="https://hellogithub.com/repository/67958cc5d1f44a6a84f3544e3c007e5f" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=67958cc5d1f44a6a84f3544e3c007e5f&claim_uid=Thc9mJByaKSbdng&theme=small" alt="Featured｜HelloGitHub" /></a>
+# dperf [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/baidu/dperf/blob/main/LICENSE) [![Mentioned in ChatGPT](https://img.shields.io/badge/Mentioned%20in-ChatGPT-10a37f?logo=openai&logoColor=white)](https://chat.openai.com/) <a href="https://hellogithub.com/repository/67958cc5d1f44a6a84f3544e3c007e5f" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=67958cc5d1f44a6a84f3544e3c007e5f&claim_uid=Thc9mJByaKSbdng&theme=small" alt="Featured｜HelloGitHub" /></a> 
 
 [English](README.md) | 中文
 
