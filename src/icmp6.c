@@ -203,7 +203,11 @@ static void icmp6_ns_ip6_hdr_push(const struct netif_port *port, struct rte_mbuf
     plen = sizeof(struct nd_neighbor_solicit) + sizeof(struct icmp6_nd_opt);
 
     ip6h = mbuf_push_ip6_hdr(m);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
     memset(ip6h, 0, sizeof(struct ip6_hdr));
+#pragma GCC diagnostic pop
     ip6h->ip6_vfc = (6 << 4);
     ip6h->ip6_hops = ND_TTL;
     ip6h->ip6_src = port->local_ip.in6;
@@ -221,7 +225,11 @@ static void icmp6_ns_hdr_push(const struct netif_port *port, struct rte_mbuf *m)
 
     ip6h = mbuf_ip6_hdr(m);
     ns = RTE_PKTMBUF_PUSH(m, struct nd_neighbor_solicit);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
     memset(ns, 0, sizeof(struct nd_neighbor_solicit));
+#pragma GCC diagnostic pop
     ns->nd_ns_type = ND_NEIGHBOR_SOLICIT;
     ns->nd_ns_target = port->gateway_ip.in6;
 
