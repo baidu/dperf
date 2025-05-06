@@ -50,6 +50,7 @@ uint32_t cpuload_cal_cpusage(struct cpuload *load, uint64_t now_tsc)
 
 void cpuload_init(struct cpuload *load)
 {
-    memset(load, 0, sizeof(struct cpuload));
     load->init_tsc = rte_rdtsc();
+    load->start_tsc = load->init_tsc;
+    load->work_tsc = 0;
 }
