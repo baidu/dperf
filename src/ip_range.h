@@ -28,6 +28,8 @@
 
 struct ip_range {
     ipaddr_t start;
+    uint32_t list[256];
+    uint32_t valid[256];
     uint8_t num;
 };
 
@@ -42,12 +44,8 @@ struct ip_group {
 
 static inline uint32_t ip_range_get(const struct ip_range *ip_range, uint8_t idx)
 {
-    uint32_t ip = ip_range->start.ip;
-
     idx = idx % ip_range->num;
-    ip = ntohl(ip);
-    ip += idx;
-    return htonl(ip);
+    return ip_range->list[idx];
 }
 
 static inline void ip_range_get2(const struct ip_range *ip_range, uint8_t idx, ipaddr_t *addr)
@@ -59,27 +57,61 @@ static inline void ip_range_get2(const struct ip_range *ip_range, uint8_t idx, i
 
 static inline int ip_range_init(struct ip_range *ip_range, ipaddr_t start, int num)
 {
+    int i = 0;
     uint32_t last_byte = ipaddr_last_byte(start);
+    uint32_t ip = start.ip;
+    uint32_t t = 0;
 
     /*
      * 1. the last byte cannot be 0 or 255, which are illegal unicast addresses.
      * 2. address cannot be 0.0.0.0
      */
-    if ((start.ip == 0) || (num <= 0) || ((last_byte + num - 1) >= 255)) {
+    if ((ip == 0) || (num <= 0) || ((last_byte + num - 1) >= 255)) {
         return -1;
     }
 
+    for (i = 0; i < num; i++) {
+        t = htonl((ntohl(ip) + i));
+        ip_range->list[i] = t;
+        ip_range->valid[last_byte + i] = t;
+    }
     ip_range->start = start;
     ip_range->num = num;
     return 0;
 }
 
+static inline int ip_range_add(struct ip_range *ip_range, ipaddr_t addr)
+{
+    int i = 0;
+    uint32_t last = 0;
+
+    if ((ip_range->num == 0) || (ip_range->num >= 255)) {
+        return -1;
+    }
+
+    for (i = 0; i < 14; i++) {
+        if (ip_range->start.byte[i] != addr.byte[i]) {
+            return -1;
+        }
+    }
+
+    last = addr.byte[15];
+    if ((last == 0) || (last == 255)) {
+        return -1;
+    }
+    if (ip_range->valid[last] == 0) {
+        ip_range->list[ip_range->num] = addr.ip;
+        ip_range->valid[last] = addr.ip;
+        ip_range->num++;
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
 static inline bool ip_range_exist(const struct ip_range *ip_range, uint32_t ip)
 {
-    uint32_t base = ntohl(ip_range->start.ip);
-
-    ip = ntohl(ip);
-    return ((ip >= base) && (ip < (base + ip_range->num)));
+    return (ip == ip_range->valid[ip & 0xff]);
 }
 
 static inline bool ip_range_exist_ipv6(const struct ip_range *ip_range, const ipaddr_t *addr)

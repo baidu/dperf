@@ -40,6 +40,7 @@ typedef struct {
             uint32_t pad[3];
             uint32_t ip;
         };
+        uint8_t byte[16];
     };
 } ipaddr_t;
 
