@@ -666,13 +666,22 @@ static int config_parse_listen(int argc, char *argv[], void *data)
  *  AF_INET  ok
  *  AF_INET6 ok
  **/
-static int config_parse_ip_range(int argc, char *argv[], struct ip_range *ip_range)
+static int config_parse_ip_range(int argc, char *argv[], struct ip_range *ip_range, bool split)
 {
+    int i = 0;
     int af = 0;
+    int af2 = 0;
     int num = 0;
     ipaddr_t ip;
+    ipaddr_t ip2;
+    struct ip_range ipr;
 
-    if (argc != 3) {
+    if (argc < 3) {
+        return -1;
+    }
+
+    if ((split == false) && (argc != 3)) {
+        printf("bad ip range: %s\n", argv[0]);
         return -1;
     }
 
@@ -686,14 +695,37 @@ static int config_parse_ip_range(int argc, char *argv[], struct ip_range *ip_ran
 
     num = config_parse_number(argv[2], false, false);
     if (ip_range_init(ip_range, ip, num) < 0) {
-        printf("bad client ip range %s %s\n", argv[1], argv[2]);
+        printf("bad ip range: %s %s\n", argv[1], argv[2]);
         return -1;
+    }
+
+    for (i = 3; i < argc; i++) {
+        if ((af2 = config_parse_ip(argv[i], &ip2)) < 0) {
+            return -1;
+        }
+
+        if (ip2.ip == 0) {
+            return -1;
+        }
+
+        if (af2 != af) {
+            return -1;
+        }
+
+        memset(&ipr, 0, sizeof(struct ip_range));
+        if (ip_range_init(&ipr, ip2, 1) < 0) {
+            return -1;
+        }
+
+        if (ip_range_add(ip_range, ip2) < 0) {
+            return -1;
+        }
     }
 
     return af;
 }
 
-static int config_parse_ip_group(struct config *cfg, int argc, char *argv[], struct ip_group *ip_group)
+static int config_parse_ip_group(struct config *cfg, int argc, char *argv[], struct ip_group *ip_group, bool split)
 {
     int af = 0;
     struct ip_range *ip_range = NULL;
@@ -703,7 +735,7 @@ static int config_parse_ip_group(struct config *cfg, int argc, char *argv[], str
     }
 
     ip_range = &ip_group->ip_range[ip_group->num];
-    af = config_parse_ip_range(argc, argv, ip_range);
+    af = config_parse_ip_range(argc, argv, ip_range, split);
     if (config_set_af(cfg, af) < 0) {
         return -1;
     }
@@ -718,7 +750,7 @@ static int config_parse_client(int argc, char *argv[], void *data)
     struct config *cfg = data;
     struct ip_group *ip_group = &cfg->client_ip_group;
 
-    return config_parse_ip_group(cfg, argc, argv, ip_group);
+    return config_parse_ip_group(cfg, argc, argv, ip_group, true);
 }
 
 static int config_parse_server(int argc, char *argv[], void *data)
@@ -726,7 +758,7 @@ static int config_parse_server(int argc, char *argv[], void *data)
     struct config *cfg = data;
     struct ip_group *ip_group = &cfg->server_ip_group;
 
-    return config_parse_ip_group(cfg, argc, argv, ip_group);
+    return config_parse_ip_group(cfg, argc, argv, ip_group, false);
 }
 
 static int config_parse_change_dip(int argc, char *argv[], void *data)
@@ -1195,11 +1227,11 @@ static int config_parse_vxlan(int argc, char *argv[], void *data)
         return -1;
     }
 
-    if (config_parse_ip_range(3, &argv[3], &vxlan->vtep_local) != AF_INET) {
+    if (config_parse_ip_range(3, &argv[3], &vxlan->vtep_local, false) != AF_INET) {
         return -1;
     }
 
-    if (config_parse_ip_range(3, &argv[5], &vxlan->vtep_remote) != AF_INET) {
+    if (config_parse_ip_range(3, &argv[5], &vxlan->vtep_remote, false) != AF_INET) {
         return -1;
     }
 
@@ -1920,12 +1952,11 @@ static int config_check_client_addr(const struct config *cfg)
     }
 
     for_each_ip_range(&cfg->client_ip_group, ip_range) {
-        low_2byte = ip_range_get(ip_range, 0);
-        low_2byte = ntohl(low_2byte) & 0xffff;
-
         for (i = 0; i < ip_range->num; i++) {
-            if (client_ip[low_2byte + i] == 0) {
-                client_ip[low_2byte + i] = 1;
+            low_2byte = ip_range_get(ip_range, i);
+            low_2byte = ntohl(low_2byte) & 0xffff;
+            if (client_ip[low_2byte] == 0) {
+                client_ip[low_2byte] = 1;
             } else {
                 ret = -1;
                 printf("duplicate client ip address's last 2 byte\n");
