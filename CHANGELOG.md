@@ -1,5 +1,36 @@
 # Changelog
 
+## v1.9.0 - 2025-07-23
+### Added
+
+- support dpdk-pdump
+
+- flow_isolate
+
+- the dperf server supports multiple payload sizes
+
+- allocate more sockets
+
+- 'client' supports non-contiguous IP lists
+
+### Changed
+
+- update readme
+
+### Fixed
+
+- fix: cpuload init
+
+- fix: duplicate config
+
+- fix: set payload for client
+
+- fix compile errors
+
+- fix: disable HTTP_PARSE
+
+- fix: dpdk-23.03, dpdk-23.07
+
 ## v1.8.0 - 2024-12-12
 ### Added
 
