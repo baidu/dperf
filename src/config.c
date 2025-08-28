@@ -2060,7 +2060,7 @@ static int config_check_server_addr(const struct config *cfg)
     return 0;
 }
 
-static int config_check_address_confliec_port(const struct config *cfg, const struct ip_group *ipg, int local)
+static int config_check_address_conflict_port(const struct config *cfg, const struct ip_group *ipg, int local)
 {
     const ipaddr_t *addr = NULL;
     const struct netif_port *port = NULL;
@@ -2115,22 +2115,22 @@ static int config_check_address_conflict(const struct config *cfg)
      *  gateway ip cannot in server ip range
      * */
     if (cfg->server) {
-        if (config_check_address_confliec_port(cfg, cipg, 1) < 0) {
+        if (config_check_address_conflict_port(cfg, cipg, 1) < 0) {
             printf("Error: local ip conflict with client address\n");
             return -1;
         }
 
-        if (config_check_address_confliec_port(cfg, sipg, 0) < 0) {
+        if (config_check_address_conflict_port(cfg, sipg, 0) < 0) {
             printf("Error: gateway ip conflict with server address\n");
             return -1;
         }
     } else {
-        if (config_check_address_confliec_port(cfg, sipg, 1) < 0) {
+        if (config_check_address_conflict_port(cfg, sipg, 1) < 0) {
             printf("Error: local ip conflict with server address\n");
             return -1;
         }
 
-        if (config_check_address_confliec_port(cfg, cipg, 0) < 0) {
+        if (config_check_address_conflict_port(cfg, cipg, 0) < 0) {
             printf("Error: gateway ip conflict with client address\n");
             return -1;
         }

@@ -111,7 +111,7 @@ static inline int ip_range_add(struct ip_range *ip_range, ipaddr_t addr)
 
 static inline bool ip_range_exist(const struct ip_range *ip_range, uint32_t ip)
 {
-    return (ip == ip_range->valid[ip & 0xff]);
+    return (ip == ip_range->valid[ntohl(ip) & 0xff]);
 }
 
 static inline bool ip_range_exist_ipv6(const struct ip_range *ip_range, const ipaddr_t *addr)
