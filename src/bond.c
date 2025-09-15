@@ -42,7 +42,9 @@ int bond_create(struct netif_port *port)
         return -1;
     }
 
-    rte_eth_bond_xmit_policy_set(port_id, port->bond_policy);
+    if (BONDING_MODE_BALANCE == port->bond_mode) {
+        rte_eth_bond_xmit_policy_set(port_id, port->bond_policy);
+    }
 
     return port_id;
 }

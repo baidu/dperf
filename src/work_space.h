@@ -147,6 +147,8 @@ static inline void work_space_tx_flush(struct work_space *ws)
 
         tx = &queue->tx[queue->head];
         n = rte_eth_tx_burst(g_work_space->port_id, g_work_space->queue_id, tx, num);
+        /* When using Bond mode2, n may be greater than num. */
+        n = n > num ? num : n;
         queue->head += n;
         if (queue->head == queue->tail) {
             queue->head = 0;
