@@ -100,15 +100,18 @@ static inline void socket_stop_timeout_timer(struct socket *sk)
 static inline uint64_t socket_accurate_timer_tsc(struct socket *sk, uint64_t now_tsc)
 {
     uint64_t interval = g_config.keepalive_request_interval;
-    /*
-     * |-------------|-------------|-------------|
-     * timer_tsc     |--|now_tsc
-     * */
-    if (((sk->timer_tsc + interval) < now_tsc) && ((sk->timer_tsc + 2 * interval) > now_tsc)) {
-        now_tsc = sk->timer_tsc + interval;
-    }
 
-    return now_tsc;
+    /* Align to interval start for timing accuracy */
+    if (now_tsc <= (sk->timer_tsc + interval)) {
+        return sk->timer_tsc;
+    } else if (now_tsc <= (sk->timer_tsc + 2 * interval)) {
+        return sk->timer_tsc + interval;
+    } else if (now_tsc <= (sk->timer_tsc + 3 * interval)) {
+        return sk->timer_tsc + 2 * interval;
+    /* Gap too large, trigger immediate sending */
+    } else {
+        return (now_tsc > interval) ? (now_tsc - interval) : now_tsc;
+    }
 }
 
 static inline void socket_start_keepalive_timer(struct socket *sk, uint64_t now_tsc)
