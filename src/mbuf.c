@@ -29,7 +29,7 @@
 
 #define NB_MBUF             (8192 * 8)
 
-__thread struct mbuf_free_pool g_mbuf_free_pool;
+__thread struct mbuf_free_pool g_mbuf_free_pool = {0};
 
 struct rte_mempool *mbuf_pool_create(const char *str, uint16_t port_id, uint16_t queue_id)
 {
