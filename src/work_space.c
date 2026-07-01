@@ -190,6 +190,7 @@ static struct work_space *work_space_alloc(struct config *cfg, int id)
             ws = (struct work_space *)p;
             memset(p, 0, size);
             ws->mmap = 1;
+            ws->mmap_size = size;
         }
     }
     if (ws != NULL) {
@@ -278,7 +279,16 @@ err:
 
 void work_space_close(struct work_space *ws)
 {
+    if (ws == NULL) {
+        return;
+    }
     work_space_close_log(ws);
+    mbuf_free2_flush();
+    if (ws->mmap) {
+        munmap(ws, ws->mmap_size);
+    } else {
+        rte_free(ws);
+    }
 }
 
 bool work_space_ip_exist(const struct work_space *ws, uint32_t ip)

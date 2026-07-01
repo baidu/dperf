@@ -77,6 +77,7 @@ struct work_space {
 
     /* bytes */
     uint32_t send_window;
+    size_t mmap_size;
 
     uint8_t tos;
     uint8_t port_id;
