@@ -77,25 +77,31 @@ void mbuf_log(struct rte_mbuf *m, const char *tag);
 int mbuf_pool_init(struct config *cfg);
 struct rte_mempool *mbuf_pool_create(const char *str, uint16_t port_id, uint16_t queue_id);
 
+#define MBUF_FREE_POOL_SIZE 128
+
 struct mbuf_free_pool {
-    int num;
-    struct rte_mbuf *head;
+    unsigned int num;
+    struct rte_mbuf *mbufs[MBUF_FREE_POOL_SIZE];
 };
 
 extern __thread struct mbuf_free_pool g_mbuf_free_pool;
 
 #define mbuf_free(m) rte_pktmbuf_free(m)
 
+static inline void mbuf_free2_flush(void)
+{
+    if (g_mbuf_free_pool.num > 0) {
+        rte_pktmbuf_free_bulk(g_mbuf_free_pool.mbufs, g_mbuf_free_pool.num);
+        g_mbuf_free_pool.num = 0;
+    }
+}
+
 static inline void mbuf_free2(struct rte_mbuf *m)
 {
     if (m) {
-        m->next = g_mbuf_free_pool.head;
-        g_mbuf_free_pool.head = m;
-        g_mbuf_free_pool.num++;
-        if (g_mbuf_free_pool.num >= 128) {
-            rte_pktmbuf_free(m);
-            g_mbuf_free_pool.head = NULL;
-            g_mbuf_free_pool.num = 0;
+        g_mbuf_free_pool.mbufs[g_mbuf_free_pool.num++] = m;
+        if (g_mbuf_free_pool.num >= MBUF_FREE_POOL_SIZE) {
+            mbuf_free2_flush();
         }
     }
 }
