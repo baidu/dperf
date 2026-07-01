@@ -461,7 +461,7 @@ static inline void tcp_client_process_syn_ack(struct work_space *ws, struct sock
     struct rte_mbuf *m, struct tcphdr *th)
 {
     uint32_t ack = ntohl(th->th_ack);
-    uint32_t seq = htonl(th->th_seq);
+    uint32_t seq = ntohl(th->th_seq);
 
     if (sk->state == SK_SYN_SENT) {
         if (ack != sk->snd_nxt) {
