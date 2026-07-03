@@ -39,7 +39,7 @@ static inline uint16_t csum_pseudo_ipv4(uint8_t proto, uint32_t sip, uint32_t di
     csum = (csum & 0x0000ffffUL) + (csum >> 16);
     csum = (csum & 0x0000ffffUL) + (csum >> 16);
 
-    return (uint16_t)csum;
+    return (uint16_t)~csum;
 }
 
 static inline uint16_t csum_pseudo_ipv6(uint8_t proto, struct in6_addr *saddr, struct in6_addr *daddr,
