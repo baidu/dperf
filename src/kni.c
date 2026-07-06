@@ -169,11 +169,12 @@ static struct rte_kni *kni_alloc(struct config *cfg, struct netif_port *port)
     }
 
     kni = rte_kni_alloc(mbuf_pool, &conf, NULL);
+    if (kni == NULL) {
+        return NULL;
+    }
 
     if (kni_set_hwaddr(cfg, port) < 0) {
-        if (kni) {
-            rte_kni_release(kni);
-        }
+        rte_kni_release(kni);
         return NULL;
     }
 
