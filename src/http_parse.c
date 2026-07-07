@@ -198,6 +198,9 @@ retry:
 
             p += sk->http_length;
             sk->http_length = 0;
+            if (p >= end) {
+                return HTTP_PARSE_OK;
+            }
             c = *p;
             p++;
             if (c == '\r') {
