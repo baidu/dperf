@@ -252,6 +252,7 @@ static int csum_check_ipv6(struct ip6_hdr *ip6h)
             printf("csum tcp error\n");
             return -1;
         }
+        th->th_sum = csum_tcp;
     } else {
         csum_udp = uh->check;
         uh->check = 0;
