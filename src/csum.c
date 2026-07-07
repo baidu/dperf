@@ -229,7 +229,7 @@ static int csum_check_ipv4(struct iphdr *iph)
             printf("csum udp error\n");
             return -1;
         }
-        uh->check = 0;
+        uh->check = csum_udp;
     }
     iph->check = csum_ip;
 
