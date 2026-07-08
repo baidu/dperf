@@ -1306,6 +1306,7 @@ static int config_parse_tos(int argc, char *argv[], void *data)
 
     if (config_parse_hex(argv[1], 0, 0xff, &tos) < 0) {
         printf("invalid tos %s\n", argv[1]);
+        return -1;
     }
 
     cfg->tos = tos;
