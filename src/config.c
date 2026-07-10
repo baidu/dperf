@@ -422,6 +422,7 @@ static int config_parse_cpu(int argc, char *argv[], void *data)
         for (cpu = cpu_min; cpu <= cpu_max; cpu++) {
             if (cpu_num + 1 > THREAD_NUM_MAX) {
                 printf("too much cpu %d > %d\n", cpu_num + 1, THREAD_NUM_MAX);
+                return -1;
             }
             cfg->cpu[cpu_num] = cpu;
             cpu_num++;
