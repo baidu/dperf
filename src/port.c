@@ -81,12 +81,20 @@ static int port_init_mbuf_pool(struct netif_port *port)
     for (i = 0; i < port->queue_num; i++) {
         mbuf_pool = mbuf_pool_create("mp", port->id, i);
         if (mbuf_pool == NULL) {
-            return -1;
+            goto err;
         }
         port->mbuf_pool[i] = mbuf_pool;
     }
 
     return 0;
+
+err:
+    while (i > 0) {
+        i--;
+        rte_mempool_free(port->mbuf_pool[i]);
+        port->mbuf_pool[i] = NULL;
+    }
+    return -1;
 }
 
 static int port_config_vlan(struct rte_eth_conf *conf, struct rte_eth_dev_info *dev_info)
