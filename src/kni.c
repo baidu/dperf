@@ -270,12 +270,16 @@ static int kni_create(struct config *cfg)
     config_for_each_port(cfg, port) {
         kni = kni_alloc(cfg, port);
         if (kni == NULL) {
+            kni_free(cfg);
             return -1;
         }
         port->kni = kni;
         snprintf(ring_name, sizeof(ring_name), "kr_%d", port->id);
         port->kni_mbuf_queue = rte_ring_create(ring_name, KNI_RING_SIZE, rte_socket_id(), RING_F_SC_DEQ);
         if (!port->kni_mbuf_queue) {
+            rte_kni_release(kni);
+            port->kni = NULL;
+            kni_free(cfg);
             return -2;
         }
     }
