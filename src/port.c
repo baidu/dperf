@@ -223,7 +223,7 @@ static int port_init_port_id(struct netif_port *port)
         pci = port->pci_list[i];
         if (rte_eth_dev_get_port_by_name(pci, &port_id) != 0) {
             printf("warning: cannot find port id by pci %s\n", pci);
-            port_id = (uint16_t)i;
+            return -1;
         }
 
         port->port_id_list[i] = port_id;
