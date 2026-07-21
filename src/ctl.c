@@ -39,7 +39,7 @@
 #define CTL_CLIENT_LOG LOG_DIR"/dperf-ctl-client.log"
 #define CTL_SERVER_LOG LOG_DIR"/dperf-ctl-server.log"
 
-static bool g_stop = false;
+static volatile sig_atomic_t g_stop = 0;
 
 static FILE *ctl_log_open(struct config *cfg)
 {
