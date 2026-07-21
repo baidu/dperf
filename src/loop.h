@@ -124,7 +124,7 @@ static inline int ipv4_trim_options(struct rte_mbuf *m)
     rte_pktmbuf_adj(m, skip);
     iph->ihl = 5;
     iph->tot_len = htons(ntohs(iph->tot_len) - skip);
-    memmove(eth + skip, eth, sizeof(struct eth_hdr) + sizeof(struct iphdr));
+    memmove((uint8_t *)eth + skip, eth, sizeof(struct eth_hdr) + sizeof(struct iphdr));
     return 0;
 }
 
