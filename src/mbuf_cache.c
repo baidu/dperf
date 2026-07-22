@@ -78,11 +78,24 @@ static void mbuf_data_ip_tot_len_add(struct mbuf_data *mdata, uint16_t len)
 {
     struct iphdr *iph = mbuf_data_iphdr(mdata);
     struct ip6_hdr *ip6h = mbuf_data_ip6hdr(mdata);
+    uint32_t cur = 0;
+    uint32_t sum = 0;
 
     if (mdata->ipv6) {
-        ip6h->ip6_plen = htons((ntohs(ip6h->ip6_plen)) + len);
+        cur = ntohs(ip6h->ip6_plen);
     } else {
-        iph->tot_len = htons(ntohs(iph->tot_len) + len);
+        cur = ntohs(iph->tot_len);
+    }
+
+    sum = cur + len;
+    if (sum > UINT16_MAX) {
+        sum = UINT16_MAX;
+    }
+
+    if (mdata->ipv6) {
+        ip6h->ip6_plen = htons((uint16_t)sum);
+    } else {
+        iph->tot_len = htons((uint16_t)sum);
     }
 }
 
