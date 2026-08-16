@@ -20,6 +20,7 @@
 #include "socket.h"
 #include "mbuf.h"
 #include "http.h"
+#include <stdint.h>
 #include <stdlib.h>
 
 #ifdef HTTP_PARSE
@@ -158,13 +159,21 @@ retry:
         sk->http_parse_state = HTTP_CHUNK_SIZE;
         /* fall through */
     case HTTP_CHUNK_SIZE:
+        /* reset before parsing a new chunk size to avoid
+         * contamination from the previous chunk's leftover. */
+        sk->http_length = 0;
         while (p < end) {
             c = *p;
             p++;
             if ((c >= '0') && (c <= '9')) {
-                sk->http_length = (sk->http_length << 4) + c - '0';
+                /* saturate to avoid int64 overflow on crafted input */
+                if (sk->http_length <= (INT64_MAX >> 4)) {
+                    sk->http_length = (sk->http_length << 4) + c - '0';
+                }
             } else if ((c >= 'a') && (c <= 'f')) {
-                sk->http_length = (sk->http_length << 4) + c - 'a' + 10;
+                if (sk->http_length <= (INT64_MAX >> 4)) {
+                    sk->http_length = (sk->http_length << 4) + c - 'a' + 10;
+                }
             } else {
                 sk->http_parse_state = HTTP_CHUNK_SIZE_END;
                 break;
